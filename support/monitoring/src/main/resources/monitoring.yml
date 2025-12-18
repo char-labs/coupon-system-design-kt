@@ -1,0 +1,13 @@
+management:
+  tracing:
+    enabled: true
+    sampling:
+      probability: 1.0
+  endpoints:
+    web:
+      exposure:
+        include: health, prometheus
+      base-path: /actuator
+  health:
+    defaults:
+      enabled: true
