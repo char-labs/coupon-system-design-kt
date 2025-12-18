@@ -8,6 +8,8 @@ spring:
       - redis.yml
       - authentication.yml
       - swagger.yml
+      - logging.yml
+      - monitoring.yml
   web.resources.add-mappings: false
 
 server:
