@@ -1,0 +1,12 @@
+package com.coupon.enums
+
+enum class ErrorKind {
+    SERVER_ERROR,
+    INTERNAL_SERVER_ERROR,
+    CLIENT_ERROR,
+    AUTHORIZATION,
+    NOT_FOUND,
+    FORBIDDEN_ERROR,
+    METHOD_ARGUMENT_TYPE_MISMATCH,
+    METHOD_NOT_ALLOWED,
+}

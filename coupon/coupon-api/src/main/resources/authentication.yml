@@ -1,0 +1,5 @@
+jwt:
+  secret-key: ${JWT_SECRET_KEY:couponJwtSecretKeyForAuthenticationSecuritySystem2024!@#}
+jwt-token:
+  access-token-expiration-seconds: ${ACCESS_TOKEN_EXPIRATION_SECONDS:2880} # 2(일) * 24 * 60 * 60
+  refresh-token-expiration-seconds: ${REFRESH_TOKEN_EXPIRATION_SECONDS:43200} # 30(일) * 24 * 60

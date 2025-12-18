@@ -52,9 +52,12 @@ subprojects {
         implementation("org.springframework.boot:spring-boot-starter")
         // Logging
         implementation("io.github.oshai:kotlin-logging-jvm:${project.properties["kotlinLoggingJvmVersion"]}")
-        // Serialize
-        implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
-        implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310")
+        // Serialize (Jackson 3 - Spring Boot 4 default)
+        // Spring Boot 4 provides Jackson 3 (tools.jackson.*) by default
+        // We only need to add Kotlin module support
+        // Note: datatype-jsr310 is now built into jackson-databind in Jackson 3
+        implementation(platform("tools.jackson:jackson-bom:3.0.2"))
+        implementation("tools.jackson.module:jackson-module-kotlin")
 
         // Test runtime
         testRuntimeOnly("org.junit.platform:junit-platform-launcher")
