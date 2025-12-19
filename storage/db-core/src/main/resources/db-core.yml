@@ -6,7 +6,7 @@ spring:
         show_sql: true
         format_sql: true
         default_batch_fetch_size: 100
-    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    database-platform: org.hibernate.dialect.MySQL8Dialect
 ---
 spring:
   config:
@@ -46,10 +46,10 @@ spring:
 datasource:
   db:
     core:
-      driver-class-name: org.postgresql.Driver
-      jdbc-url: ${DATASOURCE_DB_CORE_JDBC_URL:jdbc:postgresql://localhost:5432/studio_xid}
-      username: ${DATASOURCE_DB_CORE_USERNAME:postgres}
-      password: ${DATASOURCE_DB_CORE_PASSWORD:postgres}
+      driver-class-name: com.mysql.cj.jdbc.Driver
+      jdbc-url: ${DATASOURCE_DB_CORE_JDBC_URL:jdbc:mysql://localhost:3306/coupon-db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Seoul&characterEncoding=UTF-8}
+      username: ${DATASOURCE_DB_CORE_USERNAME:root}
+      password: ${DATASOURCE_DB_CORE_PASSWORD:root}
       pool-name: core-db-pool
       maximum-pool-size: 10
       connection-timeout: 1500
@@ -57,4 +57,13 @@ datasource:
       validation-timeout: 1000
       max-lifetime: 600000
       data-source-properties:
+        cachePrepStmts: true
+        prepStmtCacheSize: 250
+        prepStmtCacheSqlLimit: 2048
+        useServerPrepStmts: true
+        useLocalSessionState: true
         rewriteBatchedStatements: true
+        cacheResultSetMetadata: true
+        cacheServerConfiguration: true
+        elideSetAutoCommits: true
+        maintainTimeStats: false

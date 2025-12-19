@@ -52,4 +52,14 @@ enum class ErrorType(
     INVALID_NEW_LOGIN_ID(400, ErrorKind.CLIENT_ERROR, "새로 입력한 아이디와 기존 아이디는 같을 수 없습니다.", ErrorLevel.WARN),
     DUPLICATED_EMAIL(409, ErrorKind.CLIENT_ERROR, "이미 존재하는 이메일입니다.", ErrorLevel.WARN),
     FORBIDDEN_ACCESS(403, ErrorKind.FORBIDDEN_ERROR, "접근 권한이 없습니다.", ErrorLevel.WARN),
+
+    /** Coupon */
+    NOT_FOUND_COUPON(404, ErrorKind.NOT_FOUND, "쿠폰을 찾을 수 없습니다.", ErrorLevel.WARN),
+    COUPON_OUT_OF_STOCK(400, ErrorKind.CLIENT_ERROR, "쿠폰 수량이 소진되었습니다.", ErrorLevel.WARN),
+    COUPON_EXPIRED(400, ErrorKind.CLIENT_ERROR, "만료된 쿠폰입니다.", ErrorLevel.WARN),
+    COUPON_NOT_ACTIVE(400, ErrorKind.CLIENT_ERROR, "활성화되지 않은 쿠폰입니다.", ErrorLevel.WARN),
+    DUPLICATED_COUPON_CODE(409, ErrorKind.CLIENT_ERROR, "이미 존재하는 쿠폰 코드입니다.", ErrorLevel.WARN),
+    ALREADY_ISSUED_COUPON(409, ErrorKind.CLIENT_ERROR, "이미 발급받은 쿠폰입니다.", ErrorLevel.WARN),
+    INVALID_COUPON_STATUS(400, ErrorKind.CLIENT_ERROR, "쿠폰 상태가 유효하지 않습니다.", ErrorLevel.WARN),
+    FORBIDDEN_COUPON_ISSUE(403, ErrorKind.FORBIDDEN_ERROR, "쿠폰에 대한 권한이 없습니다.", ErrorLevel.WARN),
 }

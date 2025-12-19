@@ -1,0 +1,48 @@
+services:
+  mysql:
+    image: mysql:8.4
+    container_name: coupon-system-mysql
+    environment:
+      MYSQL_DATABASE: coupon-db
+      MYSQL_ROOT_PASSWORD: root
+      TZ: Asia/Seoul
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --default-authentication-plugin=mysql_native_password
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+  redis:
+    image: redis:7-alpine
+    container_name: coupon-system-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+  coupon-app:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: coupon-app
+    ports:
+      - "8080:8080"
+    environment:
+      DATASOURCE_DB_CORE_JDBC_URL: jdbc:mysql://mysql:3306/coupon-db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Seoul&characterEncoding=UTF-8
+      DATASOURCE_DB_CORE_USERNAME: root
+      DATASOURCE_DB_CORE_PASSWORD: root
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      ACCESS_TOKEN_EXPIRATION_SECONDS: 2880
+      REFRESH_TOKEN_EXPIRATION_SECONDS: 43200
+      JWT_SECRET_KEY: couponJwtSecretKeyForAuthenticationSecuritySystem2024!@#
+    depends_on:
+      - mysql
+      - redis
+
+volumes:
+  mysql_data:
+  redis_data:

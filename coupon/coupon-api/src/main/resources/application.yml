@@ -11,6 +11,9 @@ spring:
       - logging.yml
       - monitoring.yml
   web.resources.add-mappings: false
+  servlet:
+    encoding:
+      charset: UTF-8
 
 server:
   tomcat:
@@ -18,6 +21,3 @@ server:
     threads:
       max: 600
       min-spare: 100
-  servlet:
-    encoding:
-      charset: UTF-8
