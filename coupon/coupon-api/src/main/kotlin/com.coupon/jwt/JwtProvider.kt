@@ -28,7 +28,7 @@ import javax.crypto.SecretKey
 
 @Component
 class JwtProvider(
-    @Value("\${jwt.secret-key:couponJwtSecretKeyForAuthenticationSecuritySystem2024SecureKey!@#\$}")
+    @param:Value("\${jwt.secret-key:couponJwtSecretKeyForAuthenticationSecuritySystem2024SecureKey!@#\$}")
     private val secretKey: String,
     private val authenticationProperties: AuthenticationProperties,
     private val redisTokenRepository: RedisTokenRepository,

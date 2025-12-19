@@ -18,6 +18,8 @@ dependencies {
     implementation(project(":coupon:coupon-domain"))
     implementation(project(":storage:db-core"))
     implementation(project(":storage:redis"))
+    implementation(project(":support:logging"))
+    implementation(project(":support:monitoring"))
 
     // OpenApi Spec
     implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:${project.properties["springDocOpenApiVersion"]}")

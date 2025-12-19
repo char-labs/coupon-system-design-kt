@@ -1,19 +1,15 @@
 services:
   mysql:
-    image: mysql:8.4
+    image: mysql:8.0
     container_name: coupon-system-mysql
+    restart: always
     environment:
       MYSQL_DATABASE: coupon-db
       MYSQL_ROOT_PASSWORD: root
       TZ: Asia/Seoul
-    command:
-      - --character-set-server=utf8mb4
-      - --collation-server=utf8mb4_unicode_ci
-      - --default-authentication-plugin=mysql_native_password
+    command: [ "mysqld", "--character-set-server=utf8mb4", "--collation-server=utf8mb4_general_ci" ]
     ports:
       - "3306:3306"
-    volumes:
-      - mysql_data:/var/lib/mysql
 
   redis:
     image: redis:7-alpine
@@ -32,9 +28,9 @@ services:
       - "8080:8080"
     environment:
       DATASOURCE_DB_CORE_JDBC_URL: jdbc:mysql://mysql:3306/coupon-db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Seoul&characterEncoding=UTF-8
-      DATASOURCE_DB_CORE_USERNAME: root
-      DATASOURCE_DB_CORE_PASSWORD: root
-      REDIS_HOST: redis
+      DATASOURCE_DB_CORE_USERNAME: coupon-admin
+      DATASOURCE_DB_CORE_PASSWORD: coupon!@#
+      REDIS_HOST: localhost
       REDIS_PORT: 6379
       ACCESS_TOKEN_EXPIRATION_SECONDS: 2880
       REFRESH_TOKEN_EXPIRATION_SECONDS: 43200

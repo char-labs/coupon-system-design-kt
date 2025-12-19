@@ -17,15 +17,14 @@ import jakarta.persistence.Table
     indexes = [
         Index(name = "idx_authentication_history_user_id", columnList = "user_id"),
         Index(name = "idx_authentication_history_user_key", columnList = "user_key"),
-        Index(name = "idx_authentication_history_access_token", columnList = "access_token"),
     ],
 )
 class AuthenticationHistoryEntity(
     val userId: Long,
     val userKey: String,
-    @Column(columnDefinition = "TEXT")
+    @Column(columnDefinition = "text")
     var accessToken: String,
-    @Column(columnDefinition = "TEXT")
+    @Column(columnDefinition = "text")
     var refreshToken: String,
 ) : AuthenticationBaseEntity() {
     constructor(

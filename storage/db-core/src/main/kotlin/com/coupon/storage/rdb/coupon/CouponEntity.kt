@@ -20,8 +20,8 @@ import java.time.LocalDateTime
     indexes = [
         Index(name = "idx_coupon_code", columnList = "coupon_code"),
         Index(name = "idx_coupon_status", columnList = "status"),
-        Index(name = "idx_coupon_valid_from", columnList = "valid_from"),
-        Index(name = "idx_coupon_valid_until", columnList = "valid_until"),
+        Index(name = "idx_coupon_available_at", columnList = "available_at"),
+        Index(name = "idx_coupon_end_at", columnList = "end_at"),
     ],
 )
 class CouponEntity(
