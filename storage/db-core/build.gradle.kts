@@ -10,6 +10,9 @@ dependencies {
 
     api("org.springframework.boot:spring-boot-starter-data-jpa")
 
+    // TSID
+    implementation("com.github.f4b6a3:tsid-creator:5.2.6")
+
     // Database
     runtimeOnly("com.mysql:mysql-connector-j")
     runtimeOnly("com.h2database:h2")
