@@ -5,10 +5,9 @@ import jakarta.persistence.Column
 import jakarta.persistence.EntityListeners
 import jakarta.persistence.EnumType
 import jakarta.persistence.Enumerated
-import jakarta.persistence.GeneratedValue
-import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.MappedSuperclass
+import jakarta.persistence.PrePersist
 import org.hibernate.annotations.CreationTimestamp
 import org.hibernate.annotations.UpdateTimestamp
 import org.springframework.data.jpa.domain.support.AuditingEntityListener
@@ -18,8 +17,8 @@ import java.time.LocalDateTime
 @EntityListeners(value = [AuditingEntityListener::class])
 abstract class AuthenticationBaseEntity {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    val id: Long? = null
+    var id: Long? = null
+        protected set
 
     @Enumerated(value = EnumType.STRING)
     @Column(length = 50)
@@ -34,6 +33,13 @@ abstract class AuthenticationBaseEntity {
     @Column
     var updatedAt: LocalDateTime? = null
         protected set
+
+    @PrePersist
+    fun generateId() {
+        if (id == null) {
+            id = TsidGenerator.generate()
+        }
+    }
 
     fun active() {
         entityStatus = AuthenticationEntityStatus.ACTIVE
