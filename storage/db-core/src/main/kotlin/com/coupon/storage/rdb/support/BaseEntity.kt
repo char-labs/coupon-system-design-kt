@@ -4,6 +4,7 @@ import jakarta.persistence.Column
 import jakarta.persistence.EntityListeners
 import jakarta.persistence.Id
 import jakarta.persistence.MappedSuperclass
+import jakarta.persistence.PrePersist
 import org.hibernate.annotations.CreationTimestamp
 import org.hibernate.annotations.UpdateTimestamp
 import org.springframework.data.jpa.domain.support.AuditingEntityListener
@@ -11,10 +12,11 @@ import java.time.LocalDateTime
 import kotlin.reflect.full.isSubclassOf
 
 @MappedSuperclass
-@EntityListeners(AuditingEntityListener::class, TsidEntityListener::class)
+@EntityListeners(AuditingEntityListener::class)
 abstract class BaseEntity {
     @Id
-    val id: Long? = null
+    var id: Long? = null
+        protected set
 
     @CreationTimestamp
     @Column(updatable = false)
@@ -28,6 +30,13 @@ abstract class BaseEntity {
     @Column
     var deletedAt: LocalDateTime? = null
         protected set
+
+    @PrePersist
+    fun generateId() {
+        if (id == null) {
+            id = TsidGenerator.generate()
+        }
+    }
 
     fun softDelete() {
         this.deletedAt = LocalDateTime.now()
