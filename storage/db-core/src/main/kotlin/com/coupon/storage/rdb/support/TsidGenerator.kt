@@ -1,8 +1,6 @@
 package com.coupon.storage.rdb.support
 
 import com.github.f4b6a3.tsid.TsidCreator
-import java.util.concurrent.locks.ReentrantLock
-import kotlin.concurrent.withLock
 
 /**
  * TSID(Time-Sorted Unique Identifier) 생성기
@@ -13,28 +11,20 @@ import kotlin.concurrent.withLock
  * - Long 타입으로 표현 가능
  * - 데이터베이스 인덱스에 최적화
  *
- * 이 클래스는 thread-safe하며, 애플리케이션 전체에서 재사용 가능합니다.
+ * TsidCreator는 내부적으로 thread-safe하게 구현되어 있어 별도의 동기화가 필요 없습니다.
  */
 object TsidGenerator {
-    private val lock = ReentrantLock()
-
     /**
      * 새로운 TSID를 Long 타입으로 생성합니다.
      *
      * @return 생성된 TSID (Long 타입)
      */
-    fun generate(): Long =
-        lock.withLock {
-            TsidCreator.getTsid().toLong()
-        }
+    fun generate(): Long = TsidCreator.getTsid().toLong()
 
     /**
      * 새로운 TSID를 String 타입으로 생성합니다.
      *
      * @return 생성된 TSID (String 타입)
      */
-    fun generateAsString(): String =
-        lock.withLock {
-            TsidCreator.getTsid().toString()
-        }
+    fun generateAsString(): String = TsidCreator.getTsid().toString()
 }
