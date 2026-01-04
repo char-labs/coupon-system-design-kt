@@ -64,10 +64,8 @@ class CacheAdvice(
 
         val result = function()
 
-        if (result != null) {
-            val serialized = objectMapper.writeValueAsString(result)
-            cacheRepository.put(key, serialized, ttl)
-        }
+        val serialized = objectMapper.writeValueAsString(result)
+        cacheRepository.put(key, serialized, ttl)
         return result
     }
 
