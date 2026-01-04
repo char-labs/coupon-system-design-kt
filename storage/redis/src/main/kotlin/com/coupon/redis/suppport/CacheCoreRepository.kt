@@ -1,0 +1,25 @@
+package com.coupon.redis.suppport
+
+import com.coupon.support.cache.CacheRepository
+import org.springframework.data.redis.core.RedisTemplate
+import org.springframework.stereotype.Repository
+import java.util.concurrent.TimeUnit
+
+@Repository
+class CacheCoreRepository(
+    private val redisTemplate: RedisTemplate<String, String>,
+) : CacheRepository {
+    override fun get(key: String): String? = redisTemplate.opsForValue().get(key)
+
+    override fun put(
+        key: String,
+        value: String,
+        ttl: Long,
+    ) {
+        redisTemplate.opsForValue().set(key, value, ttl, TimeUnit.MINUTES)
+    }
+
+    override fun delete(key: String) {
+        redisTemplate.delete(key)
+    }
+}
