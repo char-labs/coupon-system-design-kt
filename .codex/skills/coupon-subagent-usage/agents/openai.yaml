@@ -1,0 +1,4 @@
+interface:
+  display_name: "Coupon Subagent Usage"
+  short_description: "Copy-paste Spawn prompts for coupon-system agents"
+  default_prompt: "Use $coupon-subagent-usage to choose and invoke the right repo-local agent for this coupon-system task."

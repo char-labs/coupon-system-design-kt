@@ -1,0 +1,4 @@
+interface:
+  display_name: "Coupon Clean Architecture Guard"
+  short_description: "Decide where code belongs in the coupon-system architecture"
+  default_prompt: "Use $coupon-clean-architecture-guard to decide the correct layer and module for this change."

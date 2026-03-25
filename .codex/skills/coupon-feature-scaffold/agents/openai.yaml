@@ -1,0 +1,4 @@
+interface:
+  display_name: "Coupon Feature Scaffold"
+  short_description: "Add a feature slice that matches coupon-system layering"
+  default_prompt: "Use $coupon-feature-scaffold to add a new coupon-system feature that matches the existing API, domain, and storage boundaries."

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Coupon Observability Playbook"
+  short_description: "Review logs, metrics, traces, and dashboard readiness"
+  default_prompt: "Use $coupon-observability-playbook to review the observability coverage for this coupon-system change."

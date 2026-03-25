@@ -1,0 +1,4 @@
+interface:
+  display_name: "Coupon Commit Push"
+  short_description: "Plan safe commit groups, formatting, and validation before push"
+  default_prompt: "Use $coupon-commit-push to propose a safe commit and push sequence for the current coupon-system branch."

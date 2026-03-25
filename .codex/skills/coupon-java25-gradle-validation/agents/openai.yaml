@@ -1,0 +1,4 @@
+interface:
+  display_name: "Coupon Java 25 Validation"
+  short_description: "Choose the smallest Java 25 Gradle validation command"
+  default_prompt: "Use $coupon-java25-gradle-validation to pick the right format and validation commands for this coupon-system change."

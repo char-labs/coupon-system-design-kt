@@ -1,0 +1,4 @@
+interface:
+  display_name: "Coupon Cache Topology"
+  short_description: "Review Redis-centric cache design, TTLs, and hot-key risk"
+  default_prompt: "Use $coupon-cache-topology to review the cache design and invalidation strategy for this coupon-system change."

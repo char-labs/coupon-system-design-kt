@@ -1,0 +1,4 @@
+interface:
+  display_name: "Coupon Reliability Patterns"
+  short_description: "Review lock, retry, fallback, and consistency decisions"
+  default_prompt: "Use $coupon-reliability-patterns to review the consistency and failure-handling design of this coupon-system change."

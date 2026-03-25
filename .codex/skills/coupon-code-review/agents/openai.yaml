@@ -1,0 +1,4 @@
+interface:
+  display_name: "Coupon Code Review"
+  short_description: "Review correctness, bottlenecks, and operational risks"
+  default_prompt: "Use $coupon-code-review to review this coupon-system branch for bugs, regressions, and bottleneck risks."
