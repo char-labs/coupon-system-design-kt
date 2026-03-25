@@ -11,7 +11,7 @@ class StorageRedissonConfig(
     private val redisProperties: RedisProperties,
 ) {
     @Bean
-    fun redissonClient(): RedissonClient {
+    fun coreRedissonClient(): RedissonClient {
         val config = Config()
         config
             .useSingleServer()
@@ -19,7 +19,7 @@ class StorageRedissonConfig(
             .setConnectionMinimumIdleSize(1)
             .setConnectionPoolSize(5)
             .setConnectTimeout(3000)
-            .setRetryAttempts(3)
+            .retryAttempts = 3
         return Redisson.create(config)
     }
 }

@@ -1,10 +1,8 @@
-package com.coupon.redis.repository
+package com.coupon.redis.token
 
 import com.coupon.auth.Provider
 import com.coupon.auth.RedisTokenRepository
 import com.coupon.auth.TokenWithAuthenticationResult
-import com.coupon.enums.ErrorType
-import com.coupon.error.ErrorException
 import org.springframework.data.redis.core.RedisTemplate
 import org.springframework.stereotype.Repository
 import tools.jackson.databind.ObjectMapper
@@ -45,9 +43,9 @@ class RedisTokenCoreRepository(
     }
 
     override fun findByToken(token: String): TokenWithAuthenticationResult {
-        redisTemplate.opsForValue().get(token)?.let {
+        redisTemplate.opsForValue().get(token).let {
             return objectMapper.readValue(it, TokenWithAuthenticationResult::class.java)
-        } ?: throw ErrorException(ErrorType.INVALID_TOKEN)
+        }
     }
 
     override fun findBy(accessToken: String): Provider? =

@@ -1,4 +1,4 @@
-package com.coupon.redis.support
+package com.coupon.redis.cache
 
 import com.coupon.support.cache.CacheRepository
 import org.springframework.data.redis.core.RedisTemplate

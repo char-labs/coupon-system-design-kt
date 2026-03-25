@@ -29,6 +29,14 @@ enum class ErrorType(
     INVALID_REFRESH_TOKEN(401, ErrorKind.AUTHORIZATION, "잘못된 refreshToken 입니다.", ErrorLevel.WARN),
     INVALID_SOCIAL_PROVIDER(400, ErrorKind.CLIENT_ERROR, "지원하지 않는 소셜 제공자입니다.", ErrorLevel.WARN),
 
+    /** Lock */
+    LOCK_ACQUISITION_FAILED(
+        500,
+        ErrorKind.INTERNAL_SERVER_ERROR,
+        "일시적으로 요청을 처리할 수 없습니다. 잠시 후 다시 시도해주세요.",
+        ErrorLevel.ERROR,
+    ),
+
     /** Sign */
     INVALID_CREDENTIALS(400, ErrorKind.CLIENT_ERROR, "아이디 혹은 비밀번호가 올바르지 않습니다.", ErrorLevel.WARN),
     WITHDRAWAL_USER(403, ErrorKind.FORBIDDEN_ERROR, "사용할 수 없는 계정입니다.", ErrorLevel.WARN),
