@@ -1,19 +1,19 @@
-package com.partimestudy.datasource.redis.lock
+package com.coupon.redis.lock
 
-import com.partimestudy.shared.lock.Lock2Repository
-import com.partimestudy.shared.types.error.ErrorException
-import com.partimestudy.shared.types.error.ErrorType
+import com.coupon.enums.ErrorType
+import com.coupon.error.ErrorException
+import com.coupon.support.lock.LockRepository
 import org.redisson.api.RedissonClient
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.stereotype.Repository
 import java.util.concurrent.TimeUnit
 
 @Repository
-class Lock2CoreRepository(
-    @Qualifier("coreRedissonClient") private val redissonClient: RedissonClient,
-) : Lock2Repository {
+class LockCoreRepository(
+    @param:Qualifier("coreRedissonClient") private val redissonClient: RedissonClient,
+) : LockRepository {
 
-    private val REDIS_LOCK_PREFIX = "lock2:"
+    private val REDIS_LOCK_PREFIX = "lock:"
 
     override fun tryLock(key: String, timeoutMillis: Long): Boolean {
         val lock = redissonClient.getLock("$REDIS_LOCK_PREFIX$key")
