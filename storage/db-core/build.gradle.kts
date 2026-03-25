@@ -9,6 +9,8 @@ dependencies {
     implementation(project(":coupon:coupon-domain"))
 
     api("org.springframework.boot:spring-boot-starter-data-jpa")
+    implementation("org.flywaydb:flyway-core")
+    implementation("org.flywaydb:flyway-mysql")
 
     // TSID
     implementation("com.github.f4b6a3:tsid-creator:5.2.6")
