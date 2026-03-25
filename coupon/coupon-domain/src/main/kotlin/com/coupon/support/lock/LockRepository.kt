@@ -3,7 +3,10 @@ package com.coupon.support.lock
 import com.coupon.enums.ErrorType
 
 interface LockRepository {
-    fun tryLock(key: String, timeoutMillis: Long): Boolean
+    fun tryLock(
+        key: String,
+        timeoutMillis: Long,
+    ): Boolean
 
     fun unlock(key: String)
 

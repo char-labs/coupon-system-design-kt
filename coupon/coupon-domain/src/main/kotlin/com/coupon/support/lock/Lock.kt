@@ -4,8 +4,9 @@ import com.coupon.enums.ErrorType
 import org.springframework.stereotype.Component
 
 @Component
-class Lock(_lockAdvice: LockAdvice) {
-
+class Lock(
+    _lockAdvice: LockAdvice,
+) {
     init {
         lockAdvice = _lockAdvice
     }
@@ -18,9 +19,7 @@ class Lock(_lockAdvice: LockAdvice) {
             timeoutMillis: Long = 5000,
             timeoutException: ErrorType = ErrorType.LOCK_ACQUISITION_FAILED,
             function: () -> T,
-        ): T {
-            return lockAdvice.executeWithLock(key, timeoutMillis, timeoutException, function)
-        }
+        ): T = lockAdvice.executeWithLock(key, timeoutMillis, timeoutException, function)
     }
 
     @Component
@@ -32,8 +31,6 @@ class Lock(_lockAdvice: LockAdvice) {
             timeoutMillis: Long = 5000,
             timeoutException: ErrorType = ErrorType.LOCK_ACQUISITION_FAILED,
             function: () -> T,
-        ): T {
-            return lockRepository.executeWithLock(key, timeoutMillis, timeoutException, function)
-        }
+        ): T = lockRepository.executeWithLock(key, timeoutMillis, timeoutException, function)
     }
 }

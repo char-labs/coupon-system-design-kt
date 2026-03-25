@@ -1,9 +1,9 @@
 package com.coupon.redis.cache
 
 import com.coupon.support.cache.CacheRepository
-import java.util.concurrent.TimeUnit
 import org.springframework.data.redis.core.RedisTemplate
 import org.springframework.stereotype.Repository
+import java.util.concurrent.TimeUnit
 
 @Repository
 class CacheCoreRepository(

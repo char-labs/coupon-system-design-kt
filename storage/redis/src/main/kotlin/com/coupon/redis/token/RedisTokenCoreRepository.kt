@@ -3,12 +3,10 @@ package com.coupon.redis.token
 import com.coupon.auth.Provider
 import com.coupon.auth.RedisTokenRepository
 import com.coupon.auth.TokenWithAuthenticationResult
-import com.coupon.enums.ErrorType
-import com.coupon.error.ErrorException
-import java.time.Duration
 import org.springframework.data.redis.core.RedisTemplate
 import org.springframework.stereotype.Repository
 import tools.jackson.databind.ObjectMapper
+import java.time.Duration
 
 @Repository
 class RedisTokenCoreRepository(
