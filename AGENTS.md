@@ -55,14 +55,14 @@
 
 - Always inspect `git status` first and split unrelated work into separate commit groups.
 - Run the narrowest relevant `ktlintFormat` task before validation.
-- Prefer Korean commit messages using `[주제] 내용`.
+- Prefer commit messages using `[Tag] 내용`.
 - Recommended topic labels:
-  - `[기능]`
-  - `[수정]`
-  - `[리팩터링]`
-  - `[테스트]`
-  - `[문서]`
-  - `[운영]`
+  - `[Feature]`
+  - `[Fix]`
+  - `[Refactor]`
+  - `[Test]`
+  - `[Docs]`
+  - `[Chore]`
 - When using `coupon-commit-push`, wait for the explicit approval token `확인` before mutating git state.
 
 ## Repo-Local Skills
