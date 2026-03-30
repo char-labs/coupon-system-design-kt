@@ -1,0 +1,15 @@
+export const config = {
+  baseUrl: __ENV.BASE_URL || 'http://127.0.0.1:8080',
+  adminName: __ENV.ADMIN_NAME || 'Load Test Admin',
+  adminEmail: __ENV.ADMIN_EMAIL || 'loadtest-admin@coupon.local',
+  adminPassword: __ENV.ADMIN_PASSWORD || 'admin1234!',
+  testUserPassword: __ENV.TEST_USER_PASSWORD || 'coupon1234!',
+  startupTimeoutSeconds: Number(__ENV.STARTUP_TIMEOUT_SECONDS || 60),
+  startupPollIntervalSeconds: Number(__ENV.STARTUP_POLL_INTERVAL_SECONDS || 1),
+  smokeVus: Number(__ENV.SMOKE_VUS || 1),
+  baselineVus: Number(__ENV.BASELINE_VUS || 20),
+  baselineDuration: __ENV.BASELINE_DURATION || '10m',
+  contentionVus: Number(__ENV.CONTENTION_VUS || 100),
+  contentionMaxDuration: __ENV.CONTENTION_MAX_DURATION || '2m',
+  resultsDir: __ENV.RESULTS_DIR || 'load-test/k6/results',
+};

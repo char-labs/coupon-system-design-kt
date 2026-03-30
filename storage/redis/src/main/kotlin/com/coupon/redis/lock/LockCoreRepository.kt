@@ -12,18 +12,18 @@ import java.util.concurrent.TimeUnit
 class LockCoreRepository(
     @param:Qualifier("coreRedissonClient") private val redissonClient: RedissonClient,
 ) : LockRepository {
-    private val REDIS_LOCK_PREFIX = "lock:"
+    private val redisLockPrefix = "lock:"
 
     override fun tryLock(
         key: String,
         timeoutMillis: Long,
     ): Boolean {
-        val lock = redissonClient.getLock("$REDIS_LOCK_PREFIX$key")
+        val lock = redissonClient.getLock("$redisLockPrefix$key")
         return lock.tryLock(timeoutMillis, TimeUnit.MILLISECONDS)
     }
 
     override fun unlock(key: String) {
-        val lock = redissonClient.getLock("$REDIS_LOCK_PREFIX$key")
+        val lock = redissonClient.getLock("$redisLockPrefix$key")
         if (lock.isHeldByCurrentThread) lock.unlock()
     }
 

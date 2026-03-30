@@ -1,0 +1,161 @@
+# k6 Load Test Baseline
+
+이 디렉터리는 쿠폰 시스템의 첫 부하 테스트 baseline을 위한 `k6` 시나리오를 담고 있습니다.
+
+대시보드 오픈부터 실행, 확인, 해석까지 한 번에 따라가려면 [RUNBOOK.md](/Users/yunbeom/ybcha/coupon-system-design-kt/load-test/k6/RUNBOOK.md)를 같이 봅니다.
+
+## 시나리오
+
+- `smoke.js`
+  - 관리자 로그인, 쿠폰 생성, 사용자 회원가입/로그인, 쿠폰 발급, 쿠폰 사용까지 한 번에 검증합니다.
+- `baseline.js`
+  - VU별 사용자 세션을 재사용하면서 `issue/use`, `issue/cancel`, `my-coupons`를 혼합 호출합니다.
+- `contention.js`
+  - 동일 쿠폰에 동시에 발급 요청을 몰아 정합성과 병목을 확인합니다.
+
+## 사전 준비
+
+1. 로컬 스택을 올립니다.
+
+```bash
+docker compose -f docker/docker-compose.yml up --build
+```
+
+실시간 `k6 -> InfluxDB -> Grafana` 관측이 필요하면 overlay compose를 함께 올립니다.
+
+```bash
+docker compose \
+  -f docker/docker-compose.yml \
+  -f docker/docker-compose.k6-observability.yml \
+  up --build
+```
+
+2. 애플리케이션이 준비될 때까지 기다립니다.
+
+```bash
+curl http://127.0.0.1:8080/ping
+curl http://127.0.0.1:8080/actuator/health
+curl -X POST http://127.0.0.1:8080/signin \
+  -H 'Content-Type: application/json' \
+  -d '{"email":"loadtest-admin@coupon.local","password":"admin1234!"}'
+```
+
+현재 스크립트는 `setup()`에서 `/actuator/health`와 관리자 로그인 성공을 최대 60초까지 자체 재시도합니다. 다만 compose 직후 바로 실행하는 경우를 줄이기 위해 위 확인은 그대로 권장합니다.
+
+`k6` 실행 예시의 `BASE_URL`은 `localhost` 대신 `127.0.0.1`을 사용합니다. 로컬 환경에 따라 `localhost`가 IPv6 또는 다른 resolver 경로를 타면서 진단이 어려워질 수 있습니다.
+
+`ADMIN_PASSWORD`처럼 `!`가 포함된 값은 셸 해석 이슈를 피하려고 반드시 따옴표로 감싸는 편이 안전합니다.
+
+기본 local profile에서는 애플리케이션 기동 시 아래 관리자 계정을 자동 생성합니다.
+
+- 이메일: `loadtest-admin@coupon.local`
+- 비밀번호: `admin1234!`
+
+기존 MySQL volume이 이미 존재해서 `coupon-admin` 계정이 생성되지 않았다면, 한 번만 볼륨을 초기화한 뒤 다시 올려야 합니다.
+
+```bash
+docker compose -f docker/docker-compose.yml down -v
+docker compose -f docker/docker-compose.yml up --build
+```
+
+## Optional Observability
+
+overlay compose를 사용하면 아래 로컬 엔드포인트가 추가됩니다.
+
+- Grafana: `http://localhost:3000`
+- InfluxDB v1: `http://localhost:8086`
+
+Grafana 기본 계정은 아래와 같습니다.
+
+- 아이디: `admin`
+- 비밀번호: `admin`
+
+Grafana는 repo-local provisioning을 통해 아래를 자동 등록합니다.
+
+- datasource: `k6-influxdb`
+- dashboard folder: `k6`
+- dashboard: `k6 Overview`
+
+현재 범위에서 Grafana는 `k6` 시계열만 시각화합니다. 애플리케이션 메트릭은 기존 `/actuator/prometheus` 경로를 별도로 확인합니다.
+
+## 실행 예시
+
+```bash
+k6 run \
+  -e BASE_URL=http://127.0.0.1:8080 \
+  -e ADMIN_EMAIL=loadtest-admin@coupon.local \
+  -e ADMIN_PASSWORD='admin1234!' \
+  load-test/k6/smoke.js
+```
+
+실시간 InfluxDB 출력까지 같이 보려면 `--out influxdb=...`를 추가합니다.
+
+```bash
+k6 run \
+  --out influxdb=http://localhost:8086/myk6db \
+  -e BASE_URL=http://127.0.0.1:8080 \
+  -e ADMIN_EMAIL=loadtest-admin@coupon.local \
+  -e ADMIN_PASSWORD='admin1234!' \
+  load-test/k6/smoke.js
+```
+
+```bash
+k6 run \
+  -e BASE_URL=http://127.0.0.1:8080 \
+  -e BASELINE_VUS=20 \
+  -e BASELINE_DURATION=10m \
+  load-test/k6/baseline.js
+```
+
+```bash
+k6 run \
+  --out influxdb=http://localhost:8086/myk6db \
+  -e BASE_URL=http://127.0.0.1:8080 \
+  -e BASELINE_VUS=20 \
+  -e BASELINE_DURATION=10m \
+  load-test/k6/baseline.js
+```
+
+```bash
+k6 run \
+  -e BASE_URL=http://127.0.0.1:8080 \
+  -e CONTENTION_VUS=100 \
+  load-test/k6/contention.js
+```
+
+```bash
+k6 run \
+  --out influxdb=http://localhost:8086/myk6db \
+  -e BASE_URL=http://127.0.0.1:8080 \
+  -e CONTENTION_VUS=100 \
+  load-test/k6/contention.js
+```
+
+## 환경변수
+
+- `BASE_URL`
+- `ADMIN_NAME`
+- `ADMIN_EMAIL`
+- `ADMIN_PASSWORD`
+- `TEST_USER_PASSWORD`
+- `STARTUP_TIMEOUT_SECONDS`
+- `STARTUP_POLL_INTERVAL_SECONDS`
+- `SMOKE_VUS`
+- `BASELINE_VUS`
+- `BASELINE_DURATION`
+- `CONTENTION_VUS`
+- `CONTENTION_MAX_DURATION`
+- `RESULTS_DIR`
+
+## 결과 확인
+
+- `load-test/k6/results/*-latest.json`
+- `load-test/k6/results/*-<timestamp>.json`
+- Grafana `k6 / k6 Overview`
+
+애플리케이션 측 지표는 같은 시간대의 `/actuator/prometheus`를 같이 확인합니다.
+
+- HTTP 지연과 오류율
+- JVM 메모리/GC
+- Tomcat thread 사용량
+- DB/Redis 관련 기본 Micrometer 지표

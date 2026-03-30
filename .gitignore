@@ -45,3 +45,10 @@ out/
 
 ### serena ###
 .serena
+
+load-test/k6/results/*.json
+
+### Node ###
+node_modules
+package-lock.json
+package.json

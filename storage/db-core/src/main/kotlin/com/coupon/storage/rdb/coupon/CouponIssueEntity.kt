@@ -9,19 +9,12 @@ import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.EnumType
 import jakarta.persistence.Enumerated
-import jakarta.persistence.Index
 import jakarta.persistence.Table
 import java.time.LocalDateTime
 
 @Entity
 @Table(
     name = "t_coupon_issue",
-    indexes = [
-        Index(name = "idx_coupon_issue_user_id", columnList = "user_id"),
-        Index(name = "idx_coupon_issue_coupon_id", columnList = "coupon_id"),
-        Index(name = "idx_coupon_issue_status", columnList = "status"),
-        Index(name = "idx_coupon_issue_user_coupon", columnList = "user_id,coupon_id"),
-    ],
 )
 class CouponIssueEntity(
     @Column(name = "user_id", nullable = false)
