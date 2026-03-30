@@ -5,6 +5,7 @@ import com.coupon.coupon.criteria.CouponIssueCriteria
 import com.coupon.enums.CouponIssueStatus
 import com.coupon.enums.ErrorType
 import com.coupon.error.ErrorException
+import com.coupon.support.lock.Lock
 import com.coupon.support.page.OffsetPageRequest
 import com.coupon.support.page.Page
 import com.coupon.support.tx.Tx
@@ -17,7 +18,9 @@ class CouponIssueService(
     private val couponService: CouponService,
 ) {
     fun issueCoupon(command: CouponIssueCommand.Issue): CouponIssue =
-        Tx.writeable {
+        Lock.executeWithLockRequiresNew(
+            key = "COUPON_ISSUE:${command.userId}:${command.couponId}",
+        ) {
             if (couponIssueRepository.existsByUserIdAndCouponId(command.userId, command.couponId)) {
                 throw ErrorException(ErrorType.ALREADY_ISSUED_COUPON)
             }
