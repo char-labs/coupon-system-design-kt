@@ -1,8 +1,8 @@
 import exec from 'k6/execution';
 import { config } from './lib/config.js';
 import { buildSummary } from './lib/summary.js';
-import { createVuEmail, signin, signupUser, waitForAdminSignin } from './lib/api.js';
-import { buildCouponPayload, createCoupon, issueCoupon } from './lib/coupon.js';
+import { signin, signupUser, waitForAdminSignin } from './lib/api.js';
+import { activateCoupon, buildCouponPayload, createCoupon, issueCoupon } from './lib/coupon.js';
 
 export const options = {
   scenarios: {
@@ -13,6 +13,7 @@ export const options = {
       maxDuration: config.contentionMaxDuration,
     },
   },
+  setupTimeout: '3m',
   thresholds: {
     checks: ['rate>0.99'],
     http_req_failed: ['rate<0.05'],
@@ -28,19 +29,28 @@ export function setup() {
       totalQuantity: Math.max(config.contentionVus + 10, 50),
     }),
   );
+  activateCoupon(adminToken.accessToken, coupon.id);
+  const userTokens = [];
+  const runId = Date.now();
+
+  for (let index = 0; index < config.contentionVus; index += 1) {
+    const email = `k6-contention-setup+${runId}-${index}@coupon.local`;
+    const name = `Contention User ${index + 1}`;
+
+    signupUser(email, config.testUserPassword, name);
+    const userToken = signin(email, config.testUserPassword);
+    userTokens.push(userToken.accessToken);
+  }
 
   return {
     couponId: coupon.id,
+    userTokens,
   };
 }
 
 export default function (data) {
-  const email = createVuEmail('k6-contention');
-  const name = `Contention User ${exec.vu.idInTest || 0}`;
-
-  signupUser(email, config.testUserPassword, name);
-  const userToken = signin(email, config.testUserPassword);
-  issueCoupon(userToken.accessToken, data.couponId);
+  const tokenIndex = Math.max((exec.vu.idInTest || 1) - 1, 0);
+  issueCoupon(data.userTokens[tokenIndex], data.couponId);
 }
 
 export function handleSummary(data) {

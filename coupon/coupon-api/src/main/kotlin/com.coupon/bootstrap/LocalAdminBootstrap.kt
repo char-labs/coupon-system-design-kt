@@ -1,5 +1,8 @@
 package com.coupon.bootstrap
 
+import com.coupon.auth.AuthService
+import com.coupon.auth.Token
+import com.coupon.auth.command.AuthCommand
 import com.coupon.enums.AuthorityType
 import com.coupon.support.tx.Tx
 import com.coupon.user.UserKeyGenerator
@@ -16,6 +19,7 @@ import org.springframework.stereotype.Component
 @Component
 @Profile("local")
 class LocalAdminBootstrap(
+    private val authService: AuthService,
     private val userRepository: UserRepository,
     private val userKeyGenerator: UserKeyGenerator,
     private val passwordEncoder: PasswordEncoder,
@@ -26,6 +30,10 @@ class LocalAdminBootstrap(
     private val log = LoggerFactory.getLogger(this::class.java)
 
     override fun run(args: ApplicationArguments) {
+        ensureAdminExists()
+    }
+
+    fun ensureAdminExists() {
         Tx.writeable {
             if (userRepository.existsByEmail(adminEmail)) {
                 return@writeable
@@ -43,5 +51,14 @@ class LocalAdminBootstrap(
 
             log.info("Created local admin bootstrap account for load testing: {}", adminEmail)
         }
+    }
+
+    fun signIn(): Token {
+        ensureAdminExists()
+        val credential =
+            userRepository.findCredentialByEmail(adminEmail)
+                ?: error("Local admin bootstrap account was not created: $adminEmail")
+
+        return authService.generateToken(AuthCommand.GenerateToken.toCommand(credential))
     }
 }

@@ -2,7 +2,7 @@ import exec from 'k6/execution';
 import { config } from './lib/config.js';
 import { buildSummary } from './lib/summary.js';
 import { createVuEmail, signin, signupUser, waitForAdminSignin } from './lib/api.js';
-import { buildCouponPayload, createCoupon, issueCoupon, useCoupon } from './lib/coupon.js';
+import { activateCoupon, buildCouponPayload, createCoupon, issueCoupon, useCoupon } from './lib/coupon.js';
 
 export const options = {
   setupTimeout: '3m',
@@ -29,6 +29,7 @@ export function setup() {
       totalQuantity: 10,
     }),
   );
+  activateCoupon(adminToken.accessToken, coupon.id);
 
   return {
     couponId: coupon.id,

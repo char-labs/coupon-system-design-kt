@@ -33,7 +33,7 @@ services:
       dockerfile: docker/Dockerfile
     container_name: coupon-app
     ports:
-      - "8080:8080"
+      - "${APP_HOST_PORT:-18080}:8080"
     environment:
       DATASOURCE_DB_CORE_JDBC_URL: jdbc:mysql://mysql:3306/coupon-db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Seoul&characterEncoding=UTF-8
       DATASOURCE_DB_CORE_USERNAME: coupon-admin

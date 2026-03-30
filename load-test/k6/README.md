@@ -12,6 +12,7 @@
   - VU별 사용자 세션을 재사용하면서 `issue/use`, `issue/cancel`, `my-coupons`를 혼합 호출합니다.
 - `contention.js`
   - 동일 쿠폰에 동시에 발급 요청을 몰아 정합성과 병목을 확인합니다.
+  - 인증 경합이 결과를 왜곡하지 않도록, 사용자와 토큰은 `setup()`에서 먼저 준비하고 본 실행에서는 발급 호출만 동시에 보냅니다.
 
 ## 사전 준비
 
@@ -20,6 +21,8 @@
 ```bash
 docker compose -f docker/docker-compose.yml up --build
 ```
+
+기본 Docker 앱 포트는 `18080`입니다. IDE나 `bootRun`이 `8080`을 이미 쓰고 있어도 부하 테스트 대상과 충돌하지 않게 하기 위한 기본값입니다. 다른 포트를 쓰고 싶으면 `APP_HOST_PORT`로 덮어쓸 수 있습니다.
 
 실시간 `k6 -> InfluxDB -> Grafana` 관측이 필요하면 overlay compose를 함께 올립니다.
 
@@ -33,14 +36,14 @@ docker compose \
 2. 애플리케이션이 준비될 때까지 기다립니다.
 
 ```bash
-curl http://127.0.0.1:8080/ping
-curl http://127.0.0.1:8080/actuator/health
-curl -X POST http://127.0.0.1:8080/signin \
+curl http://127.0.0.1:18080/ping
+curl http://127.0.0.1:18080/actuator/health
+curl -X POST http://127.0.0.1:18080/load-test/admin/signin \
   -H 'Content-Type: application/json' \
-  -d '{"email":"loadtest-admin@coupon.local","password":"admin1234!"}'
+  -d '{}'
 ```
 
-현재 스크립트는 `setup()`에서 `/actuator/health`와 관리자 로그인 성공을 최대 60초까지 자체 재시도합니다. 다만 compose 직후 바로 실행하는 경우를 줄이기 위해 위 확인은 그대로 권장합니다.
+현재 스크립트는 `setup()`에서 `/actuator/health`를 확인한 뒤, local profile 전용 `/load-test/admin/signin`으로 관리자 계정 보장과 토큰 발급을 먼저 시도합니다. 구버전 앱 이미지에서는 이 경로가 없을 수 있으니, 관련 코드를 반영한 뒤에는 `docker compose ... up --build`로 앱 이미지를 다시 만드는 편이 안전합니다.
 
 `k6` 실행 예시의 `BASE_URL`은 `localhost` 대신 `127.0.0.1`을 사용합니다. 로컬 환경에 따라 `localhost`가 IPv6 또는 다른 resolver 경로를 타면서 진단이 어려워질 수 있습니다.
 
@@ -76,13 +79,20 @@ Grafana는 repo-local provisioning을 통해 아래를 자동 등록합니다.
 - dashboard folder: `k6`
 - dashboard: `k6 Overview`
 
+왜 `InfluxDB`를 같이 쓰는지:
+
+- `k6`는 실행 중 메트릭을 `InfluxDB`로 바로 밀어 넣을 수 있어서, 추가 exporter 없이도 실시간 시계열 대시보드를 만들기 쉽습니다.
+- 콘솔 summary나 JSON summary만으로는 실행 중 추세를 보기 어렵지만, `InfluxDB + Grafana`를 쓰면 latency, 실패율, 처리량 변화를 시간축으로 바로 볼 수 있습니다.
+- 여러 번의 테스트 실행 결과를 같은 대시보드에서 비교하기 쉽습니다. baseline과 contention을 같은 축에서 보는 데 유리합니다.
+- 앱 메트릭은 기존 `/actuator/prometheus`가 담당하고, 부하 테스트 메트릭은 `InfluxDB`가 담당하게 나누면 역할이 명확해집니다.
+
 현재 범위에서 Grafana는 `k6` 시계열만 시각화합니다. 애플리케이션 메트릭은 기존 `/actuator/prometheus` 경로를 별도로 확인합니다.
 
 ## 실행 예시
 
 ```bash
 k6 run \
-  -e BASE_URL=http://127.0.0.1:8080 \
+  -e BASE_URL=http://127.0.0.1:18080 \
   -e ADMIN_EMAIL=loadtest-admin@coupon.local \
   -e ADMIN_PASSWORD='admin1234!' \
   load-test/k6/smoke.js
@@ -93,7 +103,7 @@ k6 run \
 ```bash
 k6 run \
   --out influxdb=http://localhost:8086/myk6db \
-  -e BASE_URL=http://127.0.0.1:8080 \
+  -e BASE_URL=http://127.0.0.1:18080 \
   -e ADMIN_EMAIL=loadtest-admin@coupon.local \
   -e ADMIN_PASSWORD='admin1234!' \
   load-test/k6/smoke.js
@@ -101,7 +111,7 @@ k6 run \
 
 ```bash
 k6 run \
-  -e BASE_URL=http://127.0.0.1:8080 \
+  -e BASE_URL=http://127.0.0.1:18080 \
   -e BASELINE_VUS=20 \
   -e BASELINE_DURATION=10m \
   load-test/k6/baseline.js
@@ -110,7 +120,7 @@ k6 run \
 ```bash
 k6 run \
   --out influxdb=http://localhost:8086/myk6db \
-  -e BASE_URL=http://127.0.0.1:8080 \
+  -e BASE_URL=http://127.0.0.1:18080 \
   -e BASELINE_VUS=20 \
   -e BASELINE_DURATION=10m \
   load-test/k6/baseline.js
@@ -118,7 +128,7 @@ k6 run \
 
 ```bash
 k6 run \
-  -e BASE_URL=http://127.0.0.1:8080 \
+  -e BASE_URL=http://127.0.0.1:18080 \
   -e CONTENTION_VUS=100 \
   load-test/k6/contention.js
 ```
@@ -126,7 +136,7 @@ k6 run \
 ```bash
 k6 run \
   --out influxdb=http://localhost:8086/myk6db \
-  -e BASE_URL=http://127.0.0.1:8080 \
+  -e BASE_URL=http://127.0.0.1:18080 \
   -e CONTENTION_VUS=100 \
   load-test/k6/contention.js
 ```
@@ -143,6 +153,8 @@ k6 run \
 - `SMOKE_VUS`
 - `BASELINE_VUS`
 - `BASELINE_DURATION`
+- `BASELINE_SESSION_POOL_SIZE`
+- `BASELINE_COUPON_POOL_SIZE`
 - `CONTENTION_VUS`
 - `CONTENTION_MAX_DURATION`
 - `RESULTS_DIR`

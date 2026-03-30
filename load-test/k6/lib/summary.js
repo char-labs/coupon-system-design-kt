@@ -25,7 +25,9 @@ export function buildSummary(name, data) {
 
   const stdout = [
     `scenario: ${name}`,
+    `http_req_duration p50: ${metricValue(data, 'http_req_duration', 'p(50)')}`,
     `http_req_duration p95: ${metricValue(data, 'http_req_duration', 'p(95)')}`,
+    `http_req_duration p99: ${metricValue(data, 'http_req_duration', 'p(99)')}`,
     `http_req_failed rate: ${metricValue(data, 'http_req_failed', 'rate')}`,
     `checks rate: ${metricValue(data, 'checks', 'rate')}`,
   ].join('\n');

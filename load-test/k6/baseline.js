@@ -3,9 +3,9 @@ import { sleep } from 'k6';
 import { config } from './lib/config.js';
 import { buildSummary } from './lib/summary.js';
 import { createVuEmail, signin, signupUser, waitForAdminSignin } from './lib/api.js';
-import { buildCouponPayload, cancelCoupon, createCoupon, getMyCoupons, issueCoupon, useCoupon } from './lib/coupon.js';
+import { activateCoupon, buildCouponPayload, cancelCoupon, createCoupon, getMyCoupons, issueCoupon, useCoupon } from './lib/coupon.js';
 
-let userSession;
+const userSessions = [];
 
 export const options = {
   scenarios: {
@@ -24,44 +24,63 @@ export const options = {
 
 export function setup() {
   const adminToken = waitForAdminSignin(config.adminEmail, config.adminPassword);
-  const coupon = createCoupon(
-    adminToken.accessToken,
-    buildCouponPayload({
-      name: `k6-baseline-${Date.now()}`,
-      totalQuantity: Math.max(config.baselineVus * 5000, 100000),
-    }),
-  );
+  const couponIds = [];
+
+  for (let index = 0; index < config.baselineCouponPoolSize; index += 1) {
+    const coupon = createCoupon(
+      adminToken.accessToken,
+      buildCouponPayload({
+        name: `k6-baseline-${Date.now()}-${index}`,
+        totalQuantity: Math.max(config.baselineVus * config.baselineSessionPoolSize, 10000),
+      }),
+    );
+    activateCoupon(adminToken.accessToken, coupon.id);
+    couponIds.push(coupon.id);
+  }
 
   return {
-    couponId: coupon.id,
+    couponIds,
   };
 }
 
-function ensureUserSession() {
-  if (userSession) {
-    return userSession;
+function ensureUserSession(sessionIndex) {
+  if (userSessions[sessionIndex]) {
+    return userSessions[sessionIndex];
   }
 
-  const email = createVuEmail('k6-baseline');
-  const name = `Baseline User ${exec.vu.idInTest || 0}`;
+  const email = createVuEmail(`k6-baseline-${sessionIndex}`);
+  const name = `Baseline User ${exec.vu.idInTest || 0}-${sessionIndex}`;
 
   signupUser(email, config.testUserPassword, name);
-  userSession = signin(email, config.testUserPassword);
-  return userSession;
+  userSessions[sessionIndex] = signin(email, config.testUserPassword);
+  return userSessions[sessionIndex];
+}
+
+function selectIssueTarget(data) {
+  const localIteration = exec.vu.iterationInScenario || 0;
+  const couponIndex = localIteration % data.couponIds.length;
+  const sessionIndex =
+    Math.floor(localIteration / data.couponIds.length) % config.baselineSessionPoolSize;
+
+  return {
+    couponId: data.couponIds[couponIndex],
+    token: ensureUserSession(sessionIndex),
+  };
 }
 
 export default function (data) {
-  const token = ensureUserSession();
   const selector = exec.scenario.iterationInTest % 10;
 
   if (selector < 5) {
-    const issue = issueCoupon(token.accessToken, data.couponId);
-    useCoupon(token.accessToken, issue.id);
+    const target = selectIssueTarget(data);
+    const issue = issueCoupon(target.token.accessToken, target.couponId);
+    useCoupon(target.token.accessToken, issue.id);
   } else if (selector < 8) {
-    const issue = issueCoupon(token.accessToken, data.couponId);
-    cancelCoupon(token.accessToken, issue.id);
+    const target = selectIssueTarget(data);
+    const issue = issueCoupon(target.token.accessToken, target.couponId);
+    cancelCoupon(target.token.accessToken, issue.id);
   } else {
-    getMyCoupons(token.accessToken);
+    getMyCoupons(ensureUserSession(0).accessToken);
   }
 
   sleep(1);

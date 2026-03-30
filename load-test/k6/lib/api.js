@@ -56,9 +56,23 @@ function request(method, path, payload, params = {}, label = path) {
     };
   }
 
+  const requestBody =
+    typeof payload === 'string'
+      ? payload
+      : JSON.stringify(payload);
+
   return {
-    response: http.post(makeUrl(path), JSON.stringify(payload), requestParams),
+    response: http.post(makeUrl(path), requestBody, requestParams),
   };
+}
+
+function extractNumericField(body, field) {
+  if (!body) {
+    return null;
+  }
+
+  const match = body.match(new RegExp(`"${field}"\\s*:\\s*(\\d+)`));
+  return match ? match[1] : null;
 }
 
 export function unwrapData(response, label, expectedStatus) {
@@ -84,6 +98,47 @@ export function post(path, payload, params = {}, expectedStatus = 200, label = p
   const { response } = request('POST', path, payload, params, label);
 
   return unwrapData(response, label, expectedStatus);
+}
+
+export function postWithNumericFields(
+  path,
+  payload,
+  numericFields = [],
+  params = {},
+  expectedStatus = 200,
+  label = path,
+) {
+  const { response } = request('POST', path, payload, params, label);
+  const data = unwrapData(response, label, expectedStatus);
+
+  for (const field of numericFields) {
+    const preservedValue = extractNumericField(response.body, field);
+    if (preservedValue !== null && data && Object.prototype.hasOwnProperty.call(data, field)) {
+      data[field] = preservedValue;
+    }
+  }
+
+  return data;
+}
+
+export function postVoid(path, payload, params = {}, expectedStatus = 200, label = path) {
+  const { response } = request('POST', path, payload, params, label);
+  const body = parseJsonIfPresent(response);
+  const isExpectedStatus = response.status === expectedStatus;
+  const isSuccessEnvelope = body == null || body.success === true;
+
+  check(response, {
+    [`${label} status ${expectedStatus}`]: () => isExpectedStatus,
+    [`${label} success envelope or empty body`]: () => isSuccessEnvelope,
+  });
+
+  if (!isExpectedStatus || !isSuccessEnvelope) {
+    fail(
+      `${label}: unexpected response status=${response.status} body=${response.body}`,
+    );
+  }
+
+  return body ? body.data : null;
 }
 
 export function get(path, params = {}, expectedStatus = 200, label = path) {
@@ -164,7 +219,27 @@ export function waitForAdminSignin(email, password) {
   waitForAppReady();
 
   return waitUntil(() => {
-    const { response } = request(
+    const bootstrap = request(
+      'POST',
+      '/load-test/admin/signin',
+      {},
+      {
+        responseCallback: readinessResponseCallback,
+      },
+      'admin_bootstrap_signin',
+    );
+    const bootstrapBody = parseJsonIfPresent(bootstrap.response);
+    const bootstrapToken = bootstrapBody && bootstrapBody.success === true ? bootstrapBody.data : null;
+
+    if (bootstrap.response.status === 200 && bootstrapToken && bootstrapToken.accessToken) {
+      return {
+        ready: true,
+        data: bootstrapToken,
+        response: bootstrap.response,
+      };
+    }
+
+    const signin = request(
       'POST',
       '/signin',
       { email, password },
@@ -173,13 +248,13 @@ export function waitForAdminSignin(email, password) {
       },
       'admin_signin_ready',
     );
-    const body = parseJsonIfPresent(response);
+    const body = parseJsonIfPresent(signin.response);
     const token = body && body.success === true ? body.data : null;
 
     return {
-      ready: response.status === 200 && token && token.accessToken,
+      ready: signin.response.status === 200 && token && token.accessToken,
       data: token,
-      response,
+      response: signin.response,
     };
   }, 'admin_signin_ready');
 }

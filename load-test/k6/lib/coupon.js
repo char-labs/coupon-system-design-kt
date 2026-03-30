@@ -1,4 +1,4 @@
-import { authHeaders, get, post } from './api.js';
+import { authHeaders, get, post, postVoid, postWithNumericFields } from './api.js';
 
 function formatLocalDateTime(date) {
   const pad = (value) => `${value}`.padStart(2, '0');
@@ -16,8 +16,8 @@ export function buildCouponPayload({
   minOrderAmount = 30000,
 }) {
   const now = new Date();
-  const availableAt = new Date(now.getTime() - 60 * 1000);
-  const endAt = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+  const availableAt = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+  const endAt = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
 
   return {
     name,
@@ -32,9 +32,10 @@ export function buildCouponPayload({
 }
 
 export function createCoupon(accessToken, payload) {
-  return post(
+  return postWithNumericFields(
     '/coupons',
     payload,
+    ['id'],
     {
       headers: authHeaders(accessToken),
     },
@@ -44,14 +45,27 @@ export function createCoupon(accessToken, payload) {
 }
 
 export function issueCoupon(accessToken, couponId) {
-  return post(
+  return postWithNumericFields(
     '/coupon-issues',
-    { couponId },
+    `{"couponId":${couponId}}`,
+    ['id'],
     {
       headers: authHeaders(accessToken),
     },
     201,
     'issue_coupon',
+  );
+}
+
+export function activateCoupon(accessToken, couponId) {
+  return postVoid(
+    `/coupons/${couponId}/activate`,
+    {},
+    {
+      headers: authHeaders(accessToken),
+    },
+    200,
+    'activate_coupon',
   );
 }
 
