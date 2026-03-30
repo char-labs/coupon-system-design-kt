@@ -1,7 +1,6 @@
 package com.coupon.storage.rdb.coupon
 
 import com.coupon.coupon.CouponIssue
-import com.coupon.coupon.CouponIssueDetail
 import com.coupon.coupon.CouponIssueRepository
 import com.coupon.coupon.criteria.CouponIssueCriteria
 import com.coupon.storage.rdb.support.findByIdOrElseThrow
@@ -25,7 +24,7 @@ class CouponIssueCoreRepository(
             .findByIdOrElseThrow(couponIssueId)
             .toCouponIssue()
 
-    override fun findDetailById(couponIssueId: Long): CouponIssueDetail {
+    override fun findDetailById(couponIssueId: Long): CouponIssue.Detail {
         val issueEntity = couponIssueJpaRepository.findByIdOrElseThrow(couponIssueId)
         val coupon = couponJpaRepository.findByIdOrElseThrow(issueEntity.couponId)
         return issueEntity.toCouponIssueDetail(
@@ -37,7 +36,7 @@ class CouponIssueCoreRepository(
     override fun findAllByUserId(
         userId: Long,
         request: OffsetPageRequest,
-    ): Page<CouponIssueDetail> {
+    ): Page<CouponIssue.Detail> {
         val pageable = PageRequest.of(request.page, request.size)
         val result = couponIssueJpaRepository.findAllByUserId(userId, pageable)
 
@@ -60,7 +59,7 @@ class CouponIssueCoreRepository(
     override fun findAllByCouponId(
         couponId: Long,
         request: OffsetPageRequest,
-    ): Page<CouponIssueDetail> {
+    ): Page<CouponIssue.Detail> {
         val pageable = PageRequest.of(request.page, request.size)
         val result = couponIssueJpaRepository.findAllByCouponId(couponId, pageable)
         val coupon = couponJpaRepository.findByIdOrElseThrow(couponId)

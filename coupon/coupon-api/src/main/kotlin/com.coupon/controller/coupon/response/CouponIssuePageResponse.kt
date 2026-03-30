@@ -1,6 +1,6 @@
 package com.coupon.controller.coupon.response
 
-import com.coupon.coupon.CouponIssueDetail
+import com.coupon.coupon.CouponIssue
 import com.coupon.support.page.Page
 import io.swagger.v3.oas.annotations.media.Schema
 
@@ -12,7 +12,7 @@ data class CouponIssuePageResponse(
     val totalCount: Long,
 ) {
     companion object {
-        fun from(page: Page<CouponIssueDetail>): CouponIssuePageResponse =
+        fun from(page: Page<CouponIssue.Detail>): CouponIssuePageResponse =
             CouponIssuePageResponse(
                 content = page.content.map(CouponIssueResponse.Detail::from),
                 totalCount = page.totalCount,

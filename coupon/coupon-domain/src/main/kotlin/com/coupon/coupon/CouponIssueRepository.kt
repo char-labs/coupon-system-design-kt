@@ -9,17 +9,17 @@ interface CouponIssueRepository {
 
     fun findById(couponIssueId: Long): CouponIssue
 
-    fun findDetailById(couponIssueId: Long): CouponIssueDetail
+    fun findDetailById(couponIssueId: Long): CouponIssue.Detail
 
     fun findAllByUserId(
         userId: Long,
         request: OffsetPageRequest,
-    ): Page<CouponIssueDetail>
+    ): Page<CouponIssue.Detail>
 
     fun findAllByCouponId(
         couponId: Long,
         request: OffsetPageRequest,
-    ): Page<CouponIssueDetail>
+    ): Page<CouponIssue.Detail>
 
     fun existsByUserIdAndCouponId(
         userId: Long,

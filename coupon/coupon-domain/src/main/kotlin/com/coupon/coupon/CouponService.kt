@@ -2,12 +2,14 @@ package com.coupon.coupon
 
 import com.coupon.coupon.command.CouponCommand
 import com.coupon.coupon.criteria.CouponCriteria
+import com.coupon.enums.CouponStatus
 import com.coupon.enums.ErrorType
 import com.coupon.error.ErrorException
 import com.coupon.support.page.OffsetPageRequest
 import com.coupon.support.page.Page
 import com.coupon.support.tx.Tx
 import org.springframework.stereotype.Service
+import java.time.LocalDateTime
 
 @Service
 class CouponService(
@@ -54,7 +56,7 @@ class CouponService(
     internal fun validateCouponAvailability(couponId: Long) {
         val coupon = couponRepository.findDetailById(couponId)
 
-        if (coupon.status != com.coupon.enums.CouponStatus.ACTIVE) {
+        if (coupon.status != CouponStatus.ACTIVE) {
             throw ErrorException(ErrorType.COUPON_NOT_ACTIVE)
         }
 
@@ -62,7 +64,7 @@ class CouponService(
             throw ErrorException(ErrorType.COUPON_OUT_OF_STOCK)
         }
 
-        val now = java.time.LocalDateTime.now()
+        val now = LocalDateTime.now()
         if (now.isBefore(coupon.availableAt) || now.isAfter(coupon.endAt)) {
             throw ErrorException(ErrorType.COUPON_EXPIRED)
         }

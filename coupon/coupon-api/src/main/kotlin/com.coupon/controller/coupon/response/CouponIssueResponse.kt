@@ -1,6 +1,6 @@
 package com.coupon.controller.coupon.response
 
-import com.coupon.coupon.CouponIssueDetail
+import com.coupon.coupon.CouponIssue
 import com.coupon.enums.CouponIssueStatus
 import io.swagger.v3.oas.annotations.media.Schema
 import java.time.LocalDateTime
@@ -29,7 +29,7 @@ sealed class CouponIssueResponse {
         val canceledAt: LocalDateTime?,
     ) {
         companion object {
-            fun from(detail: CouponIssueDetail) =
+            fun from(detail: CouponIssue.Detail) =
                 Detail(
                     id = detail.id,
                     couponId = detail.couponId,

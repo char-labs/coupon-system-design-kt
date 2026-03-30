@@ -1,7 +1,6 @@
 package com.coupon.storage.rdb.coupon
 
 import com.coupon.coupon.CouponIssue
-import com.coupon.coupon.CouponIssueDetail
 import com.coupon.coupon.criteria.CouponIssueCriteria
 import com.coupon.enums.CouponIssueStatus
 import com.coupon.storage.rdb.support.BaseEntity
@@ -45,7 +44,7 @@ class CouponIssueEntity(
     fun toCouponIssueDetail(
         couponCode: String,
         couponName: String,
-    ) = CouponIssueDetail(
+    ) = CouponIssue.Detail(
         id = id!!,
         couponId = couponId,
         couponCode = couponCode,

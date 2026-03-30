@@ -24,29 +24,27 @@ class CouponIssueService(
             if (couponIssueRepository.existsByUserIdAndCouponId(command.userId, command.couponId)) {
                 throw ErrorException(ErrorType.ALREADY_ISSUED_COUPON)
             }
-
             couponService.validateCouponAvailability(command.couponId)
 
             val couponIssue = couponIssueRepository.save(CouponIssueCriteria.Create.of(command))
-
             couponRepository.decreaseQuantity(command.couponId)
 
             couponIssue
         }
 
-    fun getCouponIssue(couponIssueId: Long): CouponIssueDetail = couponIssueRepository.findDetailById(couponIssueId)
+    fun getCouponIssue(couponIssueId: Long): CouponIssue.Detail = couponIssueRepository.findDetailById(couponIssueId)
 
     fun getMyCoupons(
         userId: Long,
         request: OffsetPageRequest,
-    ): Page<CouponIssueDetail> = couponIssueRepository.findAllByUserId(userId, request)
+    ): Page<CouponIssue.Detail> = couponIssueRepository.findAllByUserId(userId, request)
 
     fun getCouponIssues(
         couponId: Long,
         request: OffsetPageRequest,
-    ): Page<CouponIssueDetail> = couponIssueRepository.findAllByCouponId(couponId, request)
+    ): Page<CouponIssue.Detail> = couponIssueRepository.findAllByCouponId(couponId, request)
 
-    fun useCoupon(command: CouponIssueCommand.Use): CouponIssueDetail =
+    fun useCoupon(command: CouponIssueCommand.Use): CouponIssue.Detail =
         Tx.writeable {
             val couponIssue = couponIssueRepository.findById(command.couponIssueId)
 
@@ -63,7 +61,7 @@ class CouponIssueService(
             couponIssueRepository.findDetailById(command.couponIssueId)
         }
 
-    fun cancelCoupon(command: CouponIssueCommand.Cancel): CouponIssueDetail =
+    fun cancelCoupon(command: CouponIssueCommand.Cancel): CouponIssue.Detail =
         Tx.writeable {
             val couponIssue = couponIssueRepository.findById(command.couponIssueId)
 
