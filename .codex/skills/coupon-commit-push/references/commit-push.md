@@ -26,6 +26,8 @@
 - Keep one independently reviewable vertical feature slice in one commit.
 - Split formatting churn away from behavior changes when it obscures review.
 - Split infra, docs, and tests away from product behavior when they can stand alone.
+- Use English commit messages in the `[Topic] Issue summary` format.
+- Prefer `Feature`, `Fix`, `Refactor`, `Test`, `Docs`, and `Chore` as topic labels.
 
 ## Prompt Templates
 

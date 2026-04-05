@@ -55,7 +55,7 @@
 
 - Always inspect `git status` first and split unrelated work into separate commit groups.
 - Run the narrowest relevant `ktlintFormat` task before validation.
-- Prefer commit messages using `[Tag] 내용`.
+- Prefer English commit messages using `[Topic] Issue summary`.
 - Recommended topic labels:
   - `[Feature]`
   - `[Fix]`

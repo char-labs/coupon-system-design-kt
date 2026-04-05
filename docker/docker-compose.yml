@@ -6,8 +6,16 @@ services:
     environment:
       MYSQL_DATABASE: coupon-db
       MYSQL_ROOT_PASSWORD: root
+      MYSQL_USER: coupon-admin
+      MYSQL_PASSWORD: coupon!@#
       TZ: Asia/Seoul
     command: [ "mysqld", "--character-set-server=utf8mb4", "--collation-server=utf8mb4_general_ci" ]
+    healthcheck:
+      test: [ "CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-proot", "--silent" ]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 10s
     ports:
       - "3306:3306"
 
@@ -25,19 +33,24 @@ services:
       dockerfile: docker/Dockerfile
     container_name: coupon-app
     ports:
-      - "8080:8080"
+      - "${APP_HOST_PORT:-18080}:8080"
     environment:
       DATASOURCE_DB_CORE_JDBC_URL: jdbc:mysql://mysql:3306/coupon-db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Seoul&characterEncoding=UTF-8
       DATASOURCE_DB_CORE_USERNAME: coupon-admin
       DATASOURCE_DB_CORE_PASSWORD: coupon!@#
-      REDIS_HOST: localhost
+      REDIS_HOST: redis
       REDIS_PORT: 6379
+      ADMIN_NAME: Load Test Admin
+      ADMIN_EMAIL: loadtest-admin@coupon.local
+      ADMIN_PASSWORD: admin1234!
       ACCESS_TOKEN_EXPIRATION_SECONDS: 2880
       REFRESH_TOKEN_EXPIRATION_SECONDS: 43200
       JWT_SECRET_KEY: couponJwtSecretKeyForAuthenticationSecuritySystem2024!@#
     depends_on:
-      - mysql
-      - redis
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_started
 
 volumes:
   mysql_data:

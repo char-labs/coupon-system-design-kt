@@ -1,8 +1,10 @@
 package com.coupon.controller.coupon
 
 import com.coupon.controller.coupon.request.CouponRequest
+import com.coupon.controller.coupon.response.CouponIssuePageResponse
 import com.coupon.controller.coupon.response.CouponPageResponse
 import com.coupon.controller.coupon.response.CouponResponse
+import com.coupon.coupon.CouponIssueService
 import com.coupon.coupon.CouponService
 import com.coupon.support.page.OffsetPageRequest
 import com.coupon.user.User
@@ -27,6 +29,7 @@ import org.springframework.web.bind.annotation.RestController
 @RequestMapping("/coupons")
 class CouponController(
     private val couponService: CouponService,
+    private val couponIssueService: CouponIssueService,
 ) {
     @Operation(summary = "쿠폰 생성", description = "새로운 쿠폰을 생성합니다. (관리자 전용)")
     @PostMapping
@@ -53,6 +56,19 @@ class CouponController(
     fun getCoupon(
         @PathVariable couponId: Long,
     ): CouponResponse.Detail = CouponResponse.Detail.from(couponService.getCoupon(couponId))
+
+    @Operation(summary = "쿠폰별 발급 목록 조회", description = "특정 쿠폰의 발급 목록을 페이징하여 조회합니다. (관리자 전용)")
+    @GetMapping("/{couponId}/coupon-issues")
+    @PreAuthorize("hasAuthority('ADMIN')")
+    fun getCouponIssues(
+        @Parameter(hidden = true) user: User,
+        @PathVariable couponId: Long,
+        @RequestParam(defaultValue = "0") page: Int,
+        @RequestParam(defaultValue = "20") size: Int,
+    ): CouponIssuePageResponse =
+        CouponIssuePageResponse.from(
+            couponIssueService.getCouponIssues(couponId, OffsetPageRequest(page, size)),
+        )
 
     @Operation(summary = "쿠폰 수정", description = "쿠폰 정보를 수정합니다. (관리자 전용)")
     @PutMapping("/{couponId}")

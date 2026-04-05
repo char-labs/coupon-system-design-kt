@@ -54,6 +54,7 @@ class SecurityConfig(
                 .requestMatchers(
                     "/signup",
                     "/signin",
+                    "/load-test/admin/signin",
                 ).permitAll()
 
             // 추가로 열어줄 API

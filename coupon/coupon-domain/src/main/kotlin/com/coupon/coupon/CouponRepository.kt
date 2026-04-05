@@ -28,7 +28,7 @@ interface CouponRepository {
 
     fun deactivate(couponId: Long)
 
-    fun decreaseQuantity(couponId: Long)
+    fun decreaseQuantityIfAvailable(couponId: Long): Boolean
 
     fun increaseQuantity(couponId: Long)
 }

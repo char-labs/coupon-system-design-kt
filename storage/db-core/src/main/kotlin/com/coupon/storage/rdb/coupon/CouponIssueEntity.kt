@@ -1,7 +1,6 @@
 package com.coupon.storage.rdb.coupon
 
 import com.coupon.coupon.CouponIssue
-import com.coupon.coupon.CouponIssueDetail
 import com.coupon.coupon.criteria.CouponIssueCriteria
 import com.coupon.enums.CouponIssueStatus
 import com.coupon.storage.rdb.support.BaseEntity
@@ -11,16 +10,21 @@ import jakarta.persistence.EnumType
 import jakarta.persistence.Enumerated
 import jakarta.persistence.Index
 import jakarta.persistence.Table
+import jakarta.persistence.UniqueConstraint
 import java.time.LocalDateTime
 
 @Entity
 @Table(
     name = "t_coupon_issue",
+    uniqueConstraints = [
+        UniqueConstraint(
+            name = "uk_coupon_issue_user_coupon",
+            columnNames = ["user_id", "coupon_id"],
+        ),
+    ],
     indexes = [
         Index(name = "idx_coupon_issue_user_id", columnList = "user_id"),
         Index(name = "idx_coupon_issue_coupon_id", columnList = "coupon_id"),
-        Index(name = "idx_coupon_issue_status", columnList = "status"),
-        Index(name = "idx_coupon_issue_user_coupon", columnList = "user_id,coupon_id"),
     ],
 )
 class CouponIssueEntity(
@@ -52,7 +56,7 @@ class CouponIssueEntity(
     fun toCouponIssueDetail(
         couponCode: String,
         couponName: String,
-    ) = CouponIssueDetail(
+    ) = CouponIssue.Detail(
         id = id!!,
         couponId = couponId,
         couponCode = couponCode,
@@ -63,16 +67,4 @@ class CouponIssueEntity(
         usedAt = usedAt,
         canceledAt = canceledAt,
     )
-
-    fun use() {
-        require(status == CouponIssueStatus.ISSUED) { "발급된 쿠폰만 사용할 수 있습니다." }
-        this.status = CouponIssueStatus.USED
-        this.usedAt = LocalDateTime.now()
-    }
-
-    fun cancel() {
-        require(status == CouponIssueStatus.ISSUED) { "발급된 쿠폰만 취소할 수 있습니다." }
-        this.status = CouponIssueStatus.CANCELED
-        this.canceledAt = LocalDateTime.now()
-    }
 }

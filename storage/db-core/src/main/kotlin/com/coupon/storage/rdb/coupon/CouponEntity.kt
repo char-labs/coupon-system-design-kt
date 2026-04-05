@@ -10,23 +10,16 @@ import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.EnumType
 import jakarta.persistence.Enumerated
-import jakarta.persistence.Index
 import jakarta.persistence.Table
 import java.time.LocalDateTime
 
 @Entity
 @Table(
     name = "t_coupon",
-    indexes = [
-        Index(name = "idx_coupon_code", columnList = "coupon_code"),
-        Index(name = "idx_coupon_status", columnList = "status"),
-        Index(name = "idx_coupon_available_at", columnList = "available_at"),
-        Index(name = "idx_coupon_end_at", columnList = "end_at"),
-    ],
 )
 class CouponEntity(
     @Column(name = "coupon_code", unique = true, nullable = false, length = 50)
-    val couponCode: String,
+    var couponCode: String,
     @Column(nullable = false, length = 100)
     var name: String,
     @Enumerated(EnumType.STRING)
