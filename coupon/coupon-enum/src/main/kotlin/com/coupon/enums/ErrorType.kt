@@ -31,10 +31,10 @@ enum class ErrorType(
 
     /** Lock */
     LOCK_ACQUISITION_FAILED(
-        500,
-        ErrorKind.INTERNAL_SERVER_ERROR,
+        429,
+        ErrorKind.CLIENT_ERROR,
         "일시적으로 요청을 처리할 수 없습니다. 잠시 후 다시 시도해주세요.",
-        ErrorLevel.ERROR,
+        ErrorLevel.WARN,
     ),
 
     /** Sign */

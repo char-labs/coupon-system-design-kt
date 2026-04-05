@@ -1,5 +1,5 @@
 import exec from 'k6/execution';
-import { check } from 'k6';
+import { check, sleep } from 'k6';
 import { Counter, Gauge, Rate } from 'k6/metrics';
 import { config } from './lib/config.js';
 import { buildSummary } from './lib/summary.js';
@@ -19,6 +19,9 @@ const issueBurstUnexpectedClientErrorCount = new Counter(
   'issue_burst_unexpected_client_error_count',
 );
 const issueBurstServerErrorCount = new Counter('issue_burst_server_error_count');
+const issueBurstRetryableLockFailureCount = new Counter(
+  'issue_burst_retryable_lock_failure_count',
+);
 const issueBurstFinalIssuedCount = new Gauge('issue_burst_final_issued_count');
 const issueBurstFinalRemainingQuantity = new Gauge(
   'issue_burst_final_remaining_quantity',
@@ -82,39 +85,56 @@ export function setup() {
 
 export default function (data) {
   const tokenIndex = Math.max((exec.vu.idInTest || 1) - 1, 0);
-  const outcome = tryIssueCoupon(
-    data.userTokens[tokenIndex],
-    data.couponId,
-    {
-      allowOutOfStock: data.allowOutOfStock,
-      label: 'issue_burst_issue_coupon',
-    },
-  );
+  const maxAttempts = Math.max(config.issueBurstLockRetryCount + 1, 1);
 
-  switch (outcome.outcome) {
-    case 'SUCCESS':
-      issueBurstSuccessCount.add(1);
-      return;
-    case 'OUT_OF_STOCK':
-      issueBurstOutOfStockCount.add(1);
-      if (!data.allowOutOfStock) {
+  for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+    const outcome = tryIssueCoupon(
+      data.userTokens[tokenIndex],
+      data.couponId,
+      {
+        allowOutOfStock: data.allowOutOfStock,
+        allowRetryableLockFailure: true,
+        label: 'issue_burst_issue_coupon',
+      },
+    );
+
+    switch (outcome.outcome) {
+      case 'SUCCESS':
+        issueBurstSuccessCount.add(1);
+        return;
+      case 'OUT_OF_STOCK':
+        issueBurstOutOfStockCount.add(1);
+        if (!data.allowOutOfStock) {
+          issueBurstUnexpectedClientErrorCount.add(1);
+          check(outcome, {
+            'issue_burst unexpected out_of_stock': () => false,
+          });
+        }
+        return;
+      case 'RETRYABLE_LOCK_FAILURE':
+        issueBurstRetryableLockFailureCount.add(1);
+        if (attempt < maxAttempts - 1) {
+          sleep((config.issueBurstLockRetryDelayMs * (attempt + 1)) / 1000);
+          continue;
+        }
         issueBurstUnexpectedClientErrorCount.add(1);
         check(outcome, {
-          'issue_burst unexpected out_of_stock': () => false,
+          'issue_burst lock retry exhausted': () => false,
         });
-      }
-      return;
-    case 'UNEXPECTED_ERROR':
-    case 'UNEXPECTED_RESPONSE':
-    default:
-      if (outcome.status >= 500) {
-        issueBurstServerErrorCount.add(1);
-      } else {
-        issueBurstUnexpectedClientErrorCount.add(1);
-      }
-      check(outcome, {
-        'issue_burst unexpected response': () => false,
-      });
+        return;
+      case 'UNEXPECTED_ERROR':
+      case 'UNEXPECTED_RESPONSE':
+      default:
+        if (outcome.status >= 500) {
+          issueBurstServerErrorCount.add(1);
+        } else {
+          issueBurstUnexpectedClientErrorCount.add(1);
+        }
+        check(outcome, {
+          'issue_burst unexpected response': () => false,
+        });
+        return;
+    }
   }
 }
 

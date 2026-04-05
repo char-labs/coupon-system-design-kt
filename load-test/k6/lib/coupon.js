@@ -65,10 +65,17 @@ export function tryIssueCoupon(
   couponId,
   {
     allowOutOfStock = false,
+    allowRetryableLockFailure = false,
     label = 'issue_coupon',
   } = {},
 ) {
-  const expectedStatuses = allowOutOfStock ? [201, 400] : [201];
+  const expectedStatuses = [201];
+  if (allowOutOfStock) {
+    expectedStatuses.push(400);
+  }
+  if (allowRetryableLockFailure) {
+    expectedStatuses.push(429);
+  }
   const response = http.post(
     `${config.baseUrl}/coupon-issues`,
     JSON.stringify({ couponId }),
@@ -118,6 +125,18 @@ export function tryIssueCoupon(
   if (response.status === 400 && errorClassName === 'COUPON_OUT_OF_STOCK') {
     return {
       outcome: 'OUT_OF_STOCK',
+      status: response.status,
+      errorClassName,
+      message,
+    };
+  }
+
+  if (
+    response.status === 429 &&
+    errorClassName === 'LOCK_ACQUISITION_FAILED'
+  ) {
+    return {
+      outcome: 'RETRYABLE_LOCK_FAILURE',
       status: response.status,
       errorClassName,
       message,

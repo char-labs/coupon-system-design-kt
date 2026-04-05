@@ -25,6 +25,8 @@ const scenarioDefaults = {
     ISSUE_BURST_VUS: '1000',
     ISSUE_BURST_STOCK: '1000',
     ISSUE_BURST_MAX_DURATION: '5m',
+    ISSUE_BURST_LOCK_RETRY_COUNT: '3',
+    ISSUE_BURST_LOCK_RETRY_DELAY_MS: '250',
   },
   contention: {
     CONTENTION_VUS: '100',
@@ -317,6 +319,8 @@ function buildLoadDescription(scenario, parsedEnv, envSource) {
         `ISSUE_BURST_VUS=${resolveValue('ISSUE_BURST_VUS')}`,
         `ISSUE_BURST_STOCK=${resolveValue('ISSUE_BURST_STOCK')}`,
         `ISSUE_BURST_MAX_DURATION=${resolveValue('ISSUE_BURST_MAX_DURATION')}`,
+        `ISSUE_BURST_LOCK_RETRY_COUNT=${resolveValue('ISSUE_BURST_LOCK_RETRY_COUNT')}`,
+        `ISSUE_BURST_LOCK_RETRY_DELAY_MS=${resolveValue('ISSUE_BURST_LOCK_RETRY_DELAY_MS')}`,
       ].join(', ');
     case 'contention':
       return `CONTENTION_VUS=${resolveValue('CONTENTION_VUS')}, CONTENTION_MAX_DURATION=${resolveValue('CONTENTION_MAX_DURATION')}`;
@@ -407,6 +411,17 @@ function explainFailure({ failureReason, scenario, parsedEnv, envSource, thresho
       summary: '이미 발급된 대상을 다시 요청해서 테스트가 실패했습니다.',
       cause: '사용자와 쿠폰 조합이 중복되었거나 발급 조건이 맞지 않았습니다.',
       action: '사용자 풀과 쿠폰 풀을 늘리거나, 시나리오에서 중복 발급이 생기지 않는지 확인해 주세요.',
+    };
+  }
+
+  if (
+    failureReason?.includes('status=429') ||
+    failureReason?.includes('LOCK_ACQUISITION_FAILED')
+  ) {
+    return {
+      summary: '락 경합이 심해서 일부 요청이 재시도 한도 안에서 끝나지 못했습니다.',
+      cause: '같은 쿠폰에 요청이 너무 많이 몰려 락 대기 시간이 부족했거나 재시도 횟수를 모두 소진했습니다.',
+      action: 'ISSUE_BURST_LOCK_RETRY_COUNT, ISSUE_BURST_LOCK_RETRY_DELAY_MS, 서버 락 timeout을 같이 조정해 다시 확인해 주세요.',
     };
   }
 
@@ -524,6 +539,7 @@ function buildScenarioExtraMetrics(scenario, summary) {
     textLines: [
       `• *성공 발급 건수:* ${metricOrZero('issue_burst_success_count', 'count')}`,
       `• *재고 부족 건수:* ${metricOrZero('issue_burst_out_of_stock_count', 'count')}`,
+      `• *재시도 시도 횟수:* ${metricOrZero('issue_burst_retryable_lock_failure_count', 'count')}`,
       `• *예상 밖 클라이언트 오류 건수:* ${metricOrZero('issue_burst_unexpected_client_error_count', 'count')}`,
       `• *서버 오류 건수:* ${metricOrZero('issue_burst_server_error_count', 'count')}`,
       `• *최종 발급 건수:* ${metricValue(summary, 'issue_burst_final_issued_count')}`,
@@ -539,6 +555,10 @@ function buildScenarioExtraMetrics(scenario, summary) {
       {
         type: 'mrkdwn',
         text: `*재고 부족 건수*\n${metricOrZero('issue_burst_out_of_stock_count', 'count')}`,
+      },
+      {
+        type: 'mrkdwn',
+        text: `*재시도 시도 횟수*\n${metricOrZero('issue_burst_retryable_lock_failure_count', 'count')}`,
       },
       {
         type: 'mrkdwn',

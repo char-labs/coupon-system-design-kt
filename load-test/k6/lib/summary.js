@@ -26,6 +26,7 @@ function buildExtraLines(name, data) {
   return [
     `issue_burst success count: ${metricOrZero('issue_burst_success_count', 'count')}`,
     `issue_burst out_of_stock count: ${metricOrZero('issue_burst_out_of_stock_count', 'count')}`,
+    `issue_burst retryable lock failure count: ${metricOrZero('issue_burst_retryable_lock_failure_count', 'count')}`,
     `issue_burst unexpected client error count: ${metricOrZero('issue_burst_unexpected_client_error_count', 'count')}`,
     `issue_burst server error count: ${metricOrZero('issue_burst_server_error_count', 'count')}`,
     `issue_burst final issued count: ${metricValue(data, 'issue_burst_final_issued_count')}`,

@@ -93,7 +93,13 @@ class ApiExceptionAdvice : ResponseEntityExceptionHandler() {
         val errorCode: ErrorType = e.errorType
         val errorResponse = ErrorResponse.of(errorCode.name, errorCode.message)
         val apiResponse = ApiResponse.fail(errorCode.status, errorResponse)
-        return ResponseEntity.status(errorCode.status).body(apiResponse)
+        return ResponseEntity
+            .status(errorCode.status)
+            .apply {
+                if (errorCode == ErrorType.LOCK_ACQUISITION_FAILED) {
+                    header(HttpHeaders.RETRY_AFTER, "1")
+                }
+            }.body(apiResponse)
     }
 
     @ExceptionHandler(Exception::class)

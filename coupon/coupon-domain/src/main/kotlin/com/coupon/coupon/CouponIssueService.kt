@@ -15,9 +15,14 @@ class CouponIssueService(
     private val couponRepository: CouponRepository,
     private val couponIssueValidator: CouponIssueValidator,
 ) {
+    companion object {
+        private const val ISSUE_COUPON_LOCK_TIMEOUT_MILLIS = 15_000L
+    }
+
     fun issueCoupon(command: CouponIssueCommand.Issue): CouponIssue =
         Lock.executeWithLockRequiresNew(
             key = "COUPON_ISSUE:${command.couponId}",
+            timeoutMillis = ISSUE_COUPON_LOCK_TIMEOUT_MILLIS,
         ) {
             couponIssueValidator.validateIssuable(command.userId, command.couponId)
 
