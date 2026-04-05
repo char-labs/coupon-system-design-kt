@@ -41,6 +41,9 @@ curl http://localhost:3000/api/health
 
 `ADMIN_PASSWORD`처럼 `!`가 포함된 값은 셸 해석 이슈를 피하려고 따옴표로 감싸는 편이 안전합니다.
 
+Slack 실패 알림을 같이 쓰려면 [load-test/k6/.env](/Users/yunbeom/ybcha/coupon-system-design-kt/load-test/k6/.env)에 `LOAD_TEST_SLACK_WEBHOOK=` 값을 넣고, plain `k6 run` 대신 [run-with-slack.mjs](/Users/yunbeom/ybcha/coupon-system-design-kt/load-test/k6/run-with-slack.mjs)로 실행합니다.
+현재 로컬 기본값은 `LOAD_TEST_SLACK_NOTIFY_ON=always`라서, 성공과 실패 모두 Slack으로 전송됩니다.
+
 왜 `InfluxDB`를 쓰는지:
 
 - `k6`는 `InfluxDB`로 메트릭을 바로 내보낼 수 있어서 실시간 시계열 수집 경로가 단순합니다.
@@ -69,42 +72,121 @@ curl http://localhost:3000/api/health
 ### Smoke
 
 ```bash
-k6 run \
+node load-test/k6/run-with-slack.mjs smoke --profile local -- \
   --out influxdb=http://localhost:8086/myk6db \
   -e BASE_URL=http://127.0.0.1:18080 \
   -e ADMIN_EMAIL=loadtest-admin@coupon.local \
-  -e ADMIN_PASSWORD='admin1234!' \
-  load-test/k6/smoke.js
+  -e ADMIN_PASSWORD='admin1234!'
 ```
 
 ### Baseline
 
 ```bash
-k6 run \
+node load-test/k6/run-with-slack.mjs baseline --profile local -- \
   --out influxdb=http://localhost:8086/myk6db \
   -e BASE_URL=http://127.0.0.1:18080 \
   -e BASELINE_VUS=20 \
-  -e BASELINE_DURATION=10m \
-  load-test/k6/baseline.js
+  -e BASELINE_DURATION=10m
 ```
 
 ### Contention
 
 ```bash
-k6 run \
+node load-test/k6/run-with-slack.mjs contention --profile local -- \
   --out influxdb=http://localhost:8086/myk6db \
   -e BASE_URL=http://127.0.0.1:18080 \
-  -e CONTENTION_VUS=100 \
-  load-test/k6/contention.js
+  -e CONTENTION_VUS=100
 ```
 
 `contention`은 발급 락 경합을 보기 위한 시나리오라서, 사용자 회원가입과 로그인은 `setup()`에서 먼저 처리하고 실제 VU 실행 단계에서는 `issueCoupon`만 동시에 호출합니다.
+
+### Issue Overload
+
+```bash
+node load-test/k6/run-with-slack.mjs issue-overload --profile local -- \
+  --out influxdb=http://localhost:8086/myk6db \
+  -e BASE_URL=http://127.0.0.1:18080 \
+  -e ISSUE_OVERLOAD_VUS=100 \
+  -e ISSUE_OVERLOAD_DURATION=10m \
+  -e ISSUE_OVERLOAD_USER_POOL_SIZE=200 \
+  -e ISSUE_OVERLOAD_COUPON_POOL_SIZE=500
+```
+
+이 시나리오는 `coupon-issue`만 지속적으로 과부하하기 위한 전용 시나리오입니다.
+
+- `ISSUE_OVERLOAD_VUS`
+  - 동시에 계속 요청을 보내는 사용자 수입니다.
+- `ISSUE_OVERLOAD_DURATION`
+  - 과부하를 유지할 시간입니다.
+- `ISSUE_OVERLOAD_USER_POOL_SIZE x ISSUE_OVERLOAD_COUPON_POOL_SIZE`
+  - 중복 없이 발급 가능한 총 조합 수입니다.
+
+예시의 경우 capacity는 `200 x 500 = 100,000`건입니다. 테스트 도중 이 용량을 넘기면 `issue_overload capacity exhausted ...` 메시지로 테스트를 바로 abort 하며, 원인과 늘려야 할 env var 이름을 같이 알려줍니다.
 
 중요:
 
 - 실시간 대시보드를 보려면 반드시 `--out influxdb=http://localhost:8086/myk6db`를 붙입니다.
 - `--out` 없이 실행하면 JSON summary만 남고 Grafana에는 안 보입니다.
+- `run-with-slack.mjs`는 `load-test/k6/.env`를 자동으로 읽고, 실패 시 Slack webhook으로 메세지를 보냅니다.
 - 앱이 막 기동된 상태라면 `setup()`이 health와 admin signin을 몇 초간 대기할 수 있습니다.
+
+## 3-1. Slack 실패 알림 확인
+
+실패가 나면 Slack에는 아래 형식으로 전송됩니다.
+
+```text
+[local 환경 부하 테스트 내용]
+## 부하테스트 내용 보고
+- 테스트 종류: 쿠폰 발급 API 과부하
+- 결과: 실패
+- 한 줄 요약: 테스트에 쓸 사용자 또는 쿠폰 수가 부족해서 중간에 멈췄습니다.
+- 부하 조건: 100명이 10분 동안 coupon-issue를 반복 호출
+- 상세 설정: ISSUE_OVERLOAD_VUS=100, ISSUE_OVERLOAD_DURATION=10m, ...
+- 실행 시간: ...
+- 상세 설명: 현재 준비된 테스트 데이터는 사용자 200명, 쿠폰 500개 수준입니다.
+- 다음 조치: ISSUE_OVERLOAD_USER_POOL_SIZE 또는 ISSUE_OVERLOAD_COUPON_POOL_SIZE를 늘린 뒤 다시 실행해 주세요.
+- 기준 미달 항목: 오류율 기준 미달
+- 응답속도 중앙값(p50): ...
+- 느린 요청 기준(p95): ...
+- 매우 느린 요청 기준(p99): ...
+- 오류율: ...
+- 정상 응답 확인율: ...
+- 결과 파일: load-test/k6/results/issue-overload-latest.json
+```
+
+성공 메세지도 같은 구조로 전달됩니다.
+
+```text
+[local 환경 부하 테스트 내용]
+## 부하테스트 내용 보고
+- 테스트 종류: 일반 사용량 기준 부하
+- 결과: 성공
+- 한 줄 요약: 일반 사용량 기준 부하를 안정적으로 처리했습니다.
+- 부하 조건: 20명이 10m 동안 일반 사용 패턴으로 실행
+- 상세 설정: BASELINE_VUS=20, BASELINE_DURATION=10m
+- 실행 시간: ...
+- 상세 설명: 테스트 중 오류율과 정상 응답 확인율이 기준 안에 들었고, 시나리오를 끝까지 수행했습니다.
+- 다음 조치: 이번 결과를 기준선으로 기록하고, 이전 실행 대비 p95/p99 변화가 없는지 비교해 주세요.
+- 응답속도 중앙값(p50): ...
+- 느린 요청 기준(p95): ...
+- 매우 느린 요청 기준(p99): ...
+- 오류율: ...
+- 정상 응답 확인율: ...
+- 결과 파일: load-test/k6/results/baseline-latest.json
+```
+
+Webhook이 비어 있거나 Slack 전송을 끄고 싶으면:
+
+- `LOAD_TEST_SLACK_WEBHOOK=` 비워두기
+- 또는 `LOAD_TEST_SLACK_NOTIFY_ON=never`
+
+실패한 경우만 Slack으로 받고 싶으면:
+
+- `LOAD_TEST_SLACK_NOTIFY_ON=failure`
+
+이 경우에도 preview는 아래 파일에 남습니다.
+
+- `load-test/k6/results/<scenario>-slack-latest.txt`
 
 ## 4. 실행 중 확인 포인트
 
@@ -204,6 +286,42 @@ k6 run \
 
 - contention은 baseline보다 latency spike가 더 자연스럽습니다.
 - 중요한 건 spike 자체보다, 그 spike가 지속되는지와 실패율이 함께 올라가는지입니다.
+
+### Issue Overload
+
+목표:
+
+- `coupon-issue`만 장시간 과부하했을 때 처리량, p95, p99, 실패율이 어떻게 변하는지 확인
+- 순간 경합이 아니라 지속 부하에서 발급 API가 얼마나 오래 버티는지 확인
+
+정상 신호:
+
+- `Virtual Users`는 설정한 값으로 유지
+- `Iterations`가 시간축에서 크게 꺾이지 않음
+- `p50`은 흔들려도 `p95`, `p99`가 회복 가능한 범위 안에 머묾
+- `failed rate`가 장시간 0 근처 또는 낮은 수준에서 통제됨
+
+이상 신호:
+
+- `p95`, `p99`가 시간이 갈수록 계속 상승
+- `Iterations`가 점점 눌리거나 plateau를 형성
+- `failed rate`가 후반부로 갈수록 올라감
+- `issue_overload capacity exhausted`가 뜸
+
+원인 보는 순서:
+
+1. `issue_overload capacity exhausted`가 먼저 떴는지 확인
+2. 아니면 `issue_coupon` 응답 코드가 4xx인지 5xx인지 확인
+3. 같은 시간대 `p95/p99`, failed rate, `/actuator/prometheus`, 앱 로그를 같이 확인
+
+빠른 해석 기준:
+
+- `capacity exhausted`
+  - 테스트 데이터 조합 부족
+- 4xx 증가
+  - 중복 발급, 비활성/만료 쿠폰 같은 비즈니스 조건 문제
+- 5xx 증가 + p95/p99 상승
+  - DB, 락, 스레드, 연결 풀 등 실제 서버 병목 가능성
 
 ## 6. 앱 메트릭과 함께 보기
 

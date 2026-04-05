@@ -4,6 +4,8 @@
 
 대시보드 오픈부터 실행, 확인, 해석까지 한 번에 따라가려면 [RUNBOOK.md](/Users/yunbeom/ybcha/coupon-system-design-kt/load-test/k6/RUNBOOK.md)를 같이 봅니다.
 
+Slack 실패 알림을 같이 쓰는 표준 실행 경로는 [run-with-slack.mjs](/Users/yunbeom/ybcha/coupon-system-design-kt/load-test/k6/run-with-slack.mjs)입니다. 이 runner는 [load-test/k6/.env](/Users/yunbeom/ybcha/coupon-system-design-kt/load-test/k6/.env)를 자동으로 읽고, 실패 시 Slack 메세지 템플릿을 webhook으로 보냅니다.
+
 ## 시나리오
 
 - `smoke.js`
@@ -13,12 +15,12 @@
 - `contention.js`
   - 동일 쿠폰에 동시에 발급 요청을 몰아 정합성과 병목을 확인합니다.
   - 인증 경합이 결과를 왜곡하지 않도록, 사용자와 토큰은 `setup()`에서 먼저 준비하고 본 실행에서는 발급 호출만 동시에 보냅니다.
-
-## 사전 준비
 - `issue-overload.js`
   - `coupon-issue`만 N분 동안 M명이 쉬지 않고 호출하는 지속 과부하 시나리오입니다.
   - `contention`과 달리 순간 동시성 1회가 아니라, 일정 시간 동안 발급 API 처리량과 tail latency가 계속 버티는지 봅니다.
   - 중복 발급으로 결과가 오염되지 않도록 `사용자 풀 x 쿠폰 풀` 조합으로 유니크한 발급 대상을 만듭니다.
+
+## 사전 준비
 
 1. 로컬 스택을 올립니다.
 
@@ -63,6 +65,90 @@ curl -X POST http://127.0.0.1:18080/load-test/admin/signin \
 ```bash
 docker compose -f docker/docker-compose.yml down -v
 docker compose -f docker/docker-compose.yml up --build
+```
+
+## .env 와 Slack 실패 알림
+
+Slack 실패 알림은 아래 파일을 기준으로 설정합니다.
+
+- [load-test/k6/.env](/Users/yunbeom/ybcha/coupon-system-design-kt/load-test/k6/.env)
+- 참고 템플릿: [load-test/k6/.env.example](/Users/yunbeom/ybcha/coupon-system-design-kt/load-test/k6/.env.example)
+
+기본 형태:
+
+```dotenv
+LOAD_TEST_SLACK_WEBHOOK=
+```
+
+추가로 아래 값을 같이 둘 수 있습니다.
+
+```dotenv
+LOAD_TEST_SLACK_WEBHOOK=
+LOAD_TEST_PROFILE=local
+LOAD_TEST_SLACK_NOTIFY_ON=always
+```
+
+의미:
+
+- `LOAD_TEST_SLACK_WEBHOOK`
+  - Slack Incoming Webhook URL입니다.
+- `LOAD_TEST_PROFILE`
+  - Slack 메세지 제목에 넣을 환경명입니다.
+- `LOAD_TEST_SLACK_NOTIFY_ON`
+  - `failure`, `always`, `never` 중 하나입니다. 현재 로컬 기본값은 `always`입니다.
+
+Slack 메세지 템플릿은 아래 형식으로 보냅니다.
+
+```text
+[local 환경 부하 테스트 내용]
+## 부하테스트 내용 보고
+- 테스트 종류: 쿠폰 발급 API 과부하
+- 결과: 실패
+- 한 줄 요약: 테스트에 쓸 사용자 또는 쿠폰 수가 부족해서 중간에 멈췄습니다.
+- 부하 조건: 100명이 10분 동안 coupon-issue를 반복 호출
+- 상세 설정: ISSUE_OVERLOAD_VUS=100, ISSUE_OVERLOAD_DURATION=10m, ...
+- 실행 시간: 2026-04-05T07:00:00.000Z ~ 2026-04-05T07:10:00.000Z
+- 상세 설명: 현재 준비된 테스트 데이터는 사용자 200명, 쿠폰 500개 수준입니다.
+- 다음 조치: ISSUE_OVERLOAD_USER_POOL_SIZE 또는 ISSUE_OVERLOAD_COUPON_POOL_SIZE를 늘린 뒤 다시 실행해 주세요.
+- 기준 미달 항목: 오류율 기준 미달
+- 응답속도 중앙값(p50): ...
+- 느린 요청 기준(p95): ...
+- 매우 느린 요청 기준(p99): ...
+- 오류율: ...
+- 정상 응답 확인율: ...
+- 결과 파일: load-test/k6/results/issue-overload-latest.json
+```
+
+성공 메세지도 같은 형식으로 보고합니다.
+
+```text
+[local 환경 부하 테스트 내용]
+## 부하테스트 내용 보고
+- 테스트 종류: 기본 기능 확인
+- 결과: 성공
+- 한 줄 요약: 기본 기능 흐름을 오류 없이 끝까지 확인했습니다.
+- 부하 조건: 1명이 기본 기능 흐름을 1회 실행
+- 상세 설정: SMOKE_VUS=1
+- 실행 시간: 2026-04-05T07:00:00.000Z ~ 2026-04-05T07:00:01.000Z
+- 상세 설명: 관리자 로그인, 쿠폰 생성, 사용자 로그인, 쿠폰 발급과 사용까지 정상 응답으로 완료됐습니다.
+- 다음 조치: 기능 회귀 확인용 기준 결과로 저장하고, 필요하면 baseline 또는 issue-overload로 다음 단계 테스트를 진행해 주세요.
+- 응답속도 중앙값(p50): ...
+- 느린 요청 기준(p95): ...
+- 매우 느린 요청 기준(p99): ...
+- 오류율: ...
+- 정상 응답 확인율: ...
+- 결과 파일: load-test/k6/results/smoke-latest.json
+```
+
+Webhook이 비어 있으면 전송은 건너뛰고, 같은 템플릿을 아래 preview 파일로 남깁니다.
+
+- `load-test/k6/results/<scenario>-slack-latest.txt`
+- `load-test/k6/results/<scenario>-slack-<timestamp>.txt`
+
+성공한 테스트도 Slack으로 받고 싶지 않다면 `.env`에서 아래처럼 바꿉니다.
+
+```dotenv
+LOAD_TEST_SLACK_NOTIFY_ON=failure
 ```
 
 ## Optional Observability
@@ -137,44 +223,6 @@ k6 run \
   load-test/k6/contention.js
 ```
 
-```bash
-k6 run \
-  --out influxdb=http://localhost:8086/myk6db \
-  -e BASE_URL=http://127.0.0.1:18080 \
-  -e CONTENTION_VUS=100 \
-  load-test/k6/contention.js
-```
-
-## 환경변수
-
-- `BASE_URL`
-- `ADMIN_NAME`
-- `ADMIN_EMAIL`
-- `ADMIN_PASSWORD`
-- `TEST_USER_PASSWORD`
-- `STARTUP_TIMEOUT_SECONDS`
-- `STARTUP_POLL_INTERVAL_SECONDS`
-- `SMOKE_VUS`
-- `BASELINE_VUS`
-- `BASELINE_DURATION`
-- `BASELINE_SESSION_POOL_SIZE`
-- `BASELINE_COUPON_POOL_SIZE`
-- `CONTENTION_VUS`
-- `CONTENTION_MAX_DURATION`
-- `RESULTS_DIR`
-
-## 결과 확인
-
-- `load-test/k6/results/*-latest.json`
-- `load-test/k6/results/*-<timestamp>.json`
-- Grafana `k6 / k6 Overview`
-
-애플리케이션 측 지표는 같은 시간대의 `/actuator/prometheus`를 같이 확인합니다.
-
-- HTTP 지연과 오류율
-- JVM 메모리/GC
-- Tomcat thread 사용량
-- DB/Redis 관련 기본 Micrometer 지표
 사용자가 말한 “N분 동안 M명이 `coupon-issue`를 과부하게 실행”은 아래 시나리오로 바로 실행합니다.
 
 ```bash
@@ -209,11 +257,87 @@ k6 run \
 
 처음에는 쿠폰을 늘리는 편이 사용자까지 늘리는 것보다 setup 비용이 덜 큽니다.
 
+```bash
+k6 run \
+  --out influxdb=http://localhost:8086/myk6db \
+  -e BASE_URL=http://127.0.0.1:18080 \
+  -e CONTENTION_VUS=100 \
+  load-test/k6/contention.js
+```
+
+Slack 실패 알림까지 같이 쓰는 표준 실행은 아래 wrapper를 사용합니다. 모든 시나리오에서 [load-test/k6/.env](/Users/yunbeom/ybcha/coupon-system-design-kt/load-test/k6/.env)가 자동으로 반영됩니다.
+
+```bash
+node load-test/k6/run-with-slack.mjs smoke --profile local -- \
+  --out influxdb=http://localhost:8086/myk6db \
+  -e BASE_URL=http://127.0.0.1:18080 \
+  -e ADMIN_EMAIL=loadtest-admin@coupon.local \
+  -e ADMIN_PASSWORD='admin1234!'
+```
+
+```bash
+node load-test/k6/run-with-slack.mjs baseline --profile local -- \
+  --out influxdb=http://localhost:8086/myk6db \
+  -e BASE_URL=http://127.0.0.1:18080 \
+  -e BASELINE_VUS=20 \
+  -e BASELINE_DURATION=10m
+```
+
+```bash
+node load-test/k6/run-with-slack.mjs contention --profile local -- \
+  --out influxdb=http://localhost:8086/myk6db \
+  -e BASE_URL=http://127.0.0.1:18080 \
+  -e CONTENTION_VUS=100
+```
+
+```bash
+node load-test/k6/run-with-slack.mjs issue-overload --profile local -- \
+  --out influxdb=http://localhost:8086/myk6db \
+  -e BASE_URL=http://127.0.0.1:18080 \
+  -e ISSUE_OVERLOAD_VUS=100 \
+  -e ISSUE_OVERLOAD_DURATION=10m \
+  -e ISSUE_OVERLOAD_USER_POOL_SIZE=200 \
+  -e ISSUE_OVERLOAD_COUPON_POOL_SIZE=500
+```
+
+## 환경변수
+
+- `BASE_URL`
+- `ADMIN_NAME`
+- `ADMIN_EMAIL`
+- `ADMIN_PASSWORD`
+- `TEST_USER_PASSWORD`
+- `STARTUP_TIMEOUT_SECONDS`
+- `STARTUP_POLL_INTERVAL_SECONDS`
+- `SMOKE_VUS`
+- `BASELINE_VUS`
+- `BASELINE_DURATION`
+- `BASELINE_SESSION_POOL_SIZE`
+- `BASELINE_COUPON_POOL_SIZE`
+- `CONTENTION_VUS`
+- `CONTENTION_MAX_DURATION`
 - `ISSUE_OVERLOAD_VUS`
 - `ISSUE_OVERLOAD_DURATION`
 - `ISSUE_OVERLOAD_USER_POOL_SIZE`
 - `ISSUE_OVERLOAD_COUPON_POOL_SIZE`
 - `ISSUE_OVERLOAD_SETUP_TIMEOUT`
+- `LOAD_TEST_SLACK_WEBHOOK`
+- `LOAD_TEST_PROFILE`
+- `LOAD_TEST_SLACK_NOTIFY_ON`
+- `RESULTS_DIR`
+
+## 결과 확인
+
+- `load-test/k6/results/*-latest.json`
+- `load-test/k6/results/*-<timestamp>.json`
+- Grafana `k6 / k6 Overview`
+
+애플리케이션 측 지표는 같은 시간대의 `/actuator/prometheus`를 같이 확인합니다.
+
+- HTTP 지연과 오류율
+- JVM 메모리/GC
+- Tomcat thread 사용량
+- DB/Redis 관련 기본 Micrometer 지표
 
 ## 실패 원인 빠르게 보는 법
 
