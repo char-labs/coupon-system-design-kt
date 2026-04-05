@@ -15,6 +15,10 @@
   - 인증 경합이 결과를 왜곡하지 않도록, 사용자와 토큰은 `setup()`에서 먼저 준비하고 본 실행에서는 발급 호출만 동시에 보냅니다.
 
 ## 사전 준비
+- `issue-overload.js`
+  - `coupon-issue`만 N분 동안 M명이 쉬지 않고 호출하는 지속 과부하 시나리오입니다.
+  - `contention`과 달리 순간 동시성 1회가 아니라, 일정 시간 동안 발급 API 처리량과 tail latency가 계속 버티는지 봅니다.
+  - 중복 발급으로 결과가 오염되지 않도록 `사용자 풀 x 쿠폰 풀` 조합으로 유니크한 발급 대상을 만듭니다.
 
 1. 로컬 스택을 올립니다.
 
@@ -171,3 +175,57 @@ k6 run \
 - JVM 메모리/GC
 - Tomcat thread 사용량
 - DB/Redis 관련 기본 Micrometer 지표
+사용자가 말한 “N분 동안 M명이 `coupon-issue`를 과부하게 실행”은 아래 시나리오로 바로 실행합니다.
+
+```bash
+k6 run \
+  --out influxdb=http://localhost:8086/myk6db \
+  -e BASE_URL=http://127.0.0.1:18080 \
+  -e ISSUE_OVERLOAD_VUS=100 \
+  -e ISSUE_OVERLOAD_DURATION=10m \
+  -e ISSUE_OVERLOAD_USER_POOL_SIZE=200 \
+  -e ISSUE_OVERLOAD_COUPON_POOL_SIZE=500 \
+  load-test/k6/issue-overload.js
+```
+
+의미는 아래와 같습니다.
+
+- `ISSUE_OVERLOAD_VUS`
+  - 동시에 계속 요청을 보내는 사용자 수, 즉 M입니다.
+- `ISSUE_OVERLOAD_DURATION`
+  - 부하를 유지할 시간, 즉 N분입니다.
+- `ISSUE_OVERLOAD_USER_POOL_SIZE`
+  - 발급 대상 사용자 풀 크기입니다.
+- `ISSUE_OVERLOAD_COUPON_POOL_SIZE`
+  - 발급 대상 쿠폰 풀 크기입니다.
+
+`issue-overload`의 유니크 발급 가능량은 아래입니다.
+
+- `ISSUE_OVERLOAD_USER_POOL_SIZE x ISSUE_OVERLOAD_COUPON_POOL_SIZE`
+
+예를 들어 `200 users x 500 coupons = 100,000`건까지는 중복 없이 `coupon-issue`를 실행할 수 있습니다. 지속 실행 중 이 용량을 넘기면 스크립트가 아래처럼 테스트를 즉시 abort 하면서 원인을 직접 알려줍니다.
+
+- `issue_overload capacity exhausted ... Increase ISSUE_OVERLOAD_USER_POOL_SIZE or ISSUE_OVERLOAD_COUPON_POOL_SIZE`
+
+처음에는 쿠폰을 늘리는 편이 사용자까지 늘리는 것보다 setup 비용이 덜 큽니다.
+
+- `ISSUE_OVERLOAD_VUS`
+- `ISSUE_OVERLOAD_DURATION`
+- `ISSUE_OVERLOAD_USER_POOL_SIZE`
+- `ISSUE_OVERLOAD_COUPON_POOL_SIZE`
+- `ISSUE_OVERLOAD_SETUP_TIMEOUT`
+
+## 실패 원인 빠르게 보는 법
+
+- `issue_overload capacity exhausted`
+  - 테스트 데이터 조합이 부족합니다.
+  - `ISSUE_OVERLOAD_USER_POOL_SIZE x ISSUE_OVERLOAD_COUPON_POOL_SIZE`를 늘립니다.
+- `issue_coupon: unexpected response status=409` 또는 관련 4xx
+  - 중복 발급, 만료, 비활성 쿠폰처럼 비즈니스 조건이 깨진 상태입니다.
+  - setup에서 만든 쿠폰 수량과 상태, 사용자/쿠폰 조합 소진 여부를 먼저 봅니다.
+- `issue_coupon: unexpected response status=500`
+  - 서버가 실제로 버티지 못한 것입니다.
+  - 같은 시간대 Grafana의 `p95/p99`, failed rate, `/actuator/prometheus`, 애플리케이션 로그를 같이 봅니다.
+- `app_ready` 또는 `admin_signin_ready` timeout
+  - 부하 테스트 이전에 앱 기동이나 local bootstrap이 준비되지 않은 상태입니다.
+  - `docker compose ... up --build`, `/actuator/health`, `/load-test/admin/signin`부터 다시 확인합니다.

@@ -11,6 +11,14 @@ export const config = {
   baselineDuration: __ENV.BASELINE_DURATION || '10m',
   baselineSessionPoolSize: Number(__ENV.BASELINE_SESSION_POOL_SIZE || 100),
   baselineCouponPoolSize: Number(__ENV.BASELINE_COUPON_POOL_SIZE || 10),
+  issueOverloadVus: Number(__ENV.ISSUE_OVERLOAD_VUS || 100),
+  issueOverloadDuration: __ENV.ISSUE_OVERLOAD_DURATION || '10m',
+  issueOverloadUserPoolSize: Number(
+    __ENV.ISSUE_OVERLOAD_USER_POOL_SIZE ||
+      Math.max(Number(__ENV.ISSUE_OVERLOAD_VUS || 100) * 2, 200),
+  ),
+  issueOverloadCouponPoolSize: Number(__ENV.ISSUE_OVERLOAD_COUPON_POOL_SIZE || 500),
+  issueOverloadSetupTimeout: __ENV.ISSUE_OVERLOAD_SETUP_TIMEOUT || '10m',
   contentionVus: Number(__ENV.CONTENTION_VUS || 100),
   contentionMaxDuration: __ENV.CONTENTION_MAX_DURATION || '2m',
   resultsDir: __ENV.RESULTS_DIR || 'load-test/k6/results',

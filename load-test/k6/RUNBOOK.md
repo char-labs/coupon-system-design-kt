@@ -280,3 +280,39 @@ docker compose \
   -f docker/docker-compose.k6-observability.yml \
   down -v
 ```
+### Issue Overload
+
+목표:
+
+- `coupon-issue`만 장시간 과부하했을 때 처리량, p95, p99, 실패율이 어떻게 변하는지 확인
+- 순간 경합이 아니라 지속 부하에서 발급 API가 얼마나 오래 버티는지 확인
+
+정상 신호:
+
+- `Virtual Users`는 설정한 값으로 유지
+- `Iterations`가 시간축에서 크게 꺾이지 않음
+- `p50`은 흔들려도 `p95`, `p99`가 회복 가능한 범위 안에 머묾
+- `failed rate`가 장시간 0 근처 또는 낮은 수준에서 통제됨
+
+이상 신호:
+
+- `p95`, `p99`가 시간이 갈수록 계속 상승
+- `Iterations`가 점점 눌리거나 plateau를 형성
+- `failed rate`가 후반부로 갈수록 올라감
+- `issue_overload capacity exhausted`가 뜸
+
+원인 보는 순서:
+
+1. `issue_overload capacity exhausted`가 먼저 떴는지 확인
+2. 아니면 `issue_coupon` 응답 코드가 4xx인지 5xx인지 확인
+3. 같은 시간대 `p95/p99`, failed rate, `/actuator/prometheus`, 앱 로그를 같이 확인
+
+빠른 해석 기준:
+
+- `capacity exhausted`
+  - 테스트 데이터 조합 부족
+- 4xx 증가
+  - 중복 발급, 비활성/만료 쿠폰 같은 비즈니스 조건 문제
+- 5xx 증가 + p95/p99 상승
+  - DB, 락, 스레드, 연결 풀 등 실제 서버 병목 가능성
+
