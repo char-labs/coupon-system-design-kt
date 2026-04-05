@@ -60,13 +60,9 @@ class CouponCoreRepository(
         entity.deactivate()
     }
 
-    override fun decreaseQuantity(couponId: Long) {
-        val entity = couponJpaRepository.findByIdOrElseThrow(couponId)
-        entity.decreaseQuantity()
-    }
+    override fun decreaseQuantityIfAvailable(couponId: Long): Boolean = couponJpaRepository.decreaseQuantityIfAvailable(couponId) > 0
 
     override fun increaseQuantity(couponId: Long) {
-        val entity = couponJpaRepository.findByIdOrElseThrow(couponId)
-        entity.increaseQuantity()
+        couponJpaRepository.increaseQuantity(couponId)
     }
 }

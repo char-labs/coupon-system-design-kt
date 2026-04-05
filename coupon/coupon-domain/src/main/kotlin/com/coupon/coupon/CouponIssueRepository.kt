@@ -26,7 +26,7 @@ interface CouponIssueRepository {
         couponId: Long,
     ): Boolean
 
-    fun use(couponIssueId: Long)
+    fun useIfIssued(couponIssueId: Long): Boolean
 
-    fun cancel(couponIssueId: Long)
+    fun cancelIfIssued(couponIssueId: Long): Boolean
 }

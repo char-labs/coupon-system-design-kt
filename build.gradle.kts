@@ -62,6 +62,7 @@ subprojects {
         // Test runtime
         testRuntimeOnly("org.junit.platform:junit-platform-launcher")
         // Test
+        testImplementation(platform("org.testcontainers:testcontainers-bom:${project.properties["testcontainersVersion"]}"))
         testImplementation("org.springframework.boot:spring-boot-starter-test")
         testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")
         testImplementation("com.ninja-squad:springmockk:${project.properties["springMockkVersion"]}")
