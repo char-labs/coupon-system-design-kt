@@ -19,7 +19,7 @@ import java.time.LocalDateTime
 )
 class CouponEntity(
     @Column(name = "coupon_code", unique = true, nullable = false, length = 50)
-    val couponCode: String,
+    var couponCode: String,
     @Column(nullable = false, length = 100)
     var name: String,
     @Enumerated(EnumType.STRING)
