@@ -4,9 +4,9 @@ import com.coupon.CouponServerApplication
 import com.coupon.coupon.command.CouponCommand
 import com.coupon.coupon.command.CouponIssueCommand
 import com.coupon.coupon.criteria.CouponIssueCriteria
-import com.coupon.enums.CouponIssueStatus
-import com.coupon.enums.CouponType
-import com.coupon.enums.ErrorType
+import com.coupon.enums.coupon.CouponIssueStatus
+import com.coupon.enums.coupon.CouponType
+import com.coupon.enums.error.ErrorType
 import com.coupon.error.ErrorException
 import com.coupon.storage.rdb.coupon.CouponIssueJpaRepository
 import com.coupon.storage.rdb.coupon.CouponJpaRepository

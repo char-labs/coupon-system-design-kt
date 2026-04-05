@@ -1,7 +1,7 @@
 package com.coupon.controller.coupon.response
 
 import com.coupon.coupon.CouponIssue
-import com.coupon.enums.CouponIssueStatus
+import com.coupon.enums.coupon.CouponIssueStatus
 import io.swagger.v3.oas.annotations.media.Schema
 import java.time.LocalDateTime
 

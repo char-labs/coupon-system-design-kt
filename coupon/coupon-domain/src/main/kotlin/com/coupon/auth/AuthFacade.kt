@@ -1,7 +1,7 @@
 package com.coupon.auth
 
 import com.coupon.auth.command.AuthCommand
-import com.coupon.enums.ErrorType
+import com.coupon.enums.error.ErrorType
 import com.coupon.error.ErrorException
 import com.coupon.support.tx.Tx
 import com.coupon.user.UserService

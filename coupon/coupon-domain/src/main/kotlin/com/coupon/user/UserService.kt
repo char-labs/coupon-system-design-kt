@@ -1,6 +1,6 @@
 package com.coupon.user
 
-import com.coupon.enums.ErrorType
+import com.coupon.enums.error.ErrorType
 import com.coupon.error.ErrorException
 import com.coupon.support.page.OffsetPageRequest
 import com.coupon.support.page.Page

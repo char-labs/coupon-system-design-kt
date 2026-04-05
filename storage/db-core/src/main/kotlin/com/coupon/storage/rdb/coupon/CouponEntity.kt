@@ -3,8 +3,8 @@ package com.coupon.storage.rdb.coupon
 import com.coupon.coupon.Coupon
 import com.coupon.coupon.CouponDetail
 import com.coupon.coupon.criteria.CouponCriteria
-import com.coupon.enums.CouponStatus
-import com.coupon.enums.CouponType
+import com.coupon.enums.coupon.CouponStatus
+import com.coupon.enums.coupon.CouponType
 import com.coupon.storage.rdb.support.BaseEntity
 import jakarta.persistence.Column
 import jakarta.persistence.Entity

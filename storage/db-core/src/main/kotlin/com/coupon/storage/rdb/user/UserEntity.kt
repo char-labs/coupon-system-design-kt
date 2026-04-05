@@ -1,6 +1,6 @@
 package com.coupon.storage.rdb.user
 
-import com.coupon.enums.AuthorityType
+import com.coupon.enums.auth.AuthorityType
 import com.coupon.storage.rdb.support.BaseEntity
 import com.coupon.user.User
 import com.coupon.user.UserCredential

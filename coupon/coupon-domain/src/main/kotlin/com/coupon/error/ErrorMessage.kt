@@ -1,6 +1,6 @@
 package com.coupon.error
 
-import com.coupon.enums.ErrorType
+import com.coupon.enums.error.ErrorType
 
 data class ErrorMessage(
     val code: String,

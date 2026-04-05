@@ -1,6 +1,6 @@
 package com.coupon.controller.user.response
 
-import com.coupon.enums.AuthorityType
+import com.coupon.enums.auth.AuthorityType
 import com.coupon.user.UserProfile
 import io.swagger.v3.oas.annotations.media.Schema
 import java.time.LocalDateTime

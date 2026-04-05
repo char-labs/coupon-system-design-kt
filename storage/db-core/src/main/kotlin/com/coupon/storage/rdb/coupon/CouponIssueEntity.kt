@@ -2,7 +2,7 @@ package com.coupon.storage.rdb.coupon
 
 import com.coupon.coupon.CouponIssue
 import com.coupon.coupon.criteria.CouponIssueCriteria
-import com.coupon.enums.CouponIssueStatus
+import com.coupon.enums.coupon.CouponIssueStatus
 import com.coupon.storage.rdb.support.BaseEntity
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
@@ -29,9 +29,9 @@ import java.time.LocalDateTime
 )
 class CouponIssueEntity(
     @Column(name = "user_id", nullable = false)
-    val userId: Long,
+    var userId: Long,
     @Column(name = "coupon_id", nullable = false)
-    val couponId: Long,
+    var couponId: Long,
     @Enumerated(EnumType.STRING)
     @Column(columnDefinition = "varchar(20)", nullable = false)
     var status: CouponIssueStatus = CouponIssueStatus.ISSUED,

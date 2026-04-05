@@ -1,6 +1,6 @@
 package com.coupon.support.lock
 
-import com.coupon.enums.ErrorType
+import com.coupon.enums.error.ErrorType
 import com.coupon.support.tx.Tx
 import org.springframework.stereotype.Component
 

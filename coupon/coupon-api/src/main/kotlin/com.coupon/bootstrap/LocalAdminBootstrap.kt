@@ -3,7 +3,7 @@ package com.coupon.bootstrap
 import com.coupon.auth.AuthService
 import com.coupon.auth.Token
 import com.coupon.auth.command.AuthCommand
-import com.coupon.enums.AuthorityType
+import com.coupon.enums.auth.AuthorityType
 import com.coupon.support.tx.Tx
 import com.coupon.user.UserKeyGenerator
 import com.coupon.user.UserRepository

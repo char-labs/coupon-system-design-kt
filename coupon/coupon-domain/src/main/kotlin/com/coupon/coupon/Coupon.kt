@@ -1,7 +1,7 @@
 package com.coupon.coupon
 
-import com.coupon.enums.CouponStatus
-import com.coupon.enums.CouponType
+import com.coupon.enums.coupon.CouponStatus
+import com.coupon.enums.coupon.CouponType
 
 data class Coupon(
     val id: Long,

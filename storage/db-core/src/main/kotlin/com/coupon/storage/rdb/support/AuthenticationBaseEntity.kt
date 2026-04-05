@@ -1,6 +1,6 @@
 package com.coupon.storage.rdb.support
 
-import com.coupon.enums.AuthenticationEntityStatus
+import com.coupon.enums.auth.AuthenticationEntityStatus
 import jakarta.persistence.Column
 import jakarta.persistence.EntityListeners
 import jakarta.persistence.EnumType

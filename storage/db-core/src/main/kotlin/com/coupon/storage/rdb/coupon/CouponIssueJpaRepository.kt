@@ -1,6 +1,6 @@
 package com.coupon.storage.rdb.coupon
 
-import com.coupon.enums.CouponIssueStatus
+import com.coupon.enums.coupon.CouponIssueStatus
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.data.jpa.repository.JpaRepository

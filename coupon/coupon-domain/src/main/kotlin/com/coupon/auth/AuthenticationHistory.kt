@@ -1,6 +1,6 @@
 package com.coupon.auth
 
-import com.coupon.enums.TokenStatus
+import com.coupon.enums.auth.TokenStatus
 import java.time.LocalDateTime
 
 data class AuthenticationHistory(

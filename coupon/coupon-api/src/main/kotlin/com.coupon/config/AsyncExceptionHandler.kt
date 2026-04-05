@@ -1,6 +1,6 @@
 package com.coupon.config
 
-import com.coupon.enums.ErrorLevel
+import com.coupon.enums.error.ErrorLevel
 import com.coupon.error.ErrorException
 import com.coupon.support.logging.logger
 import org.springframework.aop.interceptor.AsyncUncaughtExceptionHandler

@@ -3,8 +3,8 @@ package com.coupon.storage.rdb.auth
 import com.coupon.auth.AuthenticationHistory
 import com.coupon.auth.AuthenticationHistoryRepository
 import com.coupon.auth.command.AuthenticationHistoryCommand
-import com.coupon.enums.AuthenticationEntityStatus
-import com.coupon.enums.ErrorType
+import com.coupon.enums.auth.AuthenticationEntityStatus
+import com.coupon.enums.error.ErrorType
 import com.coupon.error.ErrorException
 import org.springframework.stereotype.Repository
 import org.springframework.transaction.annotation.Transactional

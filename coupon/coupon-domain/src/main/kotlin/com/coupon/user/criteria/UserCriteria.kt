@@ -1,6 +1,6 @@
 package com.coupon.user.criteria
 
-import com.coupon.enums.AuthorityType
+import com.coupon.enums.auth.AuthorityType
 import com.coupon.user.command.UserCommand
 
 sealed class UserCriteria {

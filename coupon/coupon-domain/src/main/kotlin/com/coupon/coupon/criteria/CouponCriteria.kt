@@ -1,7 +1,7 @@
 package com.coupon.coupon.criteria
 
 import com.coupon.coupon.command.CouponCommand
-import com.coupon.enums.CouponType
+import com.coupon.enums.coupon.CouponType
 import java.time.LocalDateTime
 
 sealed class CouponCriteria {

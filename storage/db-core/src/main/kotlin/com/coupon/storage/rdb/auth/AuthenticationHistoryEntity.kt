@@ -3,8 +3,8 @@ package com.coupon.storage.rdb.auth
 import com.coupon.auth.AuthenticationHistory
 import com.coupon.auth.Token
 import com.coupon.auth.command.AuthenticationHistoryCommand
-import com.coupon.enums.AuthenticationEntityStatus
-import com.coupon.enums.TokenStatus
+import com.coupon.enums.auth.AuthenticationEntityStatus
+import com.coupon.enums.auth.TokenStatus
 import com.coupon.storage.rdb.support.AuthenticationBaseEntity
 import jakarta.persistence.Column
 import jakarta.persistence.Entity

@@ -1,6 +1,6 @@
 package com.coupon.auth
 
-import com.coupon.enums.AuthorityType
+import com.coupon.enums.auth.AuthorityType
 
 data class GrantedAuthority(
     val authorityType: AuthorityType,

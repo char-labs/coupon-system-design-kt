@@ -1,6 +1,6 @@
 package com.coupon.coupon
 
-import com.coupon.enums.CouponIssueStatus
+import com.coupon.enums.coupon.CouponIssueStatus
 import java.time.LocalDateTime
 
 data class CouponIssue(

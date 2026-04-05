@@ -1,5 +1,5 @@
 package com.coupon.storage.rdb.auth
-import com.coupon.enums.AuthenticationEntityStatus
+import com.coupon.enums.auth.AuthenticationEntityStatus
 import org.springframework.data.jpa.repository.JpaRepository
 
 interface AuthenticationHistoryJpaRepository : JpaRepository<AuthenticationHistoryEntity, Long> {

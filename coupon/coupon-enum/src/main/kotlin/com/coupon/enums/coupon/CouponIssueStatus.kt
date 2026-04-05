@@ -1,4 +1,4 @@
-package com.coupon.enums
+package com.coupon.enums.coupon
 
 enum class CouponIssueStatus(
     val description: String,

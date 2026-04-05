@@ -1,6 +1,6 @@
 package com.coupon.coupon.command
 
-import com.coupon.enums.CouponType
+import com.coupon.enums.coupon.CouponType
 import java.time.LocalDateTime
 
 sealed class CouponCommand {

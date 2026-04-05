@@ -10,8 +10,8 @@ import com.coupon.auth.Token
 import com.coupon.auth.TokenRepository
 import com.coupon.auth.command.AuthenticationHistoryCommand
 import com.coupon.auth.command.GenerateTokenCommand
-import com.coupon.enums.AuthorityType
-import com.coupon.enums.ErrorType
+import com.coupon.enums.auth.AuthorityType
+import com.coupon.enums.error.ErrorType
 import com.coupon.error.ErrorException
 import com.coupon.user.UserService
 import io.jsonwebtoken.Claims

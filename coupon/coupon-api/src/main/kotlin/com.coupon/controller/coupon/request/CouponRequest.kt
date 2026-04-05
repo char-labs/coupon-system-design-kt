@@ -1,7 +1,7 @@
 package com.coupon.controller.coupon.request
 
 import com.coupon.coupon.command.CouponCommand
-import com.coupon.enums.CouponType
+import com.coupon.enums.coupon.CouponType
 import io.swagger.v3.oas.annotations.media.Schema
 import java.time.LocalDateTime
 

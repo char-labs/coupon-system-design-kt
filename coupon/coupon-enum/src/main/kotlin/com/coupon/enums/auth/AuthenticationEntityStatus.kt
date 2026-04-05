@@ -1,4 +1,4 @@
-package com.coupon.enums
+package com.coupon.enums.auth
 
 enum class AuthenticationEntityStatus {
     ACTIVE,

@@ -1,6 +1,6 @@
 package com.coupon.redis.lock
 
-import com.coupon.enums.ErrorType
+import com.coupon.enums.error.ErrorType
 import com.coupon.error.ErrorException
 import com.coupon.support.lock.LockRepository
 import org.redisson.api.RedissonClient

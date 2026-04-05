@@ -3,8 +3,8 @@ package com.coupon.storage.rdb.coupon
 import com.coupon.coupon.CouponIssue
 import com.coupon.coupon.CouponIssueRepository
 import com.coupon.coupon.criteria.CouponIssueCriteria
-import com.coupon.enums.CouponIssueStatus
-import com.coupon.enums.ErrorType
+import com.coupon.enums.coupon.CouponIssueStatus
+import com.coupon.enums.error.ErrorType
 import com.coupon.error.ErrorException
 import com.coupon.storage.rdb.support.findByIdOrElseThrow
 import com.coupon.support.page.OffsetPageRequest

@@ -1,6 +1,6 @@
 package com.coupon.auth.command
 
-import com.coupon.enums.TokenStatus
+import com.coupon.enums.auth.TokenStatus
 
 sealed class AuthenticationHistoryCommand {
     data class Create(

@@ -1,4 +1,4 @@
-package com.coupon.enums
+package com.coupon.enums.common
 
 enum class ActiveStatus(
     val display: String,

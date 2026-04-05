@@ -3,7 +3,7 @@ package com.coupon.auth
 import com.coupon.auth.command.AuthCommand
 import com.coupon.auth.command.AuthenticationHistoryCommand
 import com.coupon.auth.command.GenerateTokenCommand
-import com.coupon.enums.TokenStatus
+import com.coupon.enums.auth.TokenStatus
 import org.springframework.stereotype.Service
 
 @Service

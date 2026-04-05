@@ -1,4 +1,4 @@
-package com.coupon.enums
+package com.coupon.enums.error
 
 enum class ErrorLevel {
     INFO,

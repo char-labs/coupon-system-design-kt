@@ -2,7 +2,7 @@ package com.coupon.coupon
 
 import com.coupon.coupon.command.CouponIssueCommand
 import com.coupon.coupon.criteria.CouponIssueCriteria
-import com.coupon.enums.ErrorType
+import com.coupon.enums.error.ErrorType
 import com.coupon.error.ErrorException
 import com.coupon.support.lock.Lock
 import com.coupon.support.page.OffsetPageRequest

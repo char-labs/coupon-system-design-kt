@@ -1,6 +1,6 @@
 package com.coupon.user
 
-import com.coupon.enums.AuthorityType
+import com.coupon.enums.auth.AuthorityType
 import java.time.LocalDateTime
 
 data class UserProfile(

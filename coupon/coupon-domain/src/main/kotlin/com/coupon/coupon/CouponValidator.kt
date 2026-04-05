@@ -1,7 +1,7 @@
 package com.coupon.coupon
 
-import com.coupon.enums.CouponStatus
-import com.coupon.enums.ErrorType
+import com.coupon.enums.coupon.CouponStatus
+import com.coupon.enums.error.ErrorType
 import com.coupon.error.ErrorException
 import org.springframework.stereotype.Component
 import java.time.LocalDateTime

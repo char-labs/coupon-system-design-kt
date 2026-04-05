@@ -2,7 +2,7 @@ package com.coupon.config
 
 import com.coupon.common.ApiResponse
 import com.coupon.common.ErrorResponse
-import com.coupon.enums.ErrorType
+import com.coupon.enums.error.ErrorType
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
 import org.springframework.http.HttpStatus

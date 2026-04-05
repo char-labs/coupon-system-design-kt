@@ -1,7 +1,7 @@
 package com.coupon.support.page
 
-import com.coupon.enums.Sort
-import com.coupon.enums.SortType
+import com.coupon.enums.page.Sort
+import com.coupon.enums.page.SortType
 
 data class OffsetLimit(
     val offset: Long,

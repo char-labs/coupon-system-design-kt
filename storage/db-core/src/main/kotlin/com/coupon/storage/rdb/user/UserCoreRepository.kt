@@ -1,6 +1,6 @@
 package com.coupon.storage.rdb.user
 
-import com.coupon.enums.ErrorType
+import com.coupon.enums.error.ErrorType
 import com.coupon.error.ErrorException
 import com.coupon.storage.rdb.support.findByIdOrElseThrow
 import com.coupon.support.page.OffsetPageRequest

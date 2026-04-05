@@ -2,7 +2,7 @@ package com.coupon.controller.advice
 
 import com.coupon.common.ApiResponse
 import com.coupon.common.ErrorResponse
-import com.coupon.enums.ErrorType
+import com.coupon.enums.error.ErrorType
 import com.coupon.error.ErrorException
 import com.coupon.support.logging.logger
 import jakarta.validation.ConstraintViolationException
