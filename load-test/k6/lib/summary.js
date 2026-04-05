@@ -13,6 +13,28 @@ function metricValue(data, key, nestedKey) {
   return metric.values?.value ?? 'n/a';
 }
 
+function buildExtraLines(name, data) {
+  if (name !== 'issue-burst') {
+    return [];
+  }
+
+  const metricOrZero = (key, nestedKey) => {
+    const value = metricValue(data, key, nestedKey);
+    return value === 'n/a' ? 0 : value;
+  };
+
+  return [
+    `issue_burst success count: ${metricOrZero('issue_burst_success_count', 'count')}`,
+    `issue_burst out_of_stock count: ${metricOrZero('issue_burst_out_of_stock_count', 'count')}`,
+    `issue_burst unexpected client error count: ${metricOrZero('issue_burst_unexpected_client_error_count', 'count')}`,
+    `issue_burst server error count: ${metricOrZero('issue_burst_server_error_count', 'count')}`,
+    `issue_burst final issued count: ${metricValue(data, 'issue_burst_final_issued_count')}`,
+    `issue_burst final remaining quantity: ${metricValue(data, 'issue_burst_final_remaining_quantity')}`,
+    `issue_burst integrity ok rate: ${metricValue(data, 'issue_burst_integrity_ok', 'rate')}`,
+    `issue_burst expected result ok rate: ${metricValue(data, 'issue_burst_expected_result_ok', 'rate')}`,
+  ];
+}
+
 export function buildSummary(name, data) {
   const generatedAt = new Date().toISOString();
   const timestamp = generatedAt.replace(/[:.]/g, '-');
@@ -30,6 +52,7 @@ export function buildSummary(name, data) {
     `http_req_duration p99: ${metricValue(data, 'http_req_duration', 'p(99)')}`,
     `http_req_failed rate: ${metricValue(data, 'http_req_failed', 'rate')}`,
     `checks rate: ${metricValue(data, 'checks', 'rate')}`,
+    ...buildExtraLines(name, data),
   ].join('\n');
 
   return {

@@ -12,6 +12,10 @@ Slack 실패 알림을 같이 쓰는 표준 실행 경로는 [run-with-slack.mjs
   - 관리자 로그인, 쿠폰 생성, 사용자 회원가입/로그인, 쿠폰 발급, 쿠폰 사용까지 한 번에 검증합니다.
 - `baseline.js`
   - VU별 사용자 세션을 재사용하면서 `issue/use`, `issue/cancel`, `my-coupons`를 혼합 호출합니다.
+- `issue-burst.js`
+  - 같은 쿠폰에 대해 많은 사용자가 정확히 한 번씩 동시에 발급을 요청하는 대량 동시성 검증 시나리오입니다.
+  - 기본값은 `1000명 동시 발급`이며, 실행 뒤 최종 발급 건수와 잔여 재고를 다시 조회해서 재고 정합성까지 같이 확인합니다.
+  - `ISSUE_BURST_STOCK=1000`이면 “1000명 모두 성공하는지”, `ISSUE_BURST_STOCK=900`이면 “900건만 성공하고 100건은 재고 부족으로 제어되는지”를 볼 수 있습니다.
 - `contention.js`
   - 동일 쿠폰에 동시에 발급 요청을 몰아 정합성과 병목을 확인합니다.
   - 인증 경합이 결과를 왜곡하지 않도록, 사용자와 토큰은 `setup()`에서 먼저 준비하고 본 실행에서는 발급 호출만 동시에 보냅니다.
@@ -101,7 +105,7 @@ Slack 메세지 템플릿은 아래 형식으로 보냅니다.
 
 ```text
 [local 환경 부하 테스트 내용]
-## 부하테스트 내용 보고
+[부하테스트 내용 보고]
 - 테스트 종류: 쿠폰 발급 API 과부하
 - 결과: 실패
 - 한 줄 요약: 테스트에 쓸 사용자 또는 쿠폰 수가 부족해서 중간에 멈췄습니다.
@@ -123,7 +127,7 @@ Slack 메세지 템플릿은 아래 형식으로 보냅니다.
 
 ```text
 [local 환경 부하 테스트 내용]
-## 부하테스트 내용 보고
+[부하테스트 내용 보고]
 - 테스트 종류: 기본 기능 확인
 - 결과: 성공
 - 한 줄 요약: 기본 기능 흐름을 오류 없이 끝까지 확인했습니다.
@@ -214,6 +218,64 @@ k6 run \
   -e BASELINE_VUS=20 \
   -e BASELINE_DURATION=10m \
   load-test/k6/baseline.js
+```
+
+```bash
+k6 run \
+  -e BASE_URL=http://127.0.0.1:18080 \
+  -e ISSUE_BURST_VUS=1000 \
+  -e ISSUE_BURST_STOCK=1000 \
+  load-test/k6/issue-burst.js
+```
+
+정확히 1000명 동시 발급과 재고 정합성을 같이 보고 싶으면 위 시나리오를 먼저 사용합니다.
+
+- 기대 결과
+  - 성공 발급 건수: `1000`
+  - 최종 잔여 재고: `0`
+  - 재고 정합성 검증: `100%`
+  - 서버 오류 건수: `0`
+
+재고보다 더 많은 요청이 들어와도 서버가 터지지 않고 비즈니스 에러로 제어되는지 보려면 재고를 낮춥니다.
+
+```bash
+k6 run \
+  -e BASE_URL=http://127.0.0.1:18080 \
+  -e ISSUE_BURST_VUS=1000 \
+  -e ISSUE_BURST_STOCK=900 \
+  load-test/k6/issue-burst.js
+```
+
+- 기대 결과
+  - 성공 발급 건수: `900`
+  - 재고 부족 건수: `100`
+  - 최종 잔여 재고: `0`
+  - 재고 정합성 검증: `100%`
+  - 서버 오류 건수: `0`
+
+```bash
+k6 run \
+  --out influxdb=http://localhost:8086/myk6db \
+  -e BASE_URL=http://127.0.0.1:18080 \
+  -e ISSUE_BURST_VUS=1000 \
+  -e ISSUE_BURST_STOCK=1000 \
+  load-test/k6/issue-burst.js
+```
+
+```bash
+node load-test/k6/run-with-slack.mjs issue-burst --profile local -- \
+  --out influxdb=http://localhost:8086/myk6db \
+  -e BASE_URL=http://127.0.0.1:18080 \
+  -e ISSUE_BURST_VUS=1000 \
+  -e ISSUE_BURST_STOCK=1000
+```
+
+```bash
+node load-test/k6/run-with-slack.mjs issue-burst --profile local -- \
+  --out influxdb=http://localhost:8086/myk6db \
+  -e BASE_URL=http://127.0.0.1:18080 \
+  -e ISSUE_BURST_VUS=1000 \
+  -e ISSUE_BURST_STOCK=900
 ```
 
 ```bash

@@ -89,6 +89,38 @@ node load-test/k6/run-with-slack.mjs baseline --profile local -- \
   -e BASELINE_DURATION=10m
 ```
 
+### Issue Burst
+
+정확히 `1000명 동시 발급`과 재고 정합성을 같이 확인하는 전용 시나리오입니다.
+
+모든 사용자가 성공해야 하는 기본 케이스:
+
+```bash
+node load-test/k6/run-with-slack.mjs issue-burst --profile local -- \
+  --out influxdb=http://localhost:8086/myk6db \
+  -e BASE_URL=http://127.0.0.1:18080 \
+  -e ISSUE_BURST_VUS=1000 \
+  -e ISSUE_BURST_STOCK=1000
+```
+
+재고보다 요청이 많을 때도 서버가 터지지 않고 제어되는지 보는 케이스:
+
+```bash
+node load-test/k6/run-with-slack.mjs issue-burst --profile local -- \
+  --out influxdb=http://localhost:8086/myk6db \
+  -e BASE_URL=http://127.0.0.1:18080 \
+  -e ISSUE_BURST_VUS=1000 \
+  -e ISSUE_BURST_STOCK=900
+```
+
+이 시나리오는 실행 뒤 아래를 자동으로 다시 확인합니다.
+
+- 최종 발급 건수
+- 최종 잔여 재고
+- `발급 건수 + 잔여 재고 == 초기 재고` 정합성
+- `min(VU, 재고)`와 실제 결과가 일치하는지
+- 서버 오류가 없었는지
+
 ### Contention
 
 ```bash
@@ -99,6 +131,8 @@ node load-test/k6/run-with-slack.mjs contention --profile local -- \
 ```
 
 `contention`은 발급 락 경합을 보기 위한 시나리오라서, 사용자 회원가입과 로그인은 `setup()`에서 먼저 처리하고 실제 VU 실행 단계에서는 `issueCoupon`만 동시에 호출합니다.
+`issue-burst`는 VU 수만큼 테스트 사용자를 `setup()`에서 먼저 준비하고, 본 실행에서는 각 사용자가 정확히 1회씩 동시에 발급 요청합니다.
+`issue-burst`는 `1000명` 기준으로 setup 시간이 수십 초에서 수 분 걸릴 수 있습니다. 이 시간은 데이터 준비 시간입니다.
 
 ### Issue Overload
 
@@ -136,7 +170,7 @@ node load-test/k6/run-with-slack.mjs issue-overload --profile local -- \
 
 ```text
 [local 환경 부하 테스트 내용]
-## 부하테스트 내용 보고
+[부하테스트 내용 보고]
 - 테스트 종류: 쿠폰 발급 API 과부하
 - 결과: 실패
 - 한 줄 요약: 테스트에 쓸 사용자 또는 쿠폰 수가 부족해서 중간에 멈췄습니다.
@@ -158,7 +192,7 @@ node load-test/k6/run-with-slack.mjs issue-overload --profile local -- \
 
 ```text
 [local 환경 부하 테스트 내용]
-## 부하테스트 내용 보고
+[부하테스트 내용 보고]
 - 테스트 종류: 일반 사용량 기준 부하
 - 결과: 성공
 - 한 줄 요약: 일반 사용량 기준 부하를 안정적으로 처리했습니다.
@@ -264,6 +298,52 @@ Webhook이 비어 있거나 Slack 전송을 끄고 싶으면:
 - `/actuator/prometheus`
 - 애플리케이션 로그
 - MySQL/Redis 컨테이너 상태
+
+### Issue Burst
+
+목표:
+
+- `1000명` 같은 대규모 사용자가 같은 쿠폰을 동시에 발급해도 재고 정합성이 깨지지 않는지 확인
+- 서버가 5xx로 터지지 않고 비즈니스 오류로만 제어되는지 확인
+
+정상 신호:
+
+- `issue_burst_server_error_count = 0`
+- `issue_burst_unexpected_client_error_count = 0`
+- `issue_burst_integrity_ok = 100%`
+- `issue_burst_expected_result_ok = 100%`
+- `ISSUE_BURST_STOCK=1000`, `ISSUE_BURST_VUS=1000`이면:
+  - 성공 발급 건수 `1000`
+  - 최종 잔여 재고 `0`
+- `ISSUE_BURST_STOCK=900`, `ISSUE_BURST_VUS=1000`이면:
+  - 성공 발급 건수 `900`
+  - 재고 부족 건수 `100`
+  - 최종 잔여 재고 `0`
+
+이상 신호:
+
+- `issue_burst_integrity_ok`가 100%가 아님
+- `issue_burst_expected_result_ok`가 100%가 아님
+- `issue_burst_server_error_count`가 1 이상
+- `http_req_failed`가 급격히 올라가고, 같은 시간대에 앱 로그에 DB/락/커넥션 풀 오류가 보임
+
+원인 보는 순서:
+
+1. Slack 또는 결과 JSON에서 `issue_burst_server_error_count`, `issue_burst_unexpected_client_error_count`를 먼저 확인
+2. `issue_burst_final_issued_count`, `issue_burst_final_remaining_quantity`를 보고 재고 합계가 맞는지 확인
+3. Grafana에서 같은 시간대 `p95`, `p99`, `HTTP Request Failed Rate`를 확인
+4. 동시에 앱 로그와 `/actuator/prometheus`에서 DB 커넥션 풀, 스레드, 에러 수치를 확인
+
+빠른 판정:
+
+- `정합성 통과 + 서버 오류 0`
+  - 재고 동시성 제어는 정상으로 판단 가능
+- `정합성 통과 + p95/p99만 상승`
+  - 락 경합은 있지만 데이터는 안전
+- `정합성 실패`
+  - 재고 차감 또는 상태 전이 설계에 문제 가능성
+- `서버 오류 발생`
+  - DB 풀, 락 대기, 앱 리소스 포화 가능성 우선 점검
 
 ### Contention
 
@@ -433,4 +513,3 @@ docker compose \
   - 중복 발급, 비활성/만료 쿠폰 같은 비즈니스 조건 문제
 - 5xx 증가 + p95/p99 상승
   - DB, 락, 스레드, 연결 풀 등 실제 서버 병목 가능성
-

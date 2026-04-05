@@ -21,6 +21,11 @@ const scenarioDefaults = {
     BASELINE_VUS: '20',
     BASELINE_DURATION: '10m',
   },
+  'issue-burst': {
+    ISSUE_BURST_VUS: '1000',
+    ISSUE_BURST_STOCK: '1000',
+    ISSUE_BURST_MAX_DURATION: '5m',
+  },
   contention: {
     CONTENTION_VUS: '100',
     CONTENTION_MAX_DURATION: '2m',
@@ -36,6 +41,7 @@ const scenarioDefaults = {
 const scenarioLabels = {
   smoke: '기본 기능 확인',
   baseline: '일반 사용량 기준 부하',
+  'issue-burst': '대량 동시 발급 정합성 확인',
   contention: '동시 발급 경합 확인',
   'issue-overload': '쿠폰 발급 API 과부하',
 };
@@ -46,13 +52,11 @@ function usage() {
     '  node load-test/k6/run-with-slack.mjs <scenario> [--profile <name>] [--notify-on <failure|always|never>] [--webhook-url <url>] [--] [k6 run args...]',
     '',
     'Example:',
-    '  node load-test/k6/run-with-slack.mjs issue-overload --profile local -- \\',
+    '  node load-test/k6/run-with-slack.mjs issue-burst --profile local -- \\',
     '    --out influxdb=http://localhost:8086/myk6db \\',
     '    -e BASE_URL=http://127.0.0.1:18080 \\',
-    '    -e ISSUE_OVERLOAD_VUS=100 \\',
-    '    -e ISSUE_OVERLOAD_DURATION=10m \\',
-    '    -e ISSUE_OVERLOAD_USER_POOL_SIZE=200 \\',
-    '    -e ISSUE_OVERLOAD_COUPON_POOL_SIZE=500',
+    '    -e ISSUE_BURST_VUS=1000 \\',
+    '    -e ISSUE_BURST_STOCK=1000',
   ].join('\n');
 }
 
@@ -308,6 +312,12 @@ function buildLoadDescription(scenario, parsedEnv, envSource) {
       return `SMOKE_VUS=${resolveValue('SMOKE_VUS')}`;
     case 'baseline':
       return `BASELINE_VUS=${resolveValue('BASELINE_VUS')}, BASELINE_DURATION=${resolveValue('BASELINE_DURATION')}`;
+    case 'issue-burst':
+      return [
+        `ISSUE_BURST_VUS=${resolveValue('ISSUE_BURST_VUS')}`,
+        `ISSUE_BURST_STOCK=${resolveValue('ISSUE_BURST_STOCK')}`,
+        `ISSUE_BURST_MAX_DURATION=${resolveValue('ISSUE_BURST_MAX_DURATION')}`,
+      ].join(', ');
     case 'contention':
       return `CONTENTION_VUS=${resolveValue('CONTENTION_VUS')}, CONTENTION_MAX_DURATION=${resolveValue('CONTENTION_MAX_DURATION')}`;
     case 'issue-overload':
@@ -331,6 +341,8 @@ function buildLoadSummary(scenario, parsedEnv, envSource) {
       return `${resolveValue('SMOKE_VUS')}명이 기본 기능 흐름을 1회 실행`;
     case 'baseline':
       return `${resolveValue('BASELINE_VUS')}명이 ${resolveValue('BASELINE_DURATION')} 동안 일반 사용 패턴으로 실행`;
+    case 'issue-burst':
+      return `${resolveValue('ISSUE_BURST_VUS')}명이 같은 쿠폰에 동시에 1회 발급 요청`;
     case 'contention':
       return `${resolveValue('CONTENTION_VUS')}명이 같은 쿠폰에 동시에 발급 요청`;
     case 'issue-overload':
@@ -347,6 +359,22 @@ function formatThresholdFailure(threshold) {
 
   if (threshold.startsWith('checks')) {
     return '정상 응답 확인율 기준 미달';
+  }
+
+  if (threshold.startsWith('issue_burst_integrity_ok')) {
+    return '재고 정합성 검증 실패';
+  }
+
+  if (threshold.startsWith('issue_burst_expected_result_ok')) {
+    return '예상 발급 수량 검증 실패';
+  }
+
+  if (threshold.startsWith('issue_burst_server_error_count')) {
+    return '서버 오류 발생';
+  }
+
+  if (threshold.startsWith('issue_burst_unexpected_client_error_count')) {
+    return '예상하지 못한 클라이언트 오류 발생';
   }
 
   return threshold;
@@ -393,6 +421,22 @@ function explainFailure({ failureReason, scenario, parsedEnv, envSource, thresho
     };
   }
 
+  if (thresholdFailures.includes('issue_burst_integrity_ok rate==1')) {
+    return {
+      summary: '부하 테스트 후 재고 정합성 검증이 맞지 않았습니다.',
+      cause: '최종 발급 건수와 남은 재고 합계가 초기 재고와 일치하지 않았습니다.',
+      action: '쿠폰 상세와 쿠폰별 발급 목록 totalCount를 다시 확인하고, 서버 로그와 DB 상태를 함께 점검해 주세요.',
+    };
+  }
+
+  if (thresholdFailures.includes('issue_burst_expected_result_ok rate==1')) {
+    return {
+      summary: '예상한 발급 결과 수량과 실제 최종 상태가 다르게 나왔습니다.',
+      cause: '성공 발급 건수 또는 잔여 수량이 설정한 재고 기준과 맞지 않았습니다.',
+      action: 'ISSUE_BURST_STOCK, 성공 발급 건수, 남은 재고 수치를 같이 비교해 주세요.',
+    };
+  }
+
   if (thresholdFailures.length > 0) {
     return {
       summary: '테스트는 실행됐지만, 미리 정한 성능 기준을 만족하지 못했습니다.',
@@ -421,6 +465,12 @@ function explainSuccess({ scenario }) {
         summary: '일반 사용량 기준 부하를 안정적으로 처리했습니다.',
         detail: '테스트 중 오류율과 정상 응답 확인율이 기준 안에 들었고, 시나리오를 끝까지 수행했습니다.',
         action: '이번 결과를 기준선으로 기록하고, 이전 실행 대비 p95/p99 변화가 없는지 비교해 주세요.',
+      };
+    case 'issue-burst':
+      return {
+        summary: '대량 동시 발급 요청을 끝까지 처리했고 재고 정합성 검증도 통과했습니다.',
+        detail: '동시 발급 후 최종 발급 건수와 잔여 재고가 초기 재고 수량과 일치했고, 서버 오류 없이 시나리오를 마쳤습니다.',
+        action: '다음에는 ISSUE_BURST_STOCK 을 낮춰 oversubscription 상황에서도 같은 정합성이 유지되는지 확인해 보세요.',
       };
     case 'contention':
       return {
@@ -457,6 +507,67 @@ async function readSummary(summaryPath, startedAtMs) {
   }
 }
 
+function buildScenarioExtraMetrics(scenario, summary) {
+  if (scenario !== 'issue-burst') {
+    return {
+      textLines: [],
+      blockFields: [],
+    };
+  }
+
+  const metricOrZero = (key, nestedKey) => {
+    const value = metricValue(summary, key, nestedKey);
+    return value === 'n/a' ? 0 : value;
+  };
+
+  return {
+    textLines: [
+      `• *성공 발급 건수:* ${metricOrZero('issue_burst_success_count', 'count')}`,
+      `• *재고 부족 건수:* ${metricOrZero('issue_burst_out_of_stock_count', 'count')}`,
+      `• *예상 밖 클라이언트 오류 건수:* ${metricOrZero('issue_burst_unexpected_client_error_count', 'count')}`,
+      `• *서버 오류 건수:* ${metricOrZero('issue_burst_server_error_count', 'count')}`,
+      `• *최종 발급 건수:* ${metricValue(summary, 'issue_burst_final_issued_count')}`,
+      `• *최종 잔여 재고:* ${metricValue(summary, 'issue_burst_final_remaining_quantity')}`,
+      `• *재고 정합성 검증:* ${formatRate(metricValue(summary, 'issue_burst_integrity_ok', 'rate'))}`,
+      `• *예상 결과 검증:* ${formatRate(metricValue(summary, 'issue_burst_expected_result_ok', 'rate'))}`,
+    ],
+    blockFields: [
+      {
+        type: 'mrkdwn',
+        text: `*성공 발급 건수*\n${metricOrZero('issue_burst_success_count', 'count')}`,
+      },
+      {
+        type: 'mrkdwn',
+        text: `*재고 부족 건수*\n${metricOrZero('issue_burst_out_of_stock_count', 'count')}`,
+      },
+      {
+        type: 'mrkdwn',
+        text: `*예상 밖 클라이언트 오류 건수*\n${metricOrZero('issue_burst_unexpected_client_error_count', 'count')}`,
+      },
+      {
+        type: 'mrkdwn',
+        text: `*서버 오류 건수*\n${metricOrZero('issue_burst_server_error_count', 'count')}`,
+      },
+      {
+        type: 'mrkdwn',
+        text: `*최종 발급 건수*\n${metricValue(summary, 'issue_burst_final_issued_count')}`,
+      },
+      {
+        type: 'mrkdwn',
+        text: `*최종 잔여 재고*\n${metricValue(summary, 'issue_burst_final_remaining_quantity')}`,
+      },
+      {
+        type: 'mrkdwn',
+        text: `*재고 정합성 검증*\n${formatRate(metricValue(summary, 'issue_burst_integrity_ok', 'rate'))}`,
+      },
+      {
+        type: 'mrkdwn',
+        text: `*예상 결과 검증*\n${formatRate(metricValue(summary, 'issue_burst_expected_result_ok', 'rate'))}`,
+      },
+    ],
+  };
+}
+
 function buildSlackMessage({
   profile,
   scenario,
@@ -470,6 +581,7 @@ function buildSlackMessage({
   parsedEnv,
   envSource,
 }) {
+  const reportHeadline = '[부하테스트 내용 보고]';
   const status = exitCode === 0 && thresholdFailures.length === 0 ? '성공' : '실패';
   const scenarioLabel = scenarioLabels[scenario] || scenario;
   const loadSummary = buildLoadSummary(scenario, parsedEnv, envSource);
@@ -502,6 +614,7 @@ function buildSlackMessage({
   const p99 = formatDuration(metricValue(summary, 'http_req_duration', 'p(99)'));
   const errorRate = formatRate(metricValue(summary, 'http_req_failed', 'rate'));
   const checksRate = formatRate(metricValue(summary, 'checks', 'rate'));
+  const scenarioExtraMetrics = buildScenarioExtraMetrics(scenario, summary);
   const thresholdText =
     thresholdSummary.length > 0
       ? `\n• *기준 미달 항목:* ${thresholdSummary.join(', ')}`
@@ -509,7 +622,7 @@ function buildSlackMessage({
 
   const text = [
     `[${profile} 환경 부하 테스트 내용]`,
-    '*## 부하테스트 내용 보고*',
+    reportHeadline,
     `• *테스트 종류:* ${scenarioLabel}`,
     `• *결과:* ${status}`,
     `• *한 줄 요약:* ${oneLineSummary}`,
@@ -524,6 +637,7 @@ function buildSlackMessage({
     `• *매우 느린 요청 기준(p99):* ${p99}`,
     `• *오류율:* ${errorRate}`,
     `• *정상 응답 확인율:* ${checksRate}`,
+    ...scenarioExtraMetrics.textLines,
     `• *결과 파일:* ${summaryPath}`,
   ].join('\n');
 
@@ -532,8 +646,18 @@ function buildSlackMessage({
       type: 'section',
       text: {
         type: 'mrkdwn',
-        text: `*[${profile} 환경 부하 테스트 내용]*\n*## 부하테스트 내용 보고*`,
+        text: `*[${profile} 환경 부하 테스트 내용]*`,
       },
+    },
+    {
+      type: 'section',
+      text: {
+        type: 'mrkdwn',
+        text: `*${reportHeadline}*`,
+      },
+    },
+    {
+      type: 'divider',
     },
     {
       type: 'section',
@@ -598,6 +722,14 @@ function buildSlackMessage({
         },
       ],
     },
+    ...(scenarioExtraMetrics.blockFields.length > 0
+      ? [
+          {
+            type: 'section',
+            fields: scenarioExtraMetrics.blockFields,
+          },
+        ]
+      : []),
     {
       type: 'context',
       elements: [

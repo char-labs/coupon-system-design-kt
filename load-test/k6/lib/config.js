@@ -11,6 +11,12 @@ export const config = {
   baselineDuration: __ENV.BASELINE_DURATION || '10m',
   baselineSessionPoolSize: Number(__ENV.BASELINE_SESSION_POOL_SIZE || 100),
   baselineCouponPoolSize: Number(__ENV.BASELINE_COUPON_POOL_SIZE || 10),
+  issueBurstVus: Number(__ENV.ISSUE_BURST_VUS || 1000),
+  issueBurstStock: Number(
+    __ENV.ISSUE_BURST_STOCK || __ENV.ISSUE_BURST_VUS || 1000,
+  ),
+  issueBurstMaxDuration: __ENV.ISSUE_BURST_MAX_DURATION || '5m',
+  issueBurstSetupTimeout: __ENV.ISSUE_BURST_SETUP_TIMEOUT || '20m',
   issueOverloadVus: Number(__ENV.ISSUE_OVERLOAD_VUS || 100),
   issueOverloadDuration: __ENV.ISSUE_OVERLOAD_DURATION || '10m',
   issueOverloadUserPoolSize: Number(
