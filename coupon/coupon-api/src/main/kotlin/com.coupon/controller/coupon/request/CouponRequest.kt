@@ -1,6 +1,7 @@
 package com.coupon.controller.coupon.request
 
 import com.coupon.coupon.command.CouponCommand
+import com.coupon.coupon.command.CouponPreviewCommand
 import com.coupon.enums.coupon.CouponType
 import io.swagger.v3.oas.annotations.media.Schema
 import java.time.LocalDateTime
@@ -63,5 +64,20 @@ sealed class CouponRequest {
                 availableAt = availableAt,
                 endAt = endAt,
             )
+    }
+
+    @Schema(description = "쿠폰 미리보기 요청")
+    data class Preview(
+        @param:Schema(description = "주문 금액", example = "42000")
+        val orderAmount: Long,
+    ) {
+        fun toCommand(
+            couponId: Long,
+            userId: Long,
+        ) = CouponPreviewCommand(
+            couponId = couponId,
+            userId = userId,
+            orderAmount = orderAmount,
+        )
     }
 }
