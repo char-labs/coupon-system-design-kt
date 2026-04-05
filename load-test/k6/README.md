@@ -4,7 +4,7 @@
 
 대시보드 오픈부터 실행, 확인, 해석까지 한 번에 따라가려면 [RUNBOOK.md](/Users/yunbeom/ybcha/coupon-system-design-kt/load-test/k6/RUNBOOK.md)를 같이 봅니다.
 
-Slack 실패 알림을 같이 쓰는 표준 실행 경로는 [run-with-slack.mjs](/Users/yunbeom/ybcha/coupon-system-design-kt/load-test/k6/run-with-slack.mjs)입니다. 이 runner는 [load-test/k6/.env](/Users/yunbeom/ybcha/coupon-system-design-kt/load-test/k6/.env)를 자동으로 읽고, 실패 시 Slack 메세지 템플릿을 webhook으로 보냅니다.
+Slack 보고를 같이 쓰는 표준 실행 경로는 [run-with-slack.mjs](/Users/yunbeom/ybcha/coupon-system-design-kt/load-test/k6/run-with-slack.mjs)입니다. 이 runner는 [load-test/k6/.env](/Users/yunbeom/ybcha/coupon-system-design-kt/load-test/k6/.env)를 자동으로 읽고, 설정에 따라 성공과 실패 결과를 Slack 메세지 템플릿으로 webhook에 보냅니다.
 
 ## 시나리오
 
@@ -71,7 +71,7 @@ docker compose -f docker/docker-compose.yml down -v
 docker compose -f docker/docker-compose.yml up --build
 ```
 
-## .env 와 Slack 실패 알림
+## .env 와 Slack 보고
 
 Slack 실패 알림은 아래 파일을 기준으로 설정합니다.
 
@@ -171,7 +171,9 @@ Grafana는 repo-local provisioning을 통해 아래를 자동 등록합니다.
 
 - datasource: `k6-influxdb`
 - dashboard folder: `k6`
-- dashboard: `k6 Overview`
+- dashboards:
+  - `k6 Overview`
+  - `Request Breakdown`
 
 왜 `InfluxDB`를 같이 쓰는지:
 
@@ -181,6 +183,39 @@ Grafana는 repo-local provisioning을 통해 아래를 자동 등록합니다.
 - 앱 메트릭은 기존 `/actuator/prometheus`가 담당하고, 부하 테스트 메트릭은 `InfluxDB`가 담당하게 나누면 역할이 명확해집니다.
 
 현재 범위에서 Grafana는 `k6` 시계열만 시각화합니다. 애플리케이션 메트릭은 기존 `/actuator/prometheus` 경로를 별도로 확인합니다.
+
+`Request Breakdown` 대시보드는 `request_group=business` 태그가 붙은 요청만 집계합니다.
+
+- 포함:
+  - `issue_coupon`
+  - `use_coupon`
+  - `cancel_coupon`
+  - `get_coupon`
+  - `get_coupon_issue_page`
+  - `get_my_coupons`
+- 제외:
+  - `signup`
+  - `signin`
+  - `admin bootstrap`
+  - `health`
+  - `create_coupon`
+  - `activate_coupon`
+
+가장 느린 단일 요청의 raw preview는 Grafana가 아니라 결과 JSON artifact로 확인합니다.
+
+- `load-test/k6/results/<scenario>-slow-requests-latest.json`
+- `load-test/k6/results/<scenario>-slow-requests-<timestamp>.json`
+
+포함 필드:
+
+- `requestName`
+- `scenario`
+- `status`
+- `durationMs`
+- `timestamp`
+- `responsePreview`
+
+이 artifact는 plain `k6 run`이 아니라 표준 runner인 `node load-test/k6/run-with-slack.mjs ...` 실행 시 생성됩니다.
 
 ## 실행 예시
 
@@ -225,6 +260,8 @@ k6 run \
   -e BASE_URL=http://127.0.0.1:18080 \
   -e ISSUE_BURST_VUS=1000 \
   -e ISSUE_BURST_STOCK=1000 \
+  -e ISSUE_BURST_LOCK_RETRY_COUNT=3 \
+  -e ISSUE_BURST_LOCK_RETRY_DELAY_MS=250 \
   load-test/k6/issue-burst.js
 ```
 
@@ -235,6 +272,7 @@ k6 run \
   - 최종 잔여 재고: `0`
   - 재고 정합성 검증: `100%`
   - 서버 오류 건수: `0`
+  - 재시도 시도 횟수는 있을 수 있지만, 최종 결과는 모두 성공으로 수렴
 
 재고보다 더 많은 요청이 들어와도 서버가 터지지 않고 비즈니스 에러로 제어되는지 보려면 재고를 낮춥니다.
 
@@ -243,6 +281,8 @@ k6 run \
   -e BASE_URL=http://127.0.0.1:18080 \
   -e ISSUE_BURST_VUS=1000 \
   -e ISSUE_BURST_STOCK=900 \
+  -e ISSUE_BURST_LOCK_RETRY_COUNT=3 \
+  -e ISSUE_BURST_LOCK_RETRY_DELAY_MS=250 \
   load-test/k6/issue-burst.js
 ```
 
@@ -252,6 +292,16 @@ k6 run \
   - 최종 잔여 재고: `0`
   - 재고 정합성 검증: `100%`
   - 서버 오류 건수: `0`
+  - 재시도 시도 횟수는 있을 수 있지만, 최종 결과는 성공 또는 재고 부족으로만 수렴
+
+`issue-burst`는 `429 LOCK_ACQUISITION_FAILED`를 서버 장애로 보지 않고, 짧게 재시도해서 최종 결과를 `성공` 또는 `재고 부족`으로 수렴시키도록 설계했습니다. 관련 env는 아래와 같습니다.
+
+- `ISSUE_BURST_LOCK_RETRY_COUNT`
+  - 동일 사용자가 락 경합 응답을 받았을 때 추가로 재시도할 횟수입니다.
+- `ISSUE_BURST_LOCK_RETRY_DELAY_MS`
+  - 재시도 사이의 기본 대기 시간입니다. 재시도 횟수가 늘수록 이 값을 배수로 사용합니다.
+
+Slack 보고와 summary의 `재시도 시도 횟수`는 실제로 `429 LOCK_ACQUISITION_FAILED`를 받아서 재시도를 시작한 횟수입니다.
 
 ```bash
 k6 run \
@@ -267,7 +317,9 @@ node load-test/k6/run-with-slack.mjs issue-burst --profile local -- \
   --out influxdb=http://localhost:8086/myk6db \
   -e BASE_URL=http://127.0.0.1:18080 \
   -e ISSUE_BURST_VUS=1000 \
-  -e ISSUE_BURST_STOCK=1000
+  -e ISSUE_BURST_STOCK=1000 \
+  -e ISSUE_BURST_LOCK_RETRY_COUNT=3 \
+  -e ISSUE_BURST_LOCK_RETRY_DELAY_MS=250
 ```
 
 ```bash
@@ -275,7 +327,9 @@ node load-test/k6/run-with-slack.mjs issue-burst --profile local -- \
   --out influxdb=http://localhost:8086/myk6db \
   -e BASE_URL=http://127.0.0.1:18080 \
   -e ISSUE_BURST_VUS=1000 \
-  -e ISSUE_BURST_STOCK=900
+  -e ISSUE_BURST_STOCK=900 \
+  -e ISSUE_BURST_LOCK_RETRY_COUNT=3 \
+  -e ISSUE_BURST_LOCK_RETRY_DELAY_MS=250
 ```
 
 ```bash
@@ -383,6 +437,8 @@ node load-test/k6/run-with-slack.mjs issue-overload --profile local -- \
 - `ISSUE_OVERLOAD_USER_POOL_SIZE`
 - `ISSUE_OVERLOAD_COUPON_POOL_SIZE`
 - `ISSUE_OVERLOAD_SETUP_TIMEOUT`
+- `SLOW_REQUEST_SAMPLE_LIMIT`
+- `SLOW_REQUEST_PREVIEW_MAX_LENGTH`
 - `LOAD_TEST_SLACK_WEBHOOK`
 - `LOAD_TEST_PROFILE`
 - `LOAD_TEST_SLACK_NOTIFY_ON`
@@ -392,7 +448,10 @@ node load-test/k6/run-with-slack.mjs issue-overload --profile local -- \
 
 - `load-test/k6/results/*-latest.json`
 - `load-test/k6/results/*-<timestamp>.json`
+- `load-test/k6/results/*-slow-requests-latest.json`
+- `load-test/k6/results/*-slow-requests-<timestamp>.json`
 - Grafana `k6 / k6 Overview`
+- Grafana `k6 / Request Breakdown`
 
 애플리케이션 측 지표는 같은 시간대의 `/actuator/prometheus`를 같이 확인합니다.
 

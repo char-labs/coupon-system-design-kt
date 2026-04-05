@@ -19,6 +19,9 @@ export const config = {
   issueBurstSetupTimeout: __ENV.ISSUE_BURST_SETUP_TIMEOUT || '20m',
   issueBurstLockRetryCount: Number(__ENV.ISSUE_BURST_LOCK_RETRY_COUNT || 3),
   issueBurstLockRetryDelayMs: Number(__ENV.ISSUE_BURST_LOCK_RETRY_DELAY_MS || 250),
+  slowRequestSampleLimit: Number(__ENV.SLOW_REQUEST_SAMPLE_LIMIT || 10),
+  slowRequestPreviewMaxLength: Number(__ENV.SLOW_REQUEST_PREVIEW_MAX_LENGTH || 300),
+  slowRequestSampleStdout: __ENV.SLOW_REQUEST_SAMPLE_STDOUT === '1',
   issueOverloadVus: Number(__ENV.ISSUE_OVERLOAD_VUS || 100),
   issueOverloadDuration: __ENV.ISSUE_OVERLOAD_DURATION || '10m',
   issueOverloadUserPoolSize: Number(

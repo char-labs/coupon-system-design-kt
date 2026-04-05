@@ -41,7 +41,7 @@ curl http://localhost:3000/api/health
 
 `ADMIN_PASSWORD`처럼 `!`가 포함된 값은 셸 해석 이슈를 피하려고 따옴표로 감싸는 편이 안전합니다.
 
-Slack 실패 알림을 같이 쓰려면 [load-test/k6/.env](/Users/yunbeom/ybcha/coupon-system-design-kt/load-test/k6/.env)에 `LOAD_TEST_SLACK_WEBHOOK=` 값을 넣고, plain `k6 run` 대신 [run-with-slack.mjs](/Users/yunbeom/ybcha/coupon-system-design-kt/load-test/k6/run-with-slack.mjs)로 실행합니다.
+Slack 보고를 같이 쓰려면 [load-test/k6/.env](/Users/yunbeom/ybcha/coupon-system-design-kt/load-test/k6/.env)에 `LOAD_TEST_SLACK_WEBHOOK=` 값을 넣고, plain `k6 run` 대신 [run-with-slack.mjs](/Users/yunbeom/ybcha/coupon-system-design-kt/load-test/k6/run-with-slack.mjs)로 실행합니다.
 현재 로컬 기본값은 `LOAD_TEST_SLACK_NOTIFY_ON=always`라서, 성공과 실패 모두 Slack으로 전송됩니다.
 
 왜 `InfluxDB`를 쓰는지:
@@ -100,7 +100,9 @@ node load-test/k6/run-with-slack.mjs issue-burst --profile local -- \
   --out influxdb=http://localhost:8086/myk6db \
   -e BASE_URL=http://127.0.0.1:18080 \
   -e ISSUE_BURST_VUS=1000 \
-  -e ISSUE_BURST_STOCK=1000
+  -e ISSUE_BURST_STOCK=1000 \
+  -e ISSUE_BURST_LOCK_RETRY_COUNT=3 \
+  -e ISSUE_BURST_LOCK_RETRY_DELAY_MS=250
 ```
 
 재고보다 요청이 많을 때도 서버가 터지지 않고 제어되는지 보는 케이스:
@@ -110,7 +112,9 @@ node load-test/k6/run-with-slack.mjs issue-burst --profile local -- \
   --out influxdb=http://localhost:8086/myk6db \
   -e BASE_URL=http://127.0.0.1:18080 \
   -e ISSUE_BURST_VUS=1000 \
-  -e ISSUE_BURST_STOCK=900
+  -e ISSUE_BURST_STOCK=900 \
+  -e ISSUE_BURST_LOCK_RETRY_COUNT=3 \
+  -e ISSUE_BURST_LOCK_RETRY_DELAY_MS=250
 ```
 
 이 시나리오는 실행 뒤 아래를 자동으로 다시 확인합니다.
@@ -120,6 +124,14 @@ node load-test/k6/run-with-slack.mjs issue-burst --profile local -- \
 - `발급 건수 + 잔여 재고 == 초기 재고` 정합성
 - `min(VU, 재고)`와 실제 결과가 일치하는지
 - 서버 오류가 없었는지
+
+추가 조정값:
+
+- `ISSUE_BURST_LOCK_RETRY_COUNT`
+  - `429 LOCK_ACQUISITION_FAILED` 응답을 받았을 때 같은 사용자가 다시 시도하는 횟수입니다.
+- `ISSUE_BURST_LOCK_RETRY_DELAY_MS`
+  - 재시도 사이 기본 대기 시간입니다. 재시도 횟수에 따라 점진적으로 늘어납니다.
+- Slack과 summary의 `재시도 시도 횟수`는 실제로 `429 LOCK_ACQUISITION_FAILED`를 받아 재시도를 시작한 횟수입니다.
 
 ### Contention
 
@@ -164,7 +176,57 @@ node load-test/k6/run-with-slack.mjs issue-overload --profile local -- \
 - `run-with-slack.mjs`는 `load-test/k6/.env`를 자동으로 읽고, 실패 시 Slack webhook으로 메세지를 보냅니다.
 - 앱이 막 기동된 상태라면 `setup()`이 health와 admin signin을 몇 초간 대기할 수 있습니다.
 
-## 3-1. Slack 실패 알림 확인
+## 3-1. Request Breakdown 대시보드
+
+`Request Breakdown`은 `k6 Overview`와 별도로 요청 이름 기준 집계를 보는 대시보드입니다.
+
+여기서는 `request_group=business` 태그가 붙은 요청만 집계합니다.
+
+- 포함:
+  - `issue_coupon`
+  - `use_coupon`
+  - `cancel_coupon`
+  - `get_coupon`
+  - `get_coupon_issue_page`
+  - `get_my_coupons`
+- 제외:
+  - `signup`
+  - `signin`
+  - `admin bootstrap`
+  - `health`
+  - `create_coupon`
+  - `activate_coupon`
+
+확인 순서:
+
+1. Grafana에서 `k6 / Request Breakdown` 열기
+2. 우상단 time range를 방금 실행 시간대로 맞추기
+3. `Scenario` 변수를 현재 실행 시나리오로 좁히기
+4. 아래 패널을 순서대로 보기
+
+- `Request p95 Over Time`
+  - 요청별 tail latency 변화를 시간축으로 봅니다.
+- `Request p95 Latency`
+  - 어떤 요청이 지속적으로 느린지 빠르게 비교합니다.
+- `Request Max Latency`
+  - 순간 최대 지연이 어느 요청에서 나왔는지 봅니다.
+- `Request Error Rate`
+  - 오류가 특정 요청에 몰렸는지 확인합니다.
+- `Request Count`
+  - 실제 트래픽이 어느 요청에 집중됐는지 봅니다.
+- `Top Slow Request Groups`
+  - 느린 요청군을 요약 테이블로 확인합니다.
+
+중요:
+
+- Grafana는 집계용입니다.
+- 가장 느린 단일 요청의 raw response preview는 결과 artifact에서 확인합니다.
+- artifact 위치:
+  - `load-test/k6/results/<scenario>-slow-requests-latest.json`
+  - `load-test/k6/results/<scenario>-slow-requests-<timestamp>.json`
+- 이 artifact는 plain `k6 run`이 아니라 `node load-test/k6/run-with-slack.mjs ...` 실행 시 생성됩니다.
+
+## 3-2. Slack 알림 확인
 
 실패가 나면 Slack에는 아래 형식으로 전송됩니다.
 
@@ -312,6 +374,7 @@ Webhook이 비어 있거나 Slack 전송을 끄고 싶으면:
 - `issue_burst_unexpected_client_error_count = 0`
 - `issue_burst_integrity_ok = 100%`
 - `issue_burst_expected_result_ok = 100%`
+- `issue_burst_retryable_lock_failure_count`는 0이 아니어도 괜찮고, 최종적으로 `서버 오류 0 / 예상 밖 클라이언트 오류 0`이면 제어된 경쟁으로 봅니다.
 - `ISSUE_BURST_STOCK=1000`, `ISSUE_BURST_VUS=1000`이면:
   - 성공 발급 건수 `1000`
   - 최종 잔여 재고 `0`
@@ -326,18 +389,24 @@ Webhook이 비어 있거나 Slack 전송을 끄고 싶으면:
 - `issue_burst_expected_result_ok`가 100%가 아님
 - `issue_burst_server_error_count`가 1 이상
 - `http_req_failed`가 급격히 올라가고, 같은 시간대에 앱 로그에 DB/락/커넥션 풀 오류가 보임
+- `issue_burst_unexpected_client_error_count`가 1 이상인데 `issue_burst_retryable_lock_failure_count`도 같이 높음
 
 원인 보는 순서:
 
 1. Slack 또는 결과 JSON에서 `issue_burst_server_error_count`, `issue_burst_unexpected_client_error_count`를 먼저 확인
-2. `issue_burst_final_issued_count`, `issue_burst_final_remaining_quantity`를 보고 재고 합계가 맞는지 확인
-3. Grafana에서 같은 시간대 `p95`, `p99`, `HTTP Request Failed Rate`를 확인
-4. 동시에 앱 로그와 `/actuator/prometheus`에서 DB 커넥션 풀, 스레드, 에러 수치를 확인
+2. `issue_burst_retryable_lock_failure_count`가 높으면 락 경합이 있었지만 재시도로 흡수했는지 같이 확인
+3. `issue_burst_final_issued_count`, `issue_burst_final_remaining_quantity`를 보고 재고 합계가 맞는지 확인
+4. Grafana에서 같은 시간대 `p95`, `p99`, `HTTP Request Failed Rate`를 확인
+5. 동시에 앱 로그와 `/actuator/prometheus`에서 DB 커넥션 풀, 스레드, 에러 수치를 확인
+6. `Request Breakdown`에서 어느 요청명이 실제로 느렸는지 확인
+7. `load-test/k6/results/issue-burst-slow-requests-latest.json`에서 상위 느린 요청의 `responsePreview`를 확인
 
 빠른 판정:
 
 - `정합성 통과 + 서버 오류 0`
   - 재고 동시성 제어는 정상으로 판단 가능
+- `정합성 통과 + 재시도 가능한 락 실패만 존재`
+  - hot coupon 경합은 있었지만 최종 결과는 제어됨
 - `정합성 통과 + p95/p99만 상승`
   - 락 경합은 있지만 데이터는 안전
 - `정합성 실패`
@@ -478,38 +547,3 @@ docker compose \
   -f docker/docker-compose.k6-observability.yml \
   down -v
 ```
-### Issue Overload
-
-목표:
-
-- `coupon-issue`만 장시간 과부하했을 때 처리량, p95, p99, 실패율이 어떻게 변하는지 확인
-- 순간 경합이 아니라 지속 부하에서 발급 API가 얼마나 오래 버티는지 확인
-
-정상 신호:
-
-- `Virtual Users`는 설정한 값으로 유지
-- `Iterations`가 시간축에서 크게 꺾이지 않음
-- `p50`은 흔들려도 `p95`, `p99`가 회복 가능한 범위 안에 머묾
-- `failed rate`가 장시간 0 근처 또는 낮은 수준에서 통제됨
-
-이상 신호:
-
-- `p95`, `p99`가 시간이 갈수록 계속 상승
-- `Iterations`가 점점 눌리거나 plateau를 형성
-- `failed rate`가 후반부로 갈수록 올라감
-- `issue_overload capacity exhausted`가 뜸
-
-원인 보는 순서:
-
-1. `issue_overload capacity exhausted`가 먼저 떴는지 확인
-2. 아니면 `issue_coupon` 응답 코드가 4xx인지 5xx인지 확인
-3. 같은 시간대 `p95/p99`, failed rate, `/actuator/prometheus`, 앱 로그를 같이 확인
-
-빠른 해석 기준:
-
-- `capacity exhausted`
-  - 테스트 데이터 조합 부족
-- 4xx 증가
-  - 중복 발급, 비활성/만료 쿠폰 같은 비즈니스 조건 문제
-- 5xx 증가 + p95/p99 상승
-  - DB, 락, 스레드, 연결 풀 등 실제 서버 병목 가능성

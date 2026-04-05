@@ -12,6 +12,7 @@ import { fileURLToPath } from 'node:url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const dotEnvPath = path.resolve(__dirname, '.env');
+const SLOW_REQUEST_SAMPLE_MARKER = '__K6_SLOW_REQUEST_SAMPLE__';
 
 const scenarioDefaults = {
   smoke: {
@@ -303,6 +304,126 @@ function resolveScenarioScript(scenario) {
 function resolveResultsDir(parsedEnv, envSource) {
   const resultsDir = parsedEnv.RESULTS_DIR || envSource.RESULTS_DIR || 'load-test/k6/results';
   return path.resolve(process.cwd(), resultsDir);
+}
+
+function resolveSlowRequestSampleLimit(parsedEnv, envSource) {
+  const value = Number(
+    parsedEnv.SLOW_REQUEST_SAMPLE_LIMIT || envSource.SLOW_REQUEST_SAMPLE_LIMIT || 10,
+  );
+
+  return Number.isFinite(value) && value > 0 ? value : 10;
+}
+
+function parseSlowRequestSampleLine(line) {
+  const parsePayload = (payload) => {
+    try {
+      return JSON.parse(payload);
+    } catch (error) {
+      try {
+        return JSON.parse(decodeURIComponent(payload));
+      } catch (decodeError) {
+        return null;
+      }
+    }
+  };
+
+  if (line.startsWith(SLOW_REQUEST_SAMPLE_MARKER)) {
+    return parsePayload(line.slice(SLOW_REQUEST_SAMPLE_MARKER.length));
+  }
+
+  const markerIndex = line.indexOf(SLOW_REQUEST_SAMPLE_MARKER);
+  if (markerIndex < 0) {
+    return null;
+  }
+
+  const rawPayload = line.slice(markerIndex + SLOW_REQUEST_SAMPLE_MARKER.length);
+  const consoleSuffixIndex = rawPayload.lastIndexOf('" source=console');
+  if (consoleSuffixIndex >= 0) {
+    return parsePayload(rawPayload.slice(0, consoleSuffixIndex));
+  }
+
+  return parsePayload(rawPayload);
+}
+
+function createOutputProcessor(writer, recentLines, slowRequestSamples) {
+  let buffer = '';
+
+  const remember = (line) => {
+    if (!line) {
+      return;
+    }
+
+    recentLines.push(line);
+    if (recentLines.length > 300) {
+      recentLines.shift();
+    }
+  };
+
+  const handleLine = (line) => {
+    const sample = parseSlowRequestSampleLine(line);
+    if (sample) {
+      slowRequestSamples.push(sample);
+      return;
+    }
+
+    writer(`${line}\n`);
+    remember(line);
+  };
+
+  return {
+    push(chunk) {
+      buffer += chunk.toString('utf8');
+      const lines = buffer.split(/\r?\n/);
+      buffer = lines.pop() ?? '';
+
+      for (const line of lines) {
+        handleLine(line);
+      }
+    },
+    flush() {
+      if (!buffer) {
+        return;
+      }
+
+      handleLine(buffer);
+      buffer = '';
+    },
+  };
+}
+
+function buildSlowRequestSummary({
+  scenario,
+  finishedAt,
+  sampleLimit,
+  slowRequestSamples,
+}) {
+  const sortedSamples = [...slowRequestSamples]
+    .sort((left, right) => Number(right.durationMs || 0) - Number(left.durationMs || 0))
+    .slice(0, sampleLimit);
+
+  return {
+    scenario,
+    generatedAt: finishedAt.toISOString(),
+    sampleLimit,
+    totalCollectedSamples: slowRequestSamples.length,
+    topSlowRequests: sortedSamples,
+  };
+}
+
+async function writeSlowRequestSummary(resultsDir, scenario, finishedAt, sampleLimit, slowRequestSamples) {
+  const payload = buildSlowRequestSummary({
+    scenario,
+    finishedAt,
+    sampleLimit,
+    slowRequestSamples,
+  });
+  const timestamp = finishedAt.toISOString().replace(/[:.]/g, '-');
+  const latestPath = path.resolve(resultsDir, `${scenario}-slow-requests-latest.json`);
+  const timestampPath = path.resolve(resultsDir, `${scenario}-slow-requests-${timestamp}.json`);
+  const serialized = JSON.stringify(payload, null, 2);
+
+  await writeFile(latestPath, serialized);
+  await writeFile(timestampPath, serialized);
 }
 
 function buildLoadDescription(scenario, parsedEnv, envSource) {
@@ -846,39 +967,29 @@ async function main() {
   const startedAt = new Date();
   const startedAtMs = startedAt.getTime();
   const recentLines = [];
+  const slowRequestSamples = [];
+  const slowRequestSampleLimit = resolveSlowRequestSampleLimit(parsedEnv, envSource);
 
   await mkdir(resultsDir, { recursive: true });
 
   const child = spawn('k6', ['run', ...parsed.k6Args, scenarioScript], {
     cwd: process.cwd(),
-    env: envSource,
+    env: {
+      ...envSource,
+      SLOW_REQUEST_SAMPLE_STDOUT: '1',
+    },
     stdio: ['inherit', 'pipe', 'pipe'],
   });
 
-  const pushLines = (chunk) => {
-    const lines = chunk.split(/\r?\n/);
-    for (const line of lines) {
-      if (!line) {
-        continue;
-      }
-
-      recentLines.push(line);
-      if (recentLines.length > 300) {
-        recentLines.shift();
-      }
-    }
-  };
+  const stdoutProcessor = createOutputProcessor(process.stdout.write.bind(process.stdout), recentLines, slowRequestSamples);
+  const stderrProcessor = createOutputProcessor(process.stderr.write.bind(process.stderr), recentLines, slowRequestSamples);
 
   child.stdout.on('data', (data) => {
-    const text = data.toString('utf8');
-    process.stdout.write(text);
-    pushLines(text);
+    stdoutProcessor.push(data);
   });
 
   child.stderr.on('data', (data) => {
-    const text = data.toString('utf8');
-    process.stderr.write(text);
-    pushLines(text);
+    stderrProcessor.push(data);
   });
 
   const exitCode = await new Promise((resolve, reject) => {
@@ -887,7 +998,16 @@ async function main() {
   });
 
   const finishedAt = new Date();
+  stdoutProcessor.flush();
+  stderrProcessor.flush();
   const summary = await readSummary(summaryPath, startedAtMs);
+  await writeSlowRequestSummary(
+    resultsDir,
+    parsed.scenario,
+    finishedAt,
+    slowRequestSampleLimit,
+    slowRequestSamples,
+  );
   const thresholdFailures = collectThresholdFailures(summary);
   const failureReason = extractFailureReason(recentLines);
   const slackMessage = buildSlackMessage({

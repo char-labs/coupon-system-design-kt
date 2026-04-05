@@ -2,6 +2,7 @@ import http from 'k6/http';
 import { check } from 'k6';
 import { authHeaders, get, post, postVoid, postWithNumericFields } from './api.js';
 import { config } from './config.js';
+import { maybeRecordSlowRequestSample } from './slow-requests.js';
 
 function formatLocalDateTime(date) {
   const pad = (value) => `${value}`.padStart(2, '0');
@@ -41,6 +42,10 @@ export function createCoupon(accessToken, payload) {
     ['id'],
     {
       headers: authHeaders(accessToken),
+      tags: {
+        request_group: 'setup',
+        request_name: 'create_coupon',
+      },
     },
     201,
     'create_coupon',
@@ -54,6 +59,14 @@ export function issueCoupon(accessToken, couponId) {
     ['id'],
     {
       headers: authHeaders(accessToken),
+      tags: {
+        request_group: 'business',
+        request_name: 'issue_coupon',
+      },
+      slowRequestSample: {
+        requestGroup: 'business',
+        requestName: 'issue_coupon',
+      },
     },
     201,
     'issue_coupon',
@@ -84,7 +97,11 @@ export function tryIssueCoupon(
         ...authHeaders(accessToken),
         'Content-Type': 'application/json',
       },
-      tags: { name: label },
+      tags: {
+        name: label,
+        request_group: 'business',
+        request_name: 'issue_coupon',
+      },
       responseCallback: http.expectedStatuses(...expectedStatuses),
     },
   );
@@ -98,6 +115,10 @@ export function tryIssueCoupon(
   }
 
   const hasEnvelope = body && typeof body.success === 'boolean';
+  maybeRecordSlowRequestSample(response, {
+    requestGroup: 'business',
+    requestName: 'issue_coupon',
+  });
   check(response, {
     [`${label} response envelope`]: () => hasEnvelope,
   });
@@ -157,6 +178,10 @@ export function activateCoupon(accessToken, couponId) {
     {},
     {
       headers: authHeaders(accessToken),
+      tags: {
+        request_group: 'setup',
+        request_name: 'activate_coupon',
+      },
     },
     200,
     'activate_coupon',
@@ -169,6 +194,14 @@ export function useCoupon(accessToken, couponIssueId) {
     {},
     {
       headers: authHeaders(accessToken),
+      tags: {
+        request_group: 'business',
+        request_name: 'use_coupon',
+      },
+      slowRequestSample: {
+        requestGroup: 'business',
+        requestName: 'use_coupon',
+      },
     },
     200,
     'use_coupon',
@@ -181,6 +214,14 @@ export function cancelCoupon(accessToken, couponIssueId) {
     {},
     {
       headers: authHeaders(accessToken),
+      tags: {
+        request_group: 'business',
+        request_name: 'cancel_coupon',
+      },
+      slowRequestSample: {
+        requestGroup: 'business',
+        requestName: 'cancel_coupon',
+      },
     },
     200,
     'cancel_coupon',
@@ -192,6 +233,14 @@ export function getMyCoupons(accessToken) {
     '/coupon-issues/my?page=0&size=20',
     {
       headers: authHeaders(accessToken),
+      tags: {
+        request_group: 'business',
+        request_name: 'get_my_coupons',
+      },
+      slowRequestSample: {
+        requestGroup: 'business',
+        requestName: 'get_my_coupons',
+      },
     },
     200,
     'get_my_coupons',
@@ -204,6 +253,14 @@ export function getCoupon(couponId, accessToken = null) {
     accessToken
       ? {
           headers: authHeaders(accessToken),
+          tags: {
+            request_group: 'business',
+            request_name: 'get_coupon',
+          },
+          slowRequestSample: {
+            requestGroup: 'business',
+            requestName: 'get_coupon',
+          },
         }
       : {},
     200,
@@ -216,6 +273,14 @@ export function getCouponIssuePage(accessToken, couponId, size = 1) {
     `/coupons/${couponId}/coupon-issues?page=0&size=${size}`,
     {
       headers: authHeaders(accessToken),
+      tags: {
+        request_group: 'business',
+        request_name: 'get_coupon_issue_page',
+      },
+      slowRequestSample: {
+        requestGroup: 'business',
+        requestName: 'get_coupon_issue_page',
+      },
     },
     200,
     'get_coupon_issue_page',

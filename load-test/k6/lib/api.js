@@ -2,6 +2,7 @@ import http from 'k6/http';
 import exec from 'k6/execution';
 import { check, fail, sleep } from 'k6';
 import { config } from './config.js';
+import { maybeRecordSlowRequestSample } from './slow-requests.js';
 
 const readinessResponseCallback = http.expectedStatuses(200, 404, 503);
 
@@ -39,20 +40,31 @@ function renderBody(response) {
 }
 
 function request(method, path, payload, params = {}, label = path) {
+  const {
+    headers: customHeaders = {},
+    tags: customTags = {},
+    slowRequestSample = null,
+    ...restParams
+  } = params;
+
   const headers = {
     ...(payload !== undefined ? { 'Content-Type': 'application/json' } : {}),
-    ...(params.headers || {}),
+    ...customHeaders,
   };
 
   const requestParams = {
-    tags: { name: label },
-    ...params,
+    ...restParams,
+    tags: {
+      name: label,
+      ...customTags,
+    },
     headers,
   };
 
   if (method === 'GET') {
     return {
       response: http.get(makeUrl(path), requestParams),
+      slowRequestSample,
     };
   }
 
@@ -63,6 +75,7 @@ function request(method, path, payload, params = {}, label = path) {
 
   return {
     response: http.post(makeUrl(path), requestBody, requestParams),
+    slowRequestSample,
   };
 }
 
@@ -95,7 +108,8 @@ export function unwrapData(response, label, expectedStatus) {
 }
 
 export function post(path, payload, params = {}, expectedStatus = 200, label = path) {
-  const { response } = request('POST', path, payload, params, label);
+  const { response, slowRequestSample } = request('POST', path, payload, params, label);
+  maybeRecordSlowRequestSample(response, slowRequestSample);
 
   return unwrapData(response, label, expectedStatus);
 }
@@ -108,7 +122,8 @@ export function postWithNumericFields(
   expectedStatus = 200,
   label = path,
 ) {
-  const { response } = request('POST', path, payload, params, label);
+  const { response, slowRequestSample } = request('POST', path, payload, params, label);
+  maybeRecordSlowRequestSample(response, slowRequestSample);
   const data = unwrapData(response, label, expectedStatus);
 
   for (const field of numericFields) {
@@ -122,7 +137,8 @@ export function postWithNumericFields(
 }
 
 export function postVoid(path, payload, params = {}, expectedStatus = 200, label = path) {
-  const { response } = request('POST', path, payload, params, label);
+  const { response, slowRequestSample } = request('POST', path, payload, params, label);
+  maybeRecordSlowRequestSample(response, slowRequestSample);
   const body = parseJsonIfPresent(response);
   const isExpectedStatus = response.status === expectedStatus;
   const isSuccessEnvelope = body == null || body.success === true;
@@ -142,7 +158,8 @@ export function postVoid(path, payload, params = {}, expectedStatus = 200, label
 }
 
 export function get(path, params = {}, expectedStatus = 200, label = path) {
-  const { response } = request('GET', path, undefined, params, label);
+  const { response, slowRequestSample } = request('GET', path, undefined, params, label);
+  maybeRecordSlowRequestSample(response, slowRequestSample);
 
   return unwrapData(response, label, expectedStatus);
 }
