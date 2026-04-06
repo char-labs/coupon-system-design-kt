@@ -1,0 +1,41 @@
+package com.coupon.support.outbox
+
+import com.coupon.support.outbox.criteria.OutboxEventCriteria
+import java.time.LocalDateTime
+
+interface OutboxEventRepository {
+    fun save(criteria: OutboxEventCriteria.Create): OutboxEvent
+
+    fun saveAll(criteria: List<OutboxEventCriteria.Create>): List<OutboxEvent>
+
+    fun findById(eventId: Long): OutboxEvent
+
+    fun findProcessable(
+        statuses: Set<OutboxEventStatus>,
+        availableAt: LocalDateTime,
+        limit: Int,
+    ): List<OutboxEvent>
+
+    fun markProcessing(
+        eventId: Long,
+        candidateStatuses: Set<OutboxEventStatus>,
+    ): Boolean
+
+    fun markSucceeded(
+        eventId: Long,
+        processedAt: LocalDateTime,
+    ): Boolean
+
+    fun reschedule(
+        eventId: Long,
+        availableAt: LocalDateTime,
+        retryCount: Int,
+        lastError: String,
+    ): Boolean
+
+    fun markDead(
+        eventId: Long,
+        processedAt: LocalDateTime,
+        lastError: String,
+    ): Boolean
+}
