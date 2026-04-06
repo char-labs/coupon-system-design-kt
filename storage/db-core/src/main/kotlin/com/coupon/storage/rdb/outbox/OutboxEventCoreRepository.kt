@@ -12,6 +12,7 @@ import java.time.LocalDateTime
 @Repository
 class OutboxEventCoreRepository(
     private val outboxEventJpaRepository: OutboxEventJpaRepository,
+    private val outboxEventCustomRepository: OutboxEventCustomRepository,
 ) : OutboxEventRepository {
     override fun save(criteria: OutboxEventCriteria.Create): OutboxEvent =
         outboxEventJpaRepository
@@ -36,7 +37,7 @@ class OutboxEventCoreRepository(
         limit: Int,
     ): List<OutboxEvent> {
         val pageable = PageRequest.of(0, limit)
-        return outboxEventJpaRepository.findProcessable(statuses, availableAt, pageable).map(OutboxEventEntity::toOutboxEvent)
+        return outboxEventCustomRepository.findProcessable(statuses, availableAt, pageable).map(OutboxEventEntity::toOutboxEvent)
     }
 
     override fun markProcessing(

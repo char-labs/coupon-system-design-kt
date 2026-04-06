@@ -1,28 +1,12 @@
 package com.coupon.storage.rdb.outbox
 
 import com.coupon.support.outbox.OutboxEventStatus
-import org.springframework.data.domain.Pageable
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Modifying
 import org.springframework.data.jpa.repository.Query
 import java.time.LocalDateTime
 
 interface OutboxEventJpaRepository : JpaRepository<OutboxEventEntity, Long> {
-    @Query(
-        """
-        select event
-          from OutboxEventEntity event
-         where event.status in :statuses
-           and event.availableAt <= :availableAt
-         order by event.availableAt asc, event.id asc
-        """,
-    )
-    fun findProcessable(
-        statuses: Set<OutboxEventStatus>,
-        availableAt: LocalDateTime,
-        pageable: Pageable,
-    ): List<OutboxEventEntity>
-
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query(
         """
