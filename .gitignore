@@ -39,8 +39,6 @@ out/
 ### Kotlin ###
 .kotlin
 
-.claude
-
 .DS_Store
 
 ### serena ###

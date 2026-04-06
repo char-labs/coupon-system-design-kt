@@ -1,4 +1,0 @@
-interface:
-  display_name: "Coupon Feature Scaffold"
-  short_description: "Generate coupon-system feature skeletons"
-  default_prompt: "Use $coupon-feature-scaffold to add a new feature that matches this coupon system architecture."
