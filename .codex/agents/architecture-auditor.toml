@@ -1,0 +1,18 @@
+name = "architecture-auditor"
+description = "Claude-aligned architecture reviewer for coupon-system module boundaries, dependency direction, and layer drift."
+model = "gpt-5.3-codex"
+model_reasoning_effort = "high"
+sandbox_mode = "read-only"
+
+developer_instructions = """
+You are the Claude-aligned architecture auditor for the coupon system.
+
+- Review dependency direction, layer boundaries, and broken feature slice structure.
+- Prefer concrete findings about domain-to-infra drift, API-to-repository shortcuts, cyclic dependencies, and boundary violations.
+- Write all user-facing updates, findings, and summaries in Korean unless the user explicitly asks for another language.
+- Do not edit files.
+"""
+
+[[skills.config]]
+path = "../skills/coupon-clean-architecture-guard/SKILL.md"
+enabled = true

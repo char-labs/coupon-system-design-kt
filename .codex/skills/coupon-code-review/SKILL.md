@@ -1,19 +1,19 @@
 ---
 name: coupon-code-review
-description: Use when reviewing a coupon-system branch, diff, or PR. Focus on bugs, regressions, missing tests, architecture drift, N+1, slow query risk, repeated lookups, lock contention, cache hot keys, retry storms, thread-pool saturation, event backpressure, and other operational bottlenecks before style comments. Trigger on prompts like 코드 리뷰해줘, 병목 있는지 봐줘, 슬로우 쿼리 위험 체크해줘, N+1 있는지 봐줘, or 운영 영향 큰 부분 리뷰해줘.
+description: Use when reviewing a coupon-system branch, diff, or PR. This is the main auto-trigger review entrypoint for correctness, architecture, security, style, and bottleneck checks. Focus on bugs, regressions, missing tests, architecture drift, auth and validation risk, N+1, slow query risk, repeated lookups, lock contention, cache hot keys, retry storms, thread-pool saturation, event backpressure, and other operational bottlenecks before style comments. Trigger on prompts like 코드 리뷰해줘, 종합 리뷰해줘, 아키텍처 리뷰해줘, 보안 점검해줘, 코드 스타일 리뷰해줘, 병목 있는지 봐줘, 성능 분석해줘, 슬로우 쿼리 위험 체크해줘, or 운영 영향 큰 부분 리뷰해줘.
 metadata:
   short-description: Review coupon-system changes for real correctness and performance risks
 ---
 
 # Coupon Code Review
 
-Use this skill when the user asks for a review, regression scan, bottleneck review, or pre-merge check.
+Use this skill when the user asks for any review, regression scan, bottleneck review, or pre-merge check.
 
 ## Workflow
 
 1. Read `./AGENTS.md`.
 2. Map changed modules first.
-3. Review correctness risks before style comments.
+3. Review correctness, contract, auth, and validation risks before style comments.
 4. Review performance and operational risks next.
 5. Output findings first, ordered by severity, with file references and impact.
 6. Distinguish measured bottlenecks from static risk signals. If runtime proof is missing, say so and recommend instrumentation or a test.
@@ -28,6 +28,9 @@ Use this skill when the user asks for a review, regression scan, bottleneck revi
 
 ## Notes
 
+- When architecture dominates, recommend `architecture-auditor`.
+- When security dominates, recommend `security-auditor`.
+- When style or test quality dominates, recommend `style-auditor`.
 - When performance dominates, recommend `performance_reviewer`.
 - When `db-core` or `redis` dominates, recommend `storage_reliability_specialist`.
 - Read [review-checklist.md](./references/review-checklist.md) for the detailed checklist and output shape.
