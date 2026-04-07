@@ -1,6 +1,7 @@
 package com.coupon.coupon
 
 import com.coupon.coupon.criteria.CouponIssueCriteria
+import com.coupon.coupon.event.CouponLifecycleDomainEvent
 import com.coupon.coupon.fixture.CouponIssueFixtures
 import com.coupon.coupon.support.DomainServiceTestRuntime
 import com.coupon.coupon.support.LockExecution
@@ -19,6 +20,7 @@ import io.mockk.mockk
 import io.mockk.slot
 import io.mockk.verify
 import io.mockk.verifySequence
+import org.springframework.context.ApplicationEventPublisher
 
 class CouponIssueServiceTest :
     BehaviorSpec({
@@ -48,6 +50,7 @@ class CouponIssueServiceTest :
                         context.couponIssueValidator.validateIssuable(command.userId, command.couponId)
                         context.couponIssueRepository.save(any())
                         context.couponRepository.decreaseQuantityIfAvailable(command.couponId)
+                        context.applicationEventPublisher.publishEvent(any<CouponLifecycleDomainEvent.Issued>())
                     }
                 }
             }
@@ -69,6 +72,7 @@ class CouponIssueServiceTest :
                 then("재고 부족 예외를 반환한다") {
                     exception.errorType shouldBe ErrorType.COUPON_OUT_OF_STOCK
                     verify(exactly = 1) { context.couponRepository.decreaseQuantityIfAvailable(command.couponId) }
+                    verify(exactly = 0) { context.applicationEventPublisher.publishEvent(any<CouponLifecycleDomainEvent.Issued>()) }
                 }
             }
         }
@@ -163,6 +167,7 @@ class CouponIssueServiceTest :
                         context.couponIssueRepository.findById(command.couponIssueId)
                         context.couponIssueValidator.validateOwnedCouponIssue(couponIssue, command.userId)
                         context.couponIssueRepository.useIfIssued(command.couponIssueId)
+                        context.applicationEventPublisher.publishEvent(any<CouponLifecycleDomainEvent.Used>())
                         context.couponIssueRepository.findDetailById(command.couponIssueId)
                     }
                 }
@@ -185,6 +190,7 @@ class CouponIssueServiceTest :
                 then("상태 변경 예외를 반환하고 상세 조회는 하지 않는다") {
                     exception.errorType shouldBe ErrorType.INVALID_COUPON_STATUS
                     verify(exactly = 0) { context.couponIssueRepository.findDetailById(command.couponIssueId) }
+                    verify(exactly = 0) { context.applicationEventPublisher.publishEvent(any<CouponLifecycleDomainEvent.Used>()) }
                 }
             }
         }
@@ -223,6 +229,7 @@ class CouponIssueServiceTest :
                         context.couponIssueValidator.validateOwnedCouponIssue(couponIssue, command.userId)
                         context.couponIssueRepository.cancelIfIssued(command.couponIssueId)
                         context.couponRepository.increaseQuantity(couponIssue.couponId)
+                        context.applicationEventPublisher.publishEvent(any<CouponLifecycleDomainEvent.Canceled>())
                         context.couponIssueRepository.findDetailById(command.couponIssueId)
                     }
                 }
@@ -246,6 +253,7 @@ class CouponIssueServiceTest :
                     exception.errorType shouldBe ErrorType.INVALID_COUPON_STATUS
                     verify(exactly = 0) { context.couponRepository.increaseQuantity(any()) }
                     verify(exactly = 0) { context.couponIssueRepository.findDetailById(command.couponIssueId) }
+                    verify(exactly = 0) { context.applicationEventPublisher.publishEvent(any<CouponLifecycleDomainEvent.Canceled>()) }
                 }
             }
         }
@@ -255,11 +263,13 @@ class CouponIssueServiceTest :
         val couponIssueRepository = mockk<CouponIssueRepository>()
         val couponRepository = mockk<CouponRepository>()
         val couponIssueValidator = mockk<CouponIssueValidator>()
+        val applicationEventPublisher = mockk<ApplicationEventPublisher>(relaxed = true)
         val couponIssueService =
             CouponIssueService(
                 couponIssueRepository = couponIssueRepository,
                 couponRepository = couponRepository,
                 couponIssueValidator = couponIssueValidator,
+                applicationEventPublisher = applicationEventPublisher,
             )
 
         val recordedLockExecutions: List<LockExecution>

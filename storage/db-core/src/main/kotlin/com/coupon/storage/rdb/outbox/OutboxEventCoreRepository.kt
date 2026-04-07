@@ -88,4 +88,17 @@ class OutboxEventCoreRepository(
             processedAt = processedAt,
             lastError = lastError,
         ) > 0
+
+    override fun recoverStuckProcessing(
+        updatedBefore: LocalDateTime,
+        availableAt: LocalDateTime,
+        lastError: String,
+    ): Int =
+        outboxEventJpaRepository.recoverStuckProcessing(
+            processingStatus = OutboxEventStatus.PROCESSING,
+            failedStatus = OutboxEventStatus.FAILED,
+            updatedBefore = updatedBefore,
+            availableAt = availableAt,
+            lastError = lastError,
+        )
 }

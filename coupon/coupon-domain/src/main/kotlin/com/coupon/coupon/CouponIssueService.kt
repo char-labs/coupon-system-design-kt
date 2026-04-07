@@ -2,18 +2,22 @@ package com.coupon.coupon
 
 import com.coupon.coupon.command.CouponIssueCommand
 import com.coupon.coupon.criteria.CouponIssueCriteria
+import com.coupon.coupon.event.CouponLifecycleDomainEvent
 import com.coupon.enums.error.ErrorType
 import com.coupon.error.ErrorException
 import com.coupon.support.lock.Lock
 import com.coupon.support.page.OffsetPageRequest
 import com.coupon.support.page.Page
+import org.springframework.context.ApplicationEventPublisher
 import org.springframework.stereotype.Service
+import java.time.LocalDateTime
 
 @Service
 class CouponIssueService(
     private val couponIssueRepository: CouponIssueRepository,
     private val couponRepository: CouponRepository,
     private val couponIssueValidator: CouponIssueValidator,
+    private val applicationEventPublisher: ApplicationEventPublisher,
 ) {
     companion object {
         private const val ISSUE_COUPON_LOCK_TIMEOUT_MILLIS = 15_000L
@@ -24,16 +28,33 @@ class CouponIssueService(
             key = "COUPON_ISSUE:${command.couponId}",
             timeoutMillis = ISSUE_COUPON_LOCK_TIMEOUT_MILLIS,
         ) {
-            couponIssueValidator.validateIssuable(command.userId, command.couponId)
-
-            val couponIssue = couponIssueRepository.save(CouponIssueCriteria.Create.of(command))
-            val decreased = couponRepository.decreaseQuantityIfAvailable(command.couponId)
-            if (!decreased) {
-                throw ErrorException(ErrorType.COUPON_OUT_OF_STOCK)
-            }
-
-            couponIssue
+            executeIssue(command)
         }
+
+    /**
+     * Internal execution path reused by async request workers.
+     * Callers must provide the surrounding transaction and lock boundary.
+     */
+    fun executeIssue(command: CouponIssueCommand.Issue): CouponIssue {
+        couponIssueValidator.validateIssuable(command.userId, command.couponId)
+
+        val couponIssue = couponIssueRepository.save(CouponIssueCriteria.Create.of(command))
+        val decreased = couponRepository.decreaseQuantityIfAvailable(command.couponId)
+        if (!decreased) {
+            throw ErrorException(ErrorType.COUPON_OUT_OF_STOCK)
+        }
+
+        applicationEventPublisher.publishEvent(
+            CouponLifecycleDomainEvent.Issued(
+                couponIssueId = couponIssue.id,
+                couponId = couponIssue.couponId,
+                userId = couponIssue.userId,
+                occurredAt = LocalDateTime.now(),
+            ),
+        )
+
+        return couponIssue
+    }
 
     fun getCouponIssue(couponIssueId: Long): CouponIssue.Detail = couponIssueRepository.findDetailById(couponIssueId)
 
@@ -59,6 +80,15 @@ class CouponIssueService(
                 throw ErrorException(ErrorType.INVALID_COUPON_STATUS)
             }
 
+            applicationEventPublisher.publishEvent(
+                CouponLifecycleDomainEvent.Used(
+                    couponIssueId = couponIssue.id,
+                    couponId = couponIssue.couponId,
+                    userId = couponIssue.userId,
+                    occurredAt = LocalDateTime.now(),
+                ),
+            )
+
             couponIssueRepository.findDetailById(command.couponIssueId)
         }
 
@@ -75,6 +105,15 @@ class CouponIssueService(
             }
 
             couponRepository.increaseQuantity(couponIssue.couponId)
+
+            applicationEventPublisher.publishEvent(
+                CouponLifecycleDomainEvent.Canceled(
+                    couponIssueId = couponIssue.id,
+                    couponId = couponIssue.couponId,
+                    userId = couponIssue.userId,
+                    occurredAt = LocalDateTime.now(),
+                ),
+            )
 
             couponIssueRepository.findDetailById(command.couponIssueId)
         }

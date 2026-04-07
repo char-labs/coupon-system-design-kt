@@ -1,0 +1,11 @@
+worker:
+  outbox:
+    enabled: true
+    batch-size: 100
+    fixed-delay: 500ms
+    initial-delay: 0ms
+    max-retries: 10
+    retry:
+      initial-delay: 1s
+      max-delay: 5m
+      multiplier: 2.0

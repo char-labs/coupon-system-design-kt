@@ -110,6 +110,39 @@ class OutboxEventServiceTest :
                 }
             }
         }
+
+        given("OutboxEventService로 stale PROCESSING 이벤트를 복구하면") {
+            `when`("기준 시각보다 오래된 이벤트가 있으면") {
+                val context = OutboxEventServiceTestContext()
+                val updatedBefore = LocalDateTime.of(2026, 4, 6, 11, 0)
+                val availableAt = LocalDateTime.of(2026, 4, 6, 11, 5)
+
+                every {
+                    context.outboxEventRepository.recoverStuckProcessing(
+                        updatedBefore = updatedBefore,
+                        availableAt = availableAt,
+                        lastError = "Recovered stale PROCESSING event",
+                    )
+                } returns 2
+
+                val result =
+                    context.outboxEventService.recoverStuckProcessing(
+                        updatedBefore = updatedBefore,
+                        availableAt = availableAt,
+                    )
+
+                then("FAILED로 되돌린 건수를 반환한다") {
+                    result shouldBe 2
+                    verify(exactly = 1) {
+                        context.outboxEventRepository.recoverStuckProcessing(
+                            updatedBefore = updatedBefore,
+                            availableAt = availableAt,
+                            lastError = "Recovered stale PROCESSING event",
+                        )
+                    }
+                }
+            }
+        }
     })
 
 private class OutboxEventServiceTestContext {
