@@ -18,6 +18,9 @@ const scenarioDefaults = {
   smoke: {
     SMOKE_VUS: '1',
   },
+  'issue-request-smoke': {
+    ISSUE_REQUEST_SMOKE_VUS: '1',
+  },
   baseline: {
     BASELINE_VUS: '20',
     BASELINE_DURATION: '10m',
@@ -39,14 +42,71 @@ const scenarioDefaults = {
     ISSUE_OVERLOAD_USER_POOL_SIZE: '200',
     ISSUE_OVERLOAD_COUPON_POOL_SIZE: '500',
   },
+  'issue-request-burst': {
+    ISSUE_REQUEST_BURST_VUS: '1000',
+    ISSUE_REQUEST_BURST_STOCK: '1000',
+    ISSUE_REQUEST_BURST_MAX_DURATION: '10m',
+    ISSUE_REQUEST_POLL_TIMEOUT_SECONDS: '30',
+    ISSUE_REQUEST_POLL_INTERVAL_MS: '500',
+  },
+  'issue-request-overload': {
+    ISSUE_REQUEST_OVERLOAD_VUS: '50',
+    ISSUE_REQUEST_OVERLOAD_DURATION: '10m',
+    ISSUE_REQUEST_OVERLOAD_COUPON_POOL_SIZE: '200',
+    ISSUE_REQUEST_OVERLOAD_STOCK_PER_COUPON: '100000',
+    ISSUE_REQUEST_POLL_TIMEOUT_SECONDS: '30',
+    ISSUE_REQUEST_POLL_INTERVAL_MS: '500',
+  },
+  'issue-request-ramp': {
+    ISSUE_REQUEST_RAMP_STOCK: '10000000',
+    ISSUE_REQUEST_RAMP_STAGE1_DURATION: '3m',
+    ISSUE_REQUEST_RAMP_STAGE1_TARGET: '3000',
+    ISSUE_REQUEST_RAMP_STAGE2_DURATION: '1m',
+    ISSUE_REQUEST_RAMP_STAGE2_TARGET: '3000',
+    ISSUE_REQUEST_RAMP_STAGE3_DURATION: '2m',
+    ISSUE_REQUEST_RAMP_STAGE3_TARGET: '5000',
+    ISSUE_REQUEST_RAMP_STAGE4_DURATION: '3m',
+    ISSUE_REQUEST_RAMP_STAGE4_TARGET: '5000',
+    ISSUE_REQUEST_RAMP_STAGE5_DURATION: '2m',
+    ISSUE_REQUEST_RAMP_STAGE5_TARGET: '7000',
+    ISSUE_REQUEST_RAMP_STAGE6_DURATION: '5m',
+    ISSUE_REQUEST_RAMP_STAGE6_TARGET: '7000',
+    ISSUE_REQUEST_RAMP_STAGE7_DURATION: '3m',
+    ISSUE_REQUEST_RAMP_STAGE7_TARGET: '0',
+  },
+  'issue-request-real-ramp': {
+    ISSUE_REQUEST_REAL_RAMP_USER_POOL_SIZE: '7000',
+    ISSUE_REQUEST_REAL_RAMP_COUPON_POOL_SIZE: '1000',
+    ISSUE_REQUEST_REAL_RAMP_STOCK_PER_COUPON: '100000',
+    ISSUE_REQUEST_REAL_RAMP_SETUP_TIMEOUT: '30m',
+    ISSUE_REQUEST_RAMP_STAGE1_DURATION: '3m',
+    ISSUE_REQUEST_RAMP_STAGE1_TARGET: '3000',
+    ISSUE_REQUEST_RAMP_STAGE2_DURATION: '1m',
+    ISSUE_REQUEST_RAMP_STAGE2_TARGET: '3000',
+    ISSUE_REQUEST_RAMP_STAGE3_DURATION: '2m',
+    ISSUE_REQUEST_RAMP_STAGE3_TARGET: '5000',
+    ISSUE_REQUEST_RAMP_STAGE4_DURATION: '5m',
+    ISSUE_REQUEST_RAMP_STAGE4_TARGET: '5000',
+    ISSUE_REQUEST_RAMP_STAGE5_DURATION: '2m',
+    ISSUE_REQUEST_RAMP_STAGE5_TARGET: '7000',
+    ISSUE_REQUEST_RAMP_STAGE6_DURATION: '5m',
+    ISSUE_REQUEST_RAMP_STAGE6_TARGET: '7000',
+    ISSUE_REQUEST_RAMP_STAGE7_DURATION: '3m',
+    ISSUE_REQUEST_RAMP_STAGE7_TARGET: '0',
+  },
 };
 
 const scenarioLabels = {
   smoke: '기본 기능 확인',
+  'issue-request-smoke': '비동기 발급 요청 기본 확인',
   baseline: '일반 사용량 기준 부하',
   'issue-burst': '대량 동시 발급 정합성 확인',
   contention: '동시 발급 경합 확인',
   'issue-overload': '쿠폰 발급 API 과부하',
+  'issue-request-burst': '비동기 발급 요청 동시성 확인',
+  'issue-request-overload': '비동기 발급 요청 과부하',
+  'issue-request-ramp': '비동기 발급 요청 수락 성능 확인',
+  'issue-request-real-ramp': '실사용자 가정 비동기 발급 수락 성능 확인',
 };
 
 function usage() {
@@ -452,6 +512,39 @@ function buildLoadDescription(scenario, parsedEnv, envSource) {
         `ISSUE_OVERLOAD_USER_POOL_SIZE=${resolveValue('ISSUE_OVERLOAD_USER_POOL_SIZE')}`,
         `ISSUE_OVERLOAD_COUPON_POOL_SIZE=${resolveValue('ISSUE_OVERLOAD_COUPON_POOL_SIZE')}`,
       ].join(', ');
+    case 'issue-request-smoke':
+      return `ISSUE_REQUEST_SMOKE_VUS=${resolveValue('ISSUE_REQUEST_SMOKE_VUS')}`;
+    case 'issue-request-burst':
+      return [
+        `ISSUE_REQUEST_BURST_VUS=${resolveValue('ISSUE_REQUEST_BURST_VUS')}`,
+        `ISSUE_REQUEST_BURST_STOCK=${resolveValue('ISSUE_REQUEST_BURST_STOCK')}`,
+        `ISSUE_REQUEST_BURST_MAX_DURATION=${resolveValue('ISSUE_REQUEST_BURST_MAX_DURATION')}`,
+        `ISSUE_REQUEST_POLL_TIMEOUT_SECONDS=${resolveValue('ISSUE_REQUEST_POLL_TIMEOUT_SECONDS')}`,
+        `ISSUE_REQUEST_POLL_INTERVAL_MS=${resolveValue('ISSUE_REQUEST_POLL_INTERVAL_MS')}`,
+      ].join(', ');
+    case 'issue-request-overload':
+      return [
+        `ISSUE_REQUEST_OVERLOAD_VUS=${resolveValue('ISSUE_REQUEST_OVERLOAD_VUS')}`,
+        `ISSUE_REQUEST_OVERLOAD_DURATION=${resolveValue('ISSUE_REQUEST_OVERLOAD_DURATION')}`,
+        `ISSUE_REQUEST_OVERLOAD_COUPON_POOL_SIZE=${resolveValue('ISSUE_REQUEST_OVERLOAD_COUPON_POOL_SIZE')}`,
+        `ISSUE_REQUEST_OVERLOAD_STOCK_PER_COUPON=${resolveValue('ISSUE_REQUEST_OVERLOAD_STOCK_PER_COUPON')}`,
+        `ISSUE_REQUEST_POLL_TIMEOUT_SECONDS=${resolveValue('ISSUE_REQUEST_POLL_TIMEOUT_SECONDS')}`,
+        `ISSUE_REQUEST_POLL_INTERVAL_MS=${resolveValue('ISSUE_REQUEST_POLL_INTERVAL_MS')}`,
+      ].join(', ');
+    case 'issue-request-ramp':
+      return [
+        `ISSUE_REQUEST_RAMP_STAGE1_TARGET=${resolveValue('ISSUE_REQUEST_RAMP_STAGE1_TARGET')}`,
+        `ISSUE_REQUEST_RAMP_STAGE3_TARGET=${resolveValue('ISSUE_REQUEST_RAMP_STAGE3_TARGET')}`,
+        `ISSUE_REQUEST_RAMP_STAGE5_TARGET=${resolveValue('ISSUE_REQUEST_RAMP_STAGE5_TARGET')}`,
+        `ISSUE_REQUEST_RAMP_STOCK=${resolveValue('ISSUE_REQUEST_RAMP_STOCK')}`,
+      ].join(', ');
+    case 'issue-request-real-ramp':
+      return [
+        `ISSUE_REQUEST_REAL_RAMP_USER_POOL_SIZE=${resolveValue('ISSUE_REQUEST_REAL_RAMP_USER_POOL_SIZE')}`,
+        `ISSUE_REQUEST_REAL_RAMP_COUPON_POOL_SIZE=${resolveValue('ISSUE_REQUEST_REAL_RAMP_COUPON_POOL_SIZE')}`,
+        `ISSUE_REQUEST_REAL_RAMP_STOCK_PER_COUPON=${resolveValue('ISSUE_REQUEST_REAL_RAMP_STOCK_PER_COUPON')}`,
+        `ISSUE_REQUEST_RAMP_STAGE5_TARGET=${resolveValue('ISSUE_REQUEST_RAMP_STAGE5_TARGET')}`,
+      ].join(', ');
     default:
       return 'n/a';
   }
@@ -472,6 +565,16 @@ function buildLoadSummary(scenario, parsedEnv, envSource) {
       return `${resolveValue('CONTENTION_VUS')}명이 같은 쿠폰에 동시에 발급 요청`;
     case 'issue-overload':
       return `${resolveValue('ISSUE_OVERLOAD_VUS')}명이 ${resolveValue('ISSUE_OVERLOAD_DURATION')} 동안 coupon-issue를 반복 호출`;
+    case 'issue-request-smoke':
+      return `${resolveValue('ISSUE_REQUEST_SMOKE_VUS')}명이 비동기 발급 요청 기본 흐름을 1회 실행`;
+    case 'issue-request-burst':
+      return `${resolveValue('ISSUE_REQUEST_BURST_VUS')}명이 같은 쿠폰에 동시에 비동기 발급 요청`;
+    case 'issue-request-overload':
+      return `${resolveValue('ISSUE_REQUEST_OVERLOAD_VUS')}명이 ${resolveValue('ISSUE_REQUEST_OVERLOAD_DURATION')} 동안 비동기 발급 요청을 반복 호출`;
+    case 'issue-request-ramp':
+      return `비동기 발급 요청 intake를 3000 -> 5000 -> 7000 VU 단계로 상승`;
+    case 'issue-request-real-ramp':
+      return `실사용자 세션 기준으로 비동기 발급 요청 intake를 3000 -> 5000 -> 7000 VU 단계로 상승`;
     default:
       return '설정값 확인 필요';
   }

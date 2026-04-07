@@ -20,10 +20,12 @@ class CouponActivityCoreRepository(
                 throw exception
             }
 
-            couponActivityJpaRepository.findByCouponIssueIdAndActivityType(
-                couponIssueId = criteria.couponIssueId,
-                activityType = criteria.activityType,
-            )!!.toCouponActivity()
+            couponActivityJpaRepository
+                .findByCouponIssueIdAndActivityType(
+                    couponIssueId = criteria.couponIssueId,
+                    activityType = criteria.activityType,
+                )!!
+                .toCouponActivity()
         }
 
     private fun isDuplicateConstraintViolation(exception: DataIntegrityViolationException): Boolean =

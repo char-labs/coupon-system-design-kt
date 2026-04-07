@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 
 @Hidden
-@Profile("local")
+@Profile("local", "load-test")
 @RestController
 @RequestMapping("/load-test/admin")
 class LoadTestAdminController(

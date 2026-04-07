@@ -16,6 +16,12 @@ interface OutboxEventRepository {
         limit: Int,
     ): List<OutboxEvent>
 
+    fun existsByAggregate(
+        aggregateType: String,
+        aggregateId: String,
+        statuses: Set<OutboxEventStatus>,
+    ): Boolean
+
     fun markProcessing(
         eventId: Long,
         candidateStatuses: Set<OutboxEventStatus>,

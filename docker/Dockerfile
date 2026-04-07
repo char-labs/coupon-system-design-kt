@@ -2,6 +2,9 @@
 FROM gradle:9.1.0-jdk25-alpine AS build
 WORKDIR /app
 
+ARG APP_MODULE=:coupon:coupon-api
+ARG APP_JAR_DIR=coupon/coupon-api
+
 # Copy gradle files for dependency caching
 COPY gradle gradle
 COPY gradlew .
@@ -13,6 +16,7 @@ COPY build.gradle.kts .
 COPY coupon/coupon-enum/build.gradle.kts coupon/coupon-enum/
 COPY coupon/coupon-domain/build.gradle.kts coupon/coupon-domain/
 COPY coupon/coupon-api/build.gradle.kts coupon/coupon-api/
+COPY coupon/coupon-worker/build.gradle.kts coupon/coupon-worker/
 COPY storage/db-core/build.gradle.kts storage/db-core/
 COPY storage/redis/build.gradle.kts storage/redis/
 COPY support/logging/build.gradle.kts support/logging/
@@ -27,18 +31,20 @@ COPY storage storage
 COPY support support
 
 # Build application
-RUN gradle clean :coupon:coupon-api:bootJar --no-daemon -x test
+RUN gradle clean ${APP_MODULE}:bootJar --no-daemon -x test
 
 # Runtime stage
 FROM amazoncorretto:25-alpine
 WORKDIR /app
+
+ARG APP_JAR_DIR=coupon/coupon-api
 
 # Create non-root user for security
 RUN addgroup -S spring && adduser -S spring -G spring
 USER spring:spring
 
 # Copy jar from build stage
-COPY --from=build /app/coupon/coupon-api/build/libs/coupon-api-*.jar app.jar
+COPY --from=build /app/${APP_JAR_DIR}/build/libs/*.jar app.jar
 
 # Spring Boot 4 & Java 25 optimizations for Amazon Corretto
 ENV JAVA_OPTS="-Xmx1024m -Xms512m \

@@ -9,3 +9,40 @@ worker:
       initial-delay: 1s
       max-delay: 5m
       multiplier: 2.0
+  coupon-issue-request-reconciliation:
+    enabled: true
+    batch-size: 100
+    fixed-delay: 1s
+    initial-delay: 1s
+    processing-timeout: 5m
+    pending-timeout: 30s
+  kafka:
+    coupon-issue-request:
+      enabled: true
+      topic: coupon.issue.requested.v1
+      dlq-topic: coupon.issue.requested.v1.dlq
+      group-id: coupon-issue-request-group
+      dlq-group-id: coupon-issue-request-dlq-group
+      concurrency: 3
+      observation-enabled: true
+      ack-timeout: 10s
+      topic-partitions: 3
+      topic-replicas: 1
+      consumer:
+        auto-offset-reset: earliest
+        session-timeout: 30s
+        heartbeat-interval: 10s
+        max-poll-interval: 10m
+        max-poll-records: 1000
+        fetch-min-bytes: 1024
+        fetch-max-wait: 200ms
+        partition-assignment-strategy: org.apache.kafka.clients.consumer.CooperativeStickyAssignor
+      producer:
+        acks: all
+        enable-idempotence: true
+        max-in-flight-requests-per-connection: 1
+      retry:
+        max-attempts: 5
+        initial-interval: 1s
+        multiplier: 2.0
+        max-interval: 30s

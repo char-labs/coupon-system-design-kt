@@ -42,7 +42,7 @@ class ApiExceptionAdvice : ResponseEntityExceptionHandler() {
         status: HttpStatusCode,
         request: WebRequest,
     ): ResponseEntity<Any>? {
-        log.error { "${"MethodArgumentNotValidException : {}"} ${e.message} $e" }
+        log.error(e) { "MethodArgumentNotValidException: ${e.message}" }
         val errors = e.bindingResult.allErrors.mapNotNull { it.defaultMessage }
         val errorMessage = if (errors.isNotEmpty()) errors.joinToString("; ") else "Validation failed"
         val errorResponse = ErrorResponse.of(e.javaClass.simpleName, errorMessage)
@@ -52,7 +52,7 @@ class ApiExceptionAdvice : ResponseEntityExceptionHandler() {
 
     @ExceptionHandler(ConstraintViolationException::class)
     fun handleConstraintViolationException(e: ConstraintViolationException): ResponseEntity<ApiResponse<ErrorResponse>> {
-        log.error { "${"ConstraintViolationException: {}"} ${e.message} $e" }
+        log.error(e) { "ConstraintViolationException: ${e.message}" }
         val bindingErrors =
             e.constraintViolations.associate { violation ->
                 val path = violation.propertyPath.toString().substringAfterLast(".", "unknown")
@@ -67,7 +67,7 @@ class ApiExceptionAdvice : ResponseEntityExceptionHandler() {
     protected fun handleMethodArgumentTypeMismatchException(
         e: MethodArgumentTypeMismatchException,
     ): ResponseEntity<ApiResponse<ErrorResponse>> {
-        log.error { "${"MethodArgumentTypeMismatchException : {}"} ${e.message} $e" }
+        log.error(e) { "MethodArgumentTypeMismatchException: ${e.message}" }
         val errorCode: ErrorType = ErrorType.METHOD_ARGUMENT_TYPE_MISMATCH
         val errorResponse = ErrorResponse.of(e.javaClass.simpleName, errorCode.message)
         val apiResponse = ApiResponse.fail(errorCode.status, errorResponse)
@@ -80,7 +80,7 @@ class ApiExceptionAdvice : ResponseEntityExceptionHandler() {
         status: HttpStatusCode,
         request: WebRequest,
     ): ResponseEntity<Any>? {
-        log.error { "${"HttpRequestMethodNotSupportedException : {}"} ${e.message} $e" }
+        log.error(e) { "HttpRequestMethodNotSupportedException: ${e.message}" }
         val errorCode: ErrorType = ErrorType.METHOD_NOT_ALLOWED
         val errorResponse = ErrorResponse.of(e.javaClass.simpleName, errorCode.message)
         val apiResponse = ApiResponse.fail(errorCode.status, errorResponse)
@@ -89,7 +89,7 @@ class ApiExceptionAdvice : ResponseEntityExceptionHandler() {
 
     @ExceptionHandler(ErrorException::class)
     fun handleCustomException(e: ErrorException): ResponseEntity<ApiResponse<ErrorResponse>> {
-        log.error { "${"CustomException : {}"} ${e.message} $e" }
+        log.error(e) { "CustomException: ${e.message}" }
         val errorCode: ErrorType = e.errorType
         val errorResponse = ErrorResponse.of(errorCode.name, errorCode.message)
         val apiResponse = ApiResponse.fail(errorCode.status, errorResponse)
@@ -104,7 +104,7 @@ class ApiExceptionAdvice : ResponseEntityExceptionHandler() {
 
     @ExceptionHandler(Exception::class)
     protected fun handleException(e: Exception): ResponseEntity<ApiResponse<ErrorResponse>> {
-        log.error { "${"Internal Server Error : {}"} ${e.message} $e" }
+        log.error(e) { "Internal Server Error: ${e.message}" }
         val internalServerError: ErrorType = ErrorType.INTERNAL_SERVER_ERROR
         val errorResponse = ErrorResponse.of(e.javaClass.simpleName, internalServerError.message)
         val apiResponse = ApiResponse.fail(internalServerError.status, errorResponse)

@@ -10,6 +10,10 @@ class CouponPreviewService(
     private val couponEligibilityEvaluator: CouponEligibilityEvaluator,
     private val couponDiscountCalculator: CouponDiscountCalculator,
 ) {
+    /**
+     * Read-only preview path.
+     * It never changes coupon state and only combines eligibility + discount calculation.
+     */
     fun preview(command: CouponPreviewCommand): CouponPreview {
         val coupon = couponRepository.findDetailById(command.couponId)
         val normalizedOrderAmount = command.orderAmount.coerceAtLeast(0)

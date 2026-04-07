@@ -1,7 +1,7 @@
 package com.coupon.auth
 
 interface RedisTokenRepository {
-    fun create(
+    fun save(
         accessToken: String,
         refreshToken: String,
         provider: Provider,

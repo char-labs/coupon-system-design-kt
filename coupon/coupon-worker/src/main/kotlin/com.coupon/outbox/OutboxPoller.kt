@@ -21,6 +21,10 @@ class OutboxPoller(
 ) {
     private val log by logger()
 
+    /**
+     * Worker heartbeat.
+     * It first recovers stale PROCESSING events, then claims fresh processable events and dispatches them one by one.
+     */
     @Scheduled(
         fixedDelayString = "\${worker.outbox.fixed-delay}",
         initialDelayString = "\${worker.outbox.initial-delay}",

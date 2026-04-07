@@ -13,7 +13,7 @@ sealed class CouponCommand {
         val totalQuantity: Long,
         val availableAt: LocalDateTime,
         val endAt: LocalDateTime,
-    )
+    ) : CouponCommand()
 
     data class Update(
         val name: String?,
@@ -22,5 +22,5 @@ sealed class CouponCommand {
         val minOrderAmount: Long?,
         val availableAt: LocalDateTime?,
         val endAt: LocalDateTime?,
-    )
+    ) : CouponCommand()
 }

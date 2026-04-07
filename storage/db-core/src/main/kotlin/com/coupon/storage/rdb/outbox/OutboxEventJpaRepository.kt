@@ -7,6 +7,21 @@ import org.springframework.data.jpa.repository.Query
 import java.time.LocalDateTime
 
 interface OutboxEventJpaRepository : JpaRepository<OutboxEventEntity, Long> {
+    @Query(
+        """
+        select case when count(event) > 0 then true else false end
+          from OutboxEventEntity event
+         where event.aggregateType = :aggregateType
+           and event.aggregateId = :aggregateId
+           and event.status in :statuses
+        """,
+    )
+    fun existsByAggregate(
+        aggregateType: String,
+        aggregateId: String,
+        statuses: Set<OutboxEventStatus>,
+    ): Boolean
+
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query(
         """

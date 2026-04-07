@@ -40,6 +40,17 @@ class OutboxEventCoreRepository(
         return outboxEventCustomRepository.findProcessable(statuses, availableAt, pageable).map(OutboxEventEntity::toOutboxEvent)
     }
 
+    override fun existsByAggregate(
+        aggregateType: String,
+        aggregateId: String,
+        statuses: Set<OutboxEventStatus>,
+    ): Boolean =
+        outboxEventJpaRepository.existsByAggregate(
+            aggregateType = aggregateType,
+            aggregateId = aggregateId,
+            statuses = statuses,
+        )
+
     override fun markProcessing(
         eventId: Long,
         candidateStatuses: Set<OutboxEventStatus>,

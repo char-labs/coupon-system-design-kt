@@ -13,7 +13,7 @@ class RedisTokenCoreRepository(
     private val redisTemplate: RedisTemplate<String, String>,
     private val objectMapper: ObjectMapper,
 ) : RedisTokenRepository {
-    override fun create(
+    override fun save(
         accessToken: String,
         refreshToken: String,
         provider: Provider,

@@ -1,7 +1,6 @@
 package com.coupon.coupon
 
 import com.coupon.enums.coupon.CouponPreviewInapplicableReason
-import com.coupon.enums.coupon.CouponStatus
 import org.springframework.stereotype.Component
 import java.time.LocalDateTime
 
@@ -17,7 +16,7 @@ class CouponEligibilityEvaluator {
             return CouponPreviewInapplicableReason.ALREADY_ISSUED
         }
 
-        if (coupon.status != CouponStatus.ACTIVE) {
+        if (!coupon.isActive()) {
             return CouponPreviewInapplicableReason.NOT_ACTIVE
         }
 

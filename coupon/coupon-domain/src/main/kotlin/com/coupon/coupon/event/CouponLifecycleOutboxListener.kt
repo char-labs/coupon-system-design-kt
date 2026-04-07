@@ -2,7 +2,6 @@ package com.coupon.coupon.event
 
 import com.coupon.support.outbox.OutboxEventService
 import com.coupon.support.outbox.command.OutboxEventCommand
-import org.springframework.scheduling.annotation.Async
 import org.springframework.stereotype.Component
 import org.springframework.transaction.event.TransactionPhase
 import org.springframework.transaction.event.TransactionalEventListener
@@ -32,6 +31,7 @@ class CouponLifecycleOutboxListener(
         event: CouponLifecycleDomainEvent,
         eventType: String,
     ) {
+        // Lifecycle events are written before commit so DB state change and follow-up projection event stay atomic.
         outboxEventService.publish(
             OutboxEventCommand.Publish(
                 eventType = eventType,

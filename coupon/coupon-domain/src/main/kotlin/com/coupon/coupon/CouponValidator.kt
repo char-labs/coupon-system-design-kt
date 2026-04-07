@@ -1,6 +1,5 @@
 package com.coupon.coupon
 
-import com.coupon.enums.coupon.CouponStatus
 import com.coupon.enums.error.ErrorType
 import com.coupon.error.ErrorException
 import org.springframework.stereotype.Component
@@ -18,7 +17,7 @@ class CouponValidator(
     }
 
     private fun validateStatus(coupon: CouponDetail) {
-        if (coupon.status != CouponStatus.ACTIVE) {
+        if (!coupon.isActive()) {
             throw ErrorException(ErrorType.COUPON_NOT_ACTIVE)
         }
     }

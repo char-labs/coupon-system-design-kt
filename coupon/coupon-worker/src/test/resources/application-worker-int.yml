@@ -1,0 +1,23 @@
+worker:
+  outbox:
+    enabled: true
+    fixed-delay: 1h
+    initial-delay: 1h
+  coupon-issue-request-reconciliation:
+    enabled: false
+  kafka:
+    coupon-issue-request:
+      enabled: true
+      concurrency: 1
+      observation-enabled: false
+      topic-partitions: 1
+      topic-replicas: 1
+
+spring:
+  kafka:
+    consumer:
+      auto-offset-reset: earliest
+
+jwt-token:
+  access-token-expiration-seconds: 60
+  refresh-token-expiration-seconds: 120

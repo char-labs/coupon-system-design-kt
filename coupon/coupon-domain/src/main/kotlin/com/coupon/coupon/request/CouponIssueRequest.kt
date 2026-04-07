@@ -13,7 +13,15 @@ data class CouponIssueRequest(
     val resultCode: CouponCommandResultCode?,
     val couponIssueId: Long?,
     val failureReason: String?,
+    val enqueuedAt: LocalDateTime?,
+    val processingStartedAt: LocalDateTime?,
+    val deliveryAttemptCount: Int,
+    val lastDeliveryError: String?,
     val processedAt: LocalDateTime?,
     val createdAt: LocalDateTime,
     val updatedAt: LocalDateTime?,
-)
+) {
+    fun isTerminal(): Boolean = status.isTerminal()
+
+    fun hasLeftPending(): Boolean = status.hasLeftPending()
+}

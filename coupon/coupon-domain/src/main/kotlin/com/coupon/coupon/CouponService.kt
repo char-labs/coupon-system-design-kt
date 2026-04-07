@@ -12,6 +12,10 @@ class CouponService(
     private val couponRepository: CouponRepository,
     private val couponCodeGenerator: CouponCodeGenerator,
 ) {
+    /**
+     * Admin write path for coupon master data.
+     * This API is fully synchronous and commits directly to the coupon table.
+     */
     fun createCoupon(command: CouponCommand.Create): Coupon {
         val couponCode = couponCodeGenerator.generate()
         return couponRepository.save(

@@ -2,6 +2,68 @@
 
 이 문서는 `k6 -> InfluxDB -> Grafana` 흐름으로 테스트를 실행하고, 대시보드를 보면서 결과를 해석하는 최소 운영 가이드입니다.
 
+현재 기본 기준 시나리오는 아래입니다.
+
+- 사용자 `1,000명`
+- 쿠폰 `1개`
+- 쿠폰 수량 `1,000개`
+- 모든 사용자가 같은 시점에 발급 시도
+- 검증 목표: `중복 발급 없음`, `최종 발급 건수 1,000`, `최종 잔여 재고 0`, `issued + remaining == initial stock`
+
+## 시나리오 맵
+
+아래 시나리오는 모두 "쿠폰 발급 시스템에 어떤 부하가 들어오는지"를 먼저 가정하고 시작합니다.
+
+- `smoke`
+  - 상황: 사용자 1명이 쿠폰 발급 요청 1건을 보냅니다.
+  - 목적: 배포 직후 request accepted-model, Kafka relay, consumer, 상태 조회가 최소한 정상 동작하는지 확인합니다.
+- `issue-request-smoke`
+  - 상황: synthetic 사용자 1명이 비동기 쿠폰 발급 요청 1건을 보냅니다.
+  - 목적: load-test 전용 accepted endpoint와 request 상태 수렴이 정상인지 확인합니다.
+- `ramp`
+  - 상황: synthetic 사용자가 점진적으로 증가합니다.
+  - 기본값: `3,000 -> 5,000 -> 7,000 VU`
+  - 목적: 인증 비용 없이 Kafka intake 자체가 어디까지 버티는지 봅니다.
+- `real-ramp`
+  - 상황: 실제 인증된 사용자 세션 풀이 점진적으로 발급 요청을 보냅니다.
+  - 기본값: 사용자 풀 `7,000명`, 쿠폰 풀 `1,000개`, 쿠폰당 재고 `100,000개`
+  - 목적: 실사용자 가정으로 intake 성능을 확인합니다.
+- `burst`
+  - 상황: 한 종류의 쿠폰에 사용자가 동시에 몰립니다.
+  - 기본값: `사용자 1,000명 동시 발급 시도 / 쿠폰 수량 1,000개`
+  - 목적: 동시성 상황에서 정합성, 중복 방지, 재고 수렴이 맞는지 봅니다.
+- `overload`
+  - 상황: 일정 시간 동안 지속적으로 발급 요청이 유입됩니다.
+  - 기본값: `50 VU`, `10분`, 쿠폰 풀 `200개`, 쿠폰당 재고 `100,000개`
+  - 목적: sustained load에서 worker, Kafka, request 상태 수렴이 안정적인지 봅니다.
+
+한 번에 따라칠 수 있는 추천 진입점은 아래와 같습니다.
+
+- 최소 회귀 확인
+  - `./load-test/k6/run-local-kafka-runbook.sh smoke`
+- 동시성 검증
+  - `./load-test/k6/run-local-kafka-runbook.sh burst`
+- 전체 추천 플로우
+  - `./load-test/k6/run-local-kafka-runbook.sh full`
+
+한 번에 따라칠 수 있는 추천 진입점은 [run-local-kafka-runbook.sh](/Users/yunbeom/ybcha/coupon-system-design-kt/load-test/k6/run-local-kafka-runbook.sh) 입니다.
+
+쿠폰 1개에 대해 재고 수량만 바꿔가며 정합성을 보고 싶으면 [run-single-coupon-stock-runbook.sh](/Users/yunbeom/ybcha/coupon-system-design-kt/load-test/k6/run-single-coupon-stock-runbook.sh)를 사용합니다.
+
+```bash
+./load-test/k6/run-local-kafka-runbook.sh full
+```
+
+현재 `full`은 `up -> check -> smoke -> burst` 순서입니다. 먼저 기본 회귀와 1,000명 동시 발급 정합성을 확인하고, ramp/overload는 필요할 때만 추가합니다.
+
+쿠폰 1개 재고 검증 전용 추천 진입점은 아래입니다.
+
+```bash
+./load-test/k6/run-single-coupon-stock-runbook.sh full
+```
+
+세부 제어가 필요하면 아래 단계별 명령을 직접 사용합니다.
+
 ## 1. 스택 올리기
 
 기본 앱 스택과 observability overlay를 함께 올립니다.
@@ -25,7 +87,14 @@ curl -i http://localhost:8086/ping
 curl http://localhost:3000/api/health
 ```
 
-`k6` 스크립트는 `setup()`에서 `/actuator/health`를 확인한 뒤, local profile 전용 `/load-test/admin/signin`으로 관리자 계정 보장과 토큰 발급을 먼저 시도합니다. 그래도 첫 실행 안정성을 위해 위 준비 확인을 먼저 하는 편이 좋습니다.
+`k6` 스크립트는 `setup()`에서 `/actuator/health`를 확인한 뒤, local 또는 load-test profile 전용 `/load-test/admin/signin`으로 관리자 계정 보장과 토큰 발급을 먼저 시도합니다. synthetic 시나리오는 `setup()`에서 `/load-test/users/prepare`로 필요한 사용자 수를 먼저 bulk prepare하고, measured phase에서는 쿠폰 발급 요청만 보내도록 맞췄습니다. synthetic 발급 엔드포인트는 전달된 k6 user id를 deterministic load-test user row로 매핑해서 FK 제약을 유지합니다. 그래도 첫 실행 안정성을 위해 위 준비 확인을 먼저 하는 편이 좋습니다.
+
+Kafka accepted-model 시나리오는 아래 `local` 또는 `load-test` profile 전용 synthetic endpoint를 사용합니다.
+
+- `POST /load-test/coupons/{couponId}/issue-requests`
+- `GET /load-test/coupon-issue-requests/{requestId}`
+
+이 경로들은 JWT 인증을 우회해서, 회원가입/로그인 비용이 아니라 Kafka relay/consumer 파이프라인의 request intake와 수렴 특성을 보는 데 집중합니다.
 
 `BASE_URL`은 `localhost` 대신 `127.0.0.1`을 권장합니다. 로컬 환경에 따라 `localhost`가 IPv6 또는 다른 resolver 경로를 타면서 진단이 어려워질 수 있습니다.
 
@@ -73,6 +142,16 @@ Slack 보고를 같이 쓰려면 [load-test/k6/.env](/Users/yunbeom/ybcha/coupon
 
 ```bash
 node load-test/k6/run-with-slack.mjs smoke --profile local -- \
+  --out influxdb=http://localhost:8086/myk6db \
+  -e BASE_URL=http://127.0.0.1:18080 \
+  -e ADMIN_EMAIL=loadtest-admin@coupon.local \
+  -e ADMIN_PASSWORD='admin1234!'
+```
+
+### Issue Request Smoke
+
+```bash
+node load-test/k6/run-with-slack.mjs issue-request-smoke --profile local -- \
   --out influxdb=http://localhost:8086/myk6db \
   -e BASE_URL=http://127.0.0.1:18080 \
   -e ADMIN_EMAIL=loadtest-admin@coupon.local \
@@ -169,6 +248,133 @@ node load-test/k6/run-with-slack.mjs issue-overload --profile local -- \
 
 예시의 경우 capacity는 `200 x 500 = 100,000`건입니다. 테스트 도중 이 용량을 넘기면 `issue_overload capacity exhausted ...` 메시지로 테스트를 바로 abort 하며, 원인과 늘려야 할 env var 이름을 같이 알려줍니다.
 
+### Issue Request Burst
+
+Kafka accepted-model 경로의 동시성 검증은 아래 시나리오를 사용합니다.
+
+```bash
+node load-test/k6/run-with-slack.mjs issue-request-burst --profile local -- \
+  --out influxdb=http://localhost:8086/myk6db \
+  -e BASE_URL=http://127.0.0.1:18080 \
+  -e ISSUE_REQUEST_BURST_VUS=1000 \
+  -e ISSUE_REQUEST_BURST_STOCK=1000 \
+  -e ISSUE_REQUEST_POLL_TIMEOUT_SECONDS=30 \
+  -e ISSUE_REQUEST_POLL_INTERVAL_MS=500
+```
+
+재고보다 더 많은 요청을 넣는 제어 케이스:
+
+```bash
+node load-test/k6/run-with-slack.mjs issue-request-burst --profile local -- \
+  --out influxdb=http://localhost:8086/myk6db \
+  -e BASE_URL=http://127.0.0.1:18080 \
+  -e ISSUE_REQUEST_BURST_VUS=1000 \
+  -e ISSUE_REQUEST_BURST_STOCK=900 \
+  -e ISSUE_REQUEST_POLL_TIMEOUT_SECONDS=30 \
+  -e ISSUE_REQUEST_POLL_INTERVAL_MS=500
+```
+
+이 시나리오는 다음을 같이 검증합니다.
+
+- request가 모두 `202 Accepted`로 정상 접수되는지
+- 각 request가 `SUCCEEDED` 또는 `FAILED(OUT_OF_STOCK)`로 수렴하는지
+- `DEAD` 요청이 없는지
+- 최종 `issued + remaining == initial stock` 정합성이 유지되는지
+
+쿠폰 1개 재고 케이스를 고정해서 반복 확인하려면 아래 전용 런북을 사용합니다.
+
+```bash
+./load-test/k6/run-single-coupon-stock-runbook.sh exact
+./load-test/k6/run-single-coupon-stock-runbook.sh oversubscribed
+./load-test/k6/run-single-coupon-stock-runbook.sh scarce
+./load-test/k6/run-single-coupon-stock-runbook.sh single-stock
+```
+
+- `exact`
+  - 사용자 1,000명 / 쿠폰 1개 / 재고 1,000개
+  - 기대: 1,000건 성공, 잔여 재고 0
+- `oversubscribed`
+  - 사용자 1,000명 / 쿠폰 1개 / 재고 900개
+  - 기대: 900건 성공, 100건 `OUT_OF_STOCK`
+- `scarce`
+  - 사용자 1,000명 / 쿠폰 1개 / 재고 100개
+  - 기대: 100건 성공, 900건 `OUT_OF_STOCK`
+- `single-stock`
+  - 사용자 1,000명 / 쿠폰 1개 / 재고 1개
+  - 기대: 1건 성공, 999건 `OUT_OF_STOCK`
+
+### Issue Request Overload
+
+Kafka relay/consumer를 포함한 end-to-end 과부하는 아래 시나리오를 사용합니다.
+
+```bash
+node load-test/k6/run-with-slack.mjs issue-request-overload --profile local -- \
+  --out influxdb=http://localhost:8086/myk6db \
+  -e BASE_URL=http://127.0.0.1:18080 \
+  -e ISSUE_REQUEST_OVERLOAD_VUS=50 \
+  -e ISSUE_REQUEST_OVERLOAD_DURATION=10m \
+  -e ISSUE_REQUEST_OVERLOAD_COUPON_POOL_SIZE=200 \
+  -e ISSUE_REQUEST_OVERLOAD_STOCK_PER_COUPON=100000 \
+  -e ISSUE_REQUEST_POLL_TIMEOUT_SECONDS=30 \
+  -e ISSUE_REQUEST_POLL_INTERVAL_MS=500
+```
+
+이 시나리오는 `POST /coupon-issue-requests`만 보내고 끝내지 않습니다. 각 요청이 최종 상태로 수렴할 때까지 polling하므로, Kafka relay/consumer를 포함한 실제 비동기 발급 파이프라인의 처리량과 tail latency를 같이 볼 수 있습니다.
+
+### Issue Request Ramp
+
+비교 대상 저장소의 `202 Accepted` 중심 부하 테스트와 가장 가까운 시나리오입니다.
+
+```bash
+node load-test/k6/run-with-slack.mjs issue-request-ramp --profile local -- \
+  --out influxdb=http://localhost:8086/myk6db \
+  -e BASE_URL=http://127.0.0.1:18080
+```
+
+기본 stage는 아래 형태입니다.
+
+- `0 -> 3000`
+- `3000 유지`
+- `5000 상승`
+- `5000 유지`
+- `7000 상승`
+- `7000 유지`
+- `0으로 종료`
+
+이 시나리오는 synthetic `userId`를 매 iteration마다 새로 만들고, request acceptance만 측정합니다.
+
+- 보는 것:
+  - `202 Accepted`
+  - request intake latency
+  - error rate
+- 보지 않는 것:
+  - request가 최종 `SUCCEEDED`까지 갔는지
+  - 재고 정합성
+
+즉, `issue-request-ramp`는 intake 성능 확인용이고, `issue-request-burst`와 `issue-request-overload`가 end-to-end 정합성 확인용입니다.
+
+### Issue Request Real Ramp
+
+실사용자 가정으로 request intake 성능을 보려면 아래 시나리오를 사용합니다.
+
+```bash
+node load-test/k6/run-with-slack.mjs issue-request-real-ramp --profile local -- \
+  --out influxdb=http://localhost:8086/myk6db \
+  -e BASE_URL=http://127.0.0.1:18080 \
+  -e ISSUE_REQUEST_REAL_RAMP_USER_POOL_SIZE=7000 \
+  -e ISSUE_REQUEST_REAL_RAMP_COUPON_POOL_SIZE=1000 \
+  -e ISSUE_REQUEST_REAL_RAMP_STOCK_PER_COUPON=100000
+```
+
+이 시나리오는 synthetic endpoint가 아니라 실제 `/coupon-issue-requests`를 호출합니다.
+
+- setup에서 사용자 회원가입/로그인 수행
+- access token 기반 호출
+- request status polling은 하지 않음
+- intake latency와 오류율 위주로 확인
+
+즉, 비교 대상 저장소의 `202 Accepted` 중심 테스트 의도와 가장 가깝지만, setup 비용이 훨씬 큽니다.
+
 중요:
 
 - 실시간 대시보드를 보려면 반드시 `--out influxdb=http://localhost:8086/myk6db`를 붙입니다.
@@ -184,6 +390,8 @@ node load-test/k6/run-with-slack.mjs issue-overload --profile local -- \
 
 - 포함:
   - `issue_coupon`
+  - `issue_coupon_request`
+  - `get_coupon_issue_request`
   - `use_coupon`
   - `cancel_coupon`
   - `get_coupon`
@@ -331,6 +539,34 @@ Webhook이 비어 있거나 Slack 전송을 끄고 싶으면:
 - checks rate가 즉시 깨짐
 - dashboard에는 데이터가 있는데 smoke가 실패하면 기능 회귀 가능성이 큼
 
+### Issue Request Smoke
+
+목표:
+
+- `POST /coupon-issue-requests`가 정상적으로 `202 Accepted`를 반환하는지 확인
+- request status polling이 최종 `SUCCEEDED`까지 수렴하는지 확인
+- Kafka relay/consumer가 기본 경로에서 정상 동작하는지 확인
+
+정상 신호:
+
+- failed rate 거의 0
+- checks rate 거의 1
+- request가 최종 `SUCCEEDED`
+- `couponIssueId`가 채워짐
+
+이상 신호:
+
+- request는 접수되지만 polling timeout 발생
+- request가 `DEAD`로 떨어짐
+- request가 `FAILED`로 끝나는데 테스트 데이터상 비즈니스 실패 이유가 없음
+
+이 경우에는 아래를 먼저 봅니다.
+
+- `t_coupon_issue_request`
+- `t_outbox_event`
+- Kafka UI topic 적재 여부
+- worker 로그
+
 ### Baseline
 
 목표:
@@ -405,6 +641,133 @@ Webhook이 비어 있거나 Slack 전송을 끄고 싶으면:
 
 - `정합성 통과 + 서버 오류 0`
   - 재고 동시성 제어는 정상으로 판단 가능
+- `lock retry가 있었지만 최종 결과 정상`
+  - 락 경합은 있었지만 시스템이 흡수했다고 판단 가능
+- `정합성 깨짐 또는 서버 오류 존재`
+  - 즉시 원인 분석이 필요한 상태
+
+### Issue Request Burst
+
+목표:
+
+- accepted-model 경로에서 대량 동시 요청이 `SUCCEEDED` 또는 `FAILED(OUT_OF_STOCK)`로만 수렴하는지 확인
+- Kafka relay/consumer를 거친 뒤에도 재고 정합성이 깨지지 않는지 확인
+- `DEAD` 요청 없이 request 상태가 모두 명시적으로 수렴하는지 확인
+
+정상 신호:
+
+- `issue_request_burst_dead_count = 0`
+- `issue_request_burst_unexpected_failure_count = 0`
+- `issue_request_burst_integrity_ok = 100%`
+- `issue_request_burst_expected_result_ok = 100%`
+- `ISSUE_REQUEST_BURST_STOCK=1000`, `ISSUE_REQUEST_BURST_VUS=1000`이면:
+  - 성공 발급 건수 `1000`
+  - 최종 잔여 재고 `0`
+- `ISSUE_REQUEST_BURST_STOCK=900`, `ISSUE_REQUEST_BURST_VUS=1000`이면:
+  - 성공 발급 건수 `900`
+  - 재고 부족 건수 `100`
+  - 최종 잔여 재고 `0`
+
+이상 신호:
+
+- `issue_request_burst_dead_count`가 1 이상
+- `issue_request_burst_unexpected_failure_count`가 1 이상
+- `issue_request_burst_integrity_ok`가 100%가 아님
+- `coupon issue request ... did not reach terminal status` timeout 발생
+
+원인 보는 순서:
+
+1. `t_coupon_issue_request`에서 `PENDING/ENQUEUED/PROCESSING/DEAD` 비율 확인
+2. `t_outbox_event`에서 relay backlog와 failed/dead 개수 확인
+3. Kafka UI에서 topic lag와 DLQ 적재 여부 확인
+4. worker 로그에서 relay publish 실패, consumer retry, DLQ 처리 로그 확인
+5. `issued + remaining == initial stock`가 깨졌다면 DB 상태를 먼저 확인
+
+### Issue Request Overload
+
+목표:
+
+- accepted-model + Kafka relay/consumer 경로의 장시간 처리량과 tail latency를 확인
+- 각 요청이 최종 `SUCCEEDED`까지 수렴하는지 확인
+- sustained load에서 relay/consumer/backlog가 밀리지 않는지 확인
+
+정상 신호:
+
+- `issue_request_overload_dead_count = 0`
+- `issue_request_overload_unexpected_failure_count = 0`
+- p95/p99가 시간축에서 과도하게 상승하지 않음
+- iterations가 장시간 비교적 일정
+
+이상 신호:
+
+- request terminal timeout 반복
+- `issue_request_overload_dead_count`가 증가
+- `issue_request_overload_unexpected_failure_count`가 증가
+- p95/p99는 오르는데 iterations가 눌림
+
+이 경우에는 아래를 같이 봅니다.
+
+- worker `/actuator/health`
+- Kafka UI lag
+- `t_coupon_issue_request` oldest `ENQUEUED` / `PROCESSING`
+- reconciliation 관련 로그와 메트릭
+
+### Issue Request Ramp
+
+목표:
+
+- Kafka accepted-model intake 성능을 고부하에서 확인
+- request acceptance latency와 오류율만 측정
+- 인증/회원가입 비용 없이 intake 자체만 집중적으로 보기
+
+정상 신호:
+
+- checks rate 거의 1
+- failed rate 거의 0
+- p95가 임계값 이내
+- accepted count가 stage 상승에 맞춰 꾸준히 증가
+
+이상 신호:
+
+- `issue_request_ramp accepted` check 실패
+- 5xx 또는 timeout 증가
+- p95/p99는 오르는데 iterations가 급격히 눌림
+
+원인 보는 순서:
+
+1. API 서버 CPU/스레드/DB connection 상태 확인
+2. `t_coupon_issue_request` insert 처리량 확인
+3. `t_outbox_event` 적재 속도와 backlog 확인
+4. Kafka relay backlog와 worker lag는 참고로만 보고, 이 시나리오에서는 acceptance latency를 먼저 본다
+
+### Issue Request Real Ramp
+
+목표:
+
+- 실사용자 인증 세션 기준으로 request intake 성능 확인
+- synthetic endpoint가 아니라 실제 `/coupon-issue-requests`를 통한 acceptance latency 확인
+- 회원가입/로그인 이후 access token 호출 환경에서 병목 확인
+
+정상 신호:
+
+- checks rate 거의 1
+- failed rate 거의 0
+- p95가 임계값 이내
+- accepted count가 stage 상승에 맞춰 꾸준히 증가
+
+이상 신호:
+
+- `issue_request_real_ramp accepted` check 실패
+- `issue_request_real_ramp capacity exhausted`
+- signup/signin setup 시간이 과도하게 길어짐
+- p95/p99는 오르는데 iterations가 급격히 눌림
+
+원인 보는 순서:
+
+1. 사용자 풀/쿠폰 풀 capacity 먼저 확인
+2. signup/signin setup 시간이 병목인지 확인
+3. API 서버 CPU/스레드/DB connection 상태 확인
+4. `t_coupon_issue_request` insert 처리량과 `t_outbox_event` 적재 속도 확인
 - `정합성 통과 + 재시도 가능한 락 실패만 존재`
   - hot coupon 경합은 있었지만 최종 결과는 제어됨
 - `정합성 통과 + p95/p99만 상승`

@@ -190,6 +190,12 @@ export function signin(email, password) {
   );
 }
 
+export function createUserSession(email, name, password = config.testUserPassword) {
+  signupUser(email, password, name);
+  const token = signin(email, password);
+  return token.accessToken;
+}
+
 function waitUntil(operation, label) {
   const deadline = Date.now() + config.startupTimeoutSeconds * 1000;
   let lastStatus = 'n/a';
@@ -276,8 +282,28 @@ export function waitForAdminSignin(email, password) {
   }, 'admin_signin_ready');
 }
 
+export function prepareSyntheticUsers(
+  count,
+  startSequence = config.issueRequestSyntheticUserIdBase,
+) {
+  return post(
+    '/load-test/users/prepare',
+    {
+      startSequence,
+      count,
+    },
+    {},
+    200,
+    'prepare_synthetic_users',
+  );
+}
+
 export function createVuEmail(prefix = 'k6-user') {
   const vuId = exec.vu.idInTest || 0;
   const iteration = exec.scenario.iterationInTest || 0;
   return `${prefix}+${vuId}-${iteration}-${Date.now()}@coupon.local`;
+}
+
+export function createSyntheticUserId(sequence) {
+  return config.issueRequestSyntheticUserIdBase + Number(sequence);
 }

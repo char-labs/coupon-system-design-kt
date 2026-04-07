@@ -46,6 +46,14 @@ class CouponIssueRequestEntity(
     var couponIssueId: Long? = null,
     @Column(name = "failure_reason", columnDefinition = "TEXT")
     var failureReason: String? = null,
+    @Column(name = "enqueued_at")
+    var enqueuedAt: LocalDateTime? = null,
+    @Column(name = "processing_started_at")
+    var processingStartedAt: LocalDateTime? = null,
+    @Column(name = "delivery_attempt_count", nullable = false)
+    var deliveryAttemptCount: Int = 0,
+    @Column(name = "last_delivery_error", columnDefinition = "TEXT")
+    var lastDeliveryError: String? = null,
     @Column(name = "processed_at")
     var processedAt: LocalDateTime? = null,
 ) : BaseEntity() {
@@ -66,6 +74,10 @@ class CouponIssueRequestEntity(
             resultCode = resultCode,
             couponIssueId = couponIssueId,
             failureReason = failureReason,
+            enqueuedAt = enqueuedAt,
+            processingStartedAt = processingStartedAt,
+            deliveryAttemptCount = deliveryAttemptCount,
+            lastDeliveryError = lastDeliveryError,
             processedAt = processedAt,
             createdAt = createdAt,
             updatedAt = updatedAt,

@@ -12,6 +12,8 @@ class OutboxEventService(
 ) {
     companion object {
         val PROCESSABLE_STATUSES: Set<OutboxEventStatus> = setOf(OutboxEventStatus.PENDING, OutboxEventStatus.FAILED)
+        val ACTIVE_STATUSES: Set<OutboxEventStatus> =
+            setOf(OutboxEventStatus.PENDING, OutboxEventStatus.FAILED, OutboxEventStatus.PROCESSING)
     }
 
     fun publish(command: OutboxEventCommand.Publish): OutboxEvent =
@@ -43,6 +45,19 @@ class OutboxEventService(
                 statuses = PROCESSABLE_STATUSES,
                 availableAt = availableAt,
                 limit = limit,
+            )
+        }
+
+    fun existsActiveEvent(
+        aggregateType: String,
+        aggregateId: String,
+        statuses: Set<OutboxEventStatus> = ACTIVE_STATUSES,
+    ): Boolean =
+        Tx.readable {
+            outboxEventRepository.existsByAggregate(
+                aggregateType = aggregateType,
+                aggregateId = aggregateId,
+                statuses = statuses,
             )
         }
 
