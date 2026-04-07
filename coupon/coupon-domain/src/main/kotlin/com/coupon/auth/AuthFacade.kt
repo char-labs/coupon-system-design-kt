@@ -17,9 +17,11 @@ class AuthFacade(
     fun signup(command: AuthCommand.SignUp): Token =
         Tx.writeable {
             userService.verifyEmail(command.email)
-            val user = userService.createUser(command.toUserCommand(passwordEncoder.encode(command.password)!!))
-            val token = authService.generateToken(AuthCommand.GenerateToken.toCommand(user))
-            return@writeable token
+            val encodedPassword =
+                passwordEncoder.encode(command.password)
+                    ?: error("PasswordEncoder.encode returned null")
+            val user = userService.createUser(command.toUserCommand(encodedPassword))
+            authService.generateToken(AuthCommand.GenerateToken.toCommand(user))
         }
 
     fun signin(command: AuthCommand.SignIn): Token =
@@ -30,7 +32,6 @@ class AuthFacade(
                 throw ErrorException(ErrorType.INVALID_PASSWORD)
             }
 
-            val token = authService.generateToken(AuthCommand.GenerateToken.toCommand(credential))
-            return@writeable token
+            authService.generateToken(AuthCommand.GenerateToken.toCommand(credential))
         }
 }

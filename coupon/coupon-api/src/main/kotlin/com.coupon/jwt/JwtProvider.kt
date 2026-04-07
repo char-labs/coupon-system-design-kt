@@ -43,7 +43,7 @@ class JwtProvider(
         private const val REFRESH_TOKEN_TYPE = "R"
     }
 
-    override fun create(
+    override fun save(
         userId: Long,
         userKey: String,
     ): Token {
@@ -61,7 +61,7 @@ class JwtProvider(
             accessToken = accessToken,
             refreshToken = refreshToken,
         ).apply {
-            redisTokenRepository.create(
+            redisTokenRepository.save(
                 accessToken = this.accessToken,
                 refreshToken = this.refreshToken,
                 provider =
@@ -107,7 +107,7 @@ class JwtProvider(
             accessToken = newAccessToken,
             refreshToken = newRefreshToken,
         ).apply {
-            redisTokenRepository.create(
+            redisTokenRepository.save(
                 accessToken = this.accessToken,
                 refreshToken = this.refreshToken,
                 provider = tokenWithAuthentication.provider,

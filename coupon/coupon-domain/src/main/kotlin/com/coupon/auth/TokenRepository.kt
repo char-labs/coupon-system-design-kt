@@ -1,7 +1,7 @@
 package com.coupon.auth
 
 interface TokenRepository {
-    fun create(
+    fun save(
         userId: Long,
         userKey: String,
     ): Token

@@ -52,3 +52,6 @@ load-test/k6/.env
 node_modules
 package-lock.json
 package.json
+
+### Claude Workspace ###
+_workspace

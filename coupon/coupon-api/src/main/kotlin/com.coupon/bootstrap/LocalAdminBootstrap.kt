@@ -17,7 +17,7 @@ import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Component
 
 @Component
-@Profile("local")
+@Profile("local", "load-test")
 class LocalAdminBootstrap(
     private val authService: AuthService,
     private val userRepository: UserRepository,
@@ -44,7 +44,9 @@ class LocalAdminBootstrap(
                     userKey = userKeyGenerator.generate(),
                     name = adminName,
                     email = adminEmail,
-                    password = passwordEncoder.encode(adminPassword)!!,
+                    password =
+                        passwordEncoder.encode(adminPassword)
+                            ?: error("PasswordEncoder.encode returned null for $adminEmail"),
                     role = AuthorityType.ADMIN,
                 ),
             )

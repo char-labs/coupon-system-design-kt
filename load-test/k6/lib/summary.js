@@ -14,26 +14,54 @@ function metricValue(data, key, nestedKey) {
 }
 
 function buildExtraLines(name, data) {
-  if (name !== 'issue-burst') {
-    return [];
-  }
-
   const metricOrZero = (key, nestedKey) => {
     const value = metricValue(data, key, nestedKey);
     return value === 'n/a' ? 0 : value;
   };
 
-  return [
-    `issue_burst success count: ${metricOrZero('issue_burst_success_count', 'count')}`,
-    `issue_burst out_of_stock count: ${metricOrZero('issue_burst_out_of_stock_count', 'count')}`,
-    `issue_burst retryable lock failure count: ${metricOrZero('issue_burst_retryable_lock_failure_count', 'count')}`,
-    `issue_burst unexpected client error count: ${metricOrZero('issue_burst_unexpected_client_error_count', 'count')}`,
-    `issue_burst server error count: ${metricOrZero('issue_burst_server_error_count', 'count')}`,
-    `issue_burst final issued count: ${metricValue(data, 'issue_burst_final_issued_count')}`,
-    `issue_burst final remaining quantity: ${metricValue(data, 'issue_burst_final_remaining_quantity')}`,
-    `issue_burst integrity ok rate: ${metricValue(data, 'issue_burst_integrity_ok', 'rate')}`,
-    `issue_burst expected result ok rate: ${metricValue(data, 'issue_burst_expected_result_ok', 'rate')}`,
-  ];
+  switch (name) {
+    case 'issue-burst':
+      return [
+        `issue_burst success count: ${metricOrZero('issue_burst_success_count', 'count')}`,
+        `issue_burst out_of_stock count: ${metricOrZero('issue_burst_out_of_stock_count', 'count')}`,
+        `issue_burst retryable lock failure count: ${metricOrZero('issue_burst_retryable_lock_failure_count', 'count')}`,
+        `issue_burst unexpected client error count: ${metricOrZero('issue_burst_unexpected_client_error_count', 'count')}`,
+        `issue_burst server error count: ${metricOrZero('issue_burst_server_error_count', 'count')}`,
+        `issue_burst final issued count: ${metricValue(data, 'issue_burst_final_issued_count')}`,
+        `issue_burst final remaining quantity: ${metricValue(data, 'issue_burst_final_remaining_quantity')}`,
+        `issue_burst integrity ok rate: ${metricValue(data, 'issue_burst_integrity_ok', 'rate')}`,
+        `issue_burst expected result ok rate: ${metricValue(data, 'issue_burst_expected_result_ok', 'rate')}`,
+      ];
+    case 'issue-request-burst':
+      return [
+        `issue_request_burst accepted count: ${metricOrZero('issue_request_burst_accepted_count', 'count')}`,
+        `issue_request_burst succeeded count: ${metricOrZero('issue_request_burst_succeeded_count', 'count')}`,
+        `issue_request_burst out_of_stock count: ${metricOrZero('issue_request_burst_out_of_stock_count', 'count')}`,
+        `issue_request_burst dead count: ${metricOrZero('issue_request_burst_dead_count', 'count')}`,
+        `issue_request_burst unexpected failure count: ${metricOrZero('issue_request_burst_unexpected_failure_count', 'count')}`,
+        `issue_request_burst final issued count: ${metricValue(data, 'issue_request_burst_final_issued_count')}`,
+        `issue_request_burst final remaining quantity: ${metricValue(data, 'issue_request_burst_final_remaining_quantity')}`,
+        `issue_request_burst integrity ok rate: ${metricValue(data, 'issue_request_burst_integrity_ok', 'rate')}`,
+        `issue_request_burst expected result ok rate: ${metricValue(data, 'issue_request_burst_expected_result_ok', 'rate')}`,
+      ];
+    case 'issue-request-overload':
+      return [
+        `issue_request_overload accepted count: ${metricOrZero('issue_request_overload_accepted_count', 'count')}`,
+        `issue_request_overload succeeded count: ${metricOrZero('issue_request_overload_succeeded_count', 'count')}`,
+        `issue_request_overload dead count: ${metricOrZero('issue_request_overload_dead_count', 'count')}`,
+        `issue_request_overload unexpected failure count: ${metricOrZero('issue_request_overload_unexpected_failure_count', 'count')}`,
+      ];
+    case 'issue-request-ramp':
+      return [
+        `issue_request_ramp accepted count: ${metricOrZero('issue_request_ramp_accepted_count', 'count')}`,
+      ];
+    case 'issue-request-real-ramp':
+      return [
+        `issue_request_real_ramp accepted count: ${metricOrZero('issue_request_real_ramp_accepted_count', 'count')}`,
+      ];
+    default:
+      return [];
+  }
 }
 
 export function buildSummary(name, data) {

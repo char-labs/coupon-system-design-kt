@@ -12,7 +12,7 @@ class AuthService(
     private val authenticationHistoryRepository: AuthenticationHistoryRepository,
 ) {
     fun generateToken(command: AuthCommand.GenerateToken) =
-        tokenRepository.create(command.userId, command.userKey).apply {
+        tokenRepository.save(command.userId, command.userKey).also { saved ->
             authenticationHistoryRepository.create(
                 AuthenticationHistoryCommand.Create(
                     userId = command.userId,
@@ -20,8 +20,8 @@ class AuthService(
                     command =
                         GenerateTokenCommand(
                             Token(
-                                accessToken = this.accessToken,
-                                refreshToken = this.refreshToken,
+                                accessToken = saved.accessToken,
+                                refreshToken = saved.refreshToken,
                             ),
                         ),
                     status = TokenStatus.ACTIVE,

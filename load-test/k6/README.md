@@ -2,7 +2,19 @@
 
 이 디렉터리는 쿠폰 시스템의 첫 부하 테스트 baseline을 위한 `k6` 시나리오를 담고 있습니다.
 
+현재 기본 기준 시나리오는 아래입니다.
+
+- 사용자 `1,000명`
+- 쿠폰 `1개`
+- 쿠폰 수량 `1,000개`
+- 모든 사용자가 같은 시점에 발급을 시도
+- 검증 목표: `중복 발급 없음`, `issued + remaining == initial stock`, `DEAD 요청 없음`
+
 대시보드 오픈부터 실행, 확인, 해석까지 한 번에 따라가려면 [RUNBOOK.md](/Users/yunbeom/ybcha/coupon-system-design-kt/load-test/k6/RUNBOOK.md)를 같이 봅니다.
+
+로컬 Kafka accepted-model 스택을 바로 띄우고, readiness 확인 뒤 추천 시나리오를 순서대로 실행하려면 [run-local-kafka-runbook.sh](/Users/yunbeom/ybcha/coupon-system-design-kt/load-test/k6/run-local-kafka-runbook.sh)를 사용합니다.
+
+쿠폰 1개에 대해 재고 수량만 바꿔가며 동시성/정합성을 검증하려면 [run-single-coupon-stock-runbook.sh](/Users/yunbeom/ybcha/coupon-system-design-kt/load-test/k6/run-single-coupon-stock-runbook.sh)를 사용합니다.
 
 Slack 보고를 같이 쓰는 표준 실행 경로는 [run-with-slack.mjs](/Users/yunbeom/ybcha/coupon-system-design-kt/load-test/k6/run-with-slack.mjs)입니다. 이 runner는 [load-test/k6/.env](/Users/yunbeom/ybcha/coupon-system-design-kt/load-test/k6/.env)를 자동으로 읽고, 설정에 따라 성공과 실패 결과를 Slack 메세지 템플릿으로 webhook에 보냅니다.
 
@@ -10,6 +22,9 @@ Slack 보고를 같이 쓰는 표준 실행 경로는 [run-with-slack.mjs](/User
 
 - `smoke.js`
   - 관리자 로그인, 쿠폰 생성, 사용자 회원가입/로그인, 쿠폰 발급, 쿠폰 사용까지 한 번에 검증합니다.
+- `issue-request-smoke.js`
+  - Kafka accepted-model 기준 기본 검증 시나리오입니다.
+  - local profile 전용 synthetic endpoint로 요청을 접수하고, 상태 조회를 polling해서 최종 `SUCCEEDED`까지 수렴하는지 확인합니다.
 - `baseline.js`
   - VU별 사용자 세션을 재사용하면서 `issue/use`, `issue/cancel`, `my-coupons`를 혼합 호출합니다.
 - `issue-burst.js`
@@ -23,6 +38,23 @@ Slack 보고를 같이 쓰는 표준 실행 경로는 [run-with-slack.mjs](/User
   - `coupon-issue`만 N분 동안 M명이 쉬지 않고 호출하는 지속 과부하 시나리오입니다.
   - `contention`과 달리 순간 동시성 1회가 아니라, 일정 시간 동안 발급 API 처리량과 tail latency가 계속 버티는지 봅니다.
   - 중복 발급으로 결과가 오염되지 않도록 `사용자 풀 x 쿠폰 풀` 조합으로 유니크한 발급 대상을 만듭니다.
+- `issue-request-burst.js`
+  - Kafka relay + consumer 경로 기준 대량 동시 발급 검증 시나리오입니다.
+  - 현재 이 저장소의 표준 동시성/정합성 검증 시나리오입니다.
+  - 같은 쿠폰에 대해 많은 사용자가 동시에 `POST /coupon-issue-requests`를 호출하고, 각 요청이 최종 `SUCCEEDED` 또는 `FAILED(OUT_OF_STOCK)`로 수렴하는지 확인합니다.
+  - 실행 뒤 최종 발급 건수와 잔여 재고를 다시 조회해서 `issued + remaining == initial stock` 정합성까지 같이 검증합니다.
+- `issue-request-overload.js`
+  - 비동기 발급 요청 경로를 N분 동안 지속적으로 누르는 Kafka 전용 과부하 시나리오입니다.
+  - 각 iteration은 `request accepted -> status polling -> terminal status`까지 완료한 뒤 다음 요청으로 넘어갑니다.
+  - synthetic `userId`를 매 iteration마다 새로 만들기 때문에 사용자 준비 비용 없이 Kafka end-to-end 경로만 측정합니다.
+- `issue-request-ramp.js`
+  - 비교 대상 저장소의 `202 Accepted` 중심 테스트와 가장 가까운 Kafka 수락 전용 시나리오입니다.
+  - synthetic endpoint로 `POST /load-test/coupons/{couponId}/issue-requests`만 지속 호출해서 request intake 성능을 봅니다.
+  - 상태 polling은 하지 않고, request acceptance 지연과 오류율만 측정합니다.
+- `issue-request-real-ramp.js`
+  - 실사용자 가정으로 인증된 사용자 세션과 실제 `/coupon-issue-requests` endpoint를 사용하는 ramp 시나리오입니다.
+  - 비교 대상 저장소처럼 request intake 성능을 보되, synthetic endpoint가 아니라 실제 access token 기반 호출을 사용합니다.
+  - 다만 사용자 풀과 쿠폰 풀을 미리 준비해야 하므로 setup 비용이 큽니다.
 
 ## 사전 준비
 
@@ -30,6 +62,25 @@ Slack 보고를 같이 쓰는 표준 실행 경로는 [run-with-slack.mjs](/User
 
 ```bash
 docker compose -f docker/docker-compose.yml up --build
+```
+
+또는 추천 런북 스크립트로 바로 시작할 수 있습니다.
+
+```bash
+./load-test/k6/run-local-kafka-runbook.sh up
+./load-test/k6/run-local-kafka-runbook.sh check
+./load-test/k6/run-local-kafka-runbook.sh smoke
+./load-test/k6/run-local-kafka-runbook.sh burst
+```
+
+쿠폰 1개 재고 검증만 따로 보고 싶으면 아래 전용 런북을 씁니다.
+
+```bash
+./load-test/k6/run-single-coupon-stock-runbook.sh up
+./load-test/k6/run-single-coupon-stock-runbook.sh check
+./load-test/k6/run-single-coupon-stock-runbook.sh exact
+./load-test/k6/run-single-coupon-stock-runbook.sh oversubscribed
+./load-test/k6/run-single-coupon-stock-runbook.sh single-stock
 ```
 
 기본 Docker 앱 포트는 `18080`입니다. IDE나 `bootRun`이 `8080`을 이미 쓰고 있어도 부하 테스트 대상과 충돌하지 않게 하기 위한 기본값입니다. 다른 포트를 쓰고 싶으면 `APP_HOST_PORT`로 덮어쓸 수 있습니다.
@@ -53,7 +104,14 @@ curl -X POST http://127.0.0.1:18080/load-test/admin/signin \
   -d '{}'
 ```
 
-현재 스크립트는 `setup()`에서 `/actuator/health`를 확인한 뒤, local profile 전용 `/load-test/admin/signin`으로 관리자 계정 보장과 토큰 발급을 먼저 시도합니다. 구버전 앱 이미지에서는 이 경로가 없을 수 있으니, 관련 코드를 반영한 뒤에는 `docker compose ... up --build`로 앱 이미지를 다시 만드는 편이 안전합니다.
+현재 스크립트는 `setup()`에서 `/actuator/health`를 확인한 뒤, local 또는 load-test profile 전용 `/load-test/admin/signin`으로 관리자 계정 보장과 토큰 발급을 먼저 시도합니다. synthetic 시나리오는 `setup()`에서 `/load-test/users/prepare`로 필요한 사용자 수를 먼저 bulk prepare하고, measured phase에서는 쿠폰 발급 요청만 보내도록 맞췄습니다. synthetic 발급 엔드포인트는 전달된 k6 user id를 deterministic load-test user row로 매핑해서 FK 제약을 유지합니다. 구버전 앱 이미지에서는 이 경로가 없을 수 있으니, 관련 코드를 반영한 뒤에는 `docker compose ... up --build`로 앱 이미지를 다시 만드는 편이 안전합니다.
+
+Kafka accepted-model 시나리오는 `local` 또는 `load-test` profile에서 활성화되는 synthetic endpoint를 사용합니다.
+
+- `POST /load-test/coupons/{couponId}/issue-requests`
+- `GET /load-test/coupon-issue-requests/{requestId}`
+
+이 경로들은 JWT 인증을 생략해서, 회원가입/로그인 비용이 아니라 Kafka relay/consumer 파이프라인 자체를 측정하는 데 집중합니다.
 
 `k6` 실행 예시의 `BASE_URL`은 `localhost` 대신 `127.0.0.1`을 사용합니다. 로컬 환경에 따라 `localhost`가 IPv6 또는 다른 resolver 경로를 타면서 진단이 어려워질 수 있습니다.
 
@@ -188,6 +246,8 @@ Grafana는 repo-local provisioning을 통해 아래를 자동 등록합니다.
 
 - 포함:
   - `issue_coupon`
+  - `issue_coupon_request`
+  - `get_coupon_issue_request`
   - `use_coupon`
   - `cancel_coupon`
   - `get_coupon`
@@ -240,6 +300,15 @@ k6 run \
 
 ```bash
 k6 run \
+  --out influxdb=http://localhost:8086/myk6db \
+  -e BASE_URL=http://127.0.0.1:18080 \
+  -e ADMIN_EMAIL=loadtest-admin@coupon.local \
+  -e ADMIN_PASSWORD='admin1234!' \
+  load-test/k6/issue-request-smoke.js
+```
+
+```bash
+k6 run \
   -e BASE_URL=http://127.0.0.1:18080 \
   -e BASELINE_VUS=20 \
   -e BASELINE_DURATION=10m \
@@ -265,7 +334,7 @@ k6 run \
   load-test/k6/issue-burst.js
 ```
 
-정확히 1000명 동시 발급과 재고 정합성을 같이 보고 싶으면 위 시나리오를 먼저 사용합니다.
+정확히 1000명 동시 발급과 재고 정합성을 같이 보고 싶으면 위 시나리오를 먼저 사용합니다. 현재 기본 검증 시나리오도 이것입니다.
 
 - 기대 결과
   - 성공 발급 건수: `1000`
@@ -303,6 +372,21 @@ k6 run \
 
 Slack 보고와 summary의 `재시도 시도 횟수`는 실제로 `429 LOCK_ACQUISITION_FAILED`를 받아서 재시도를 시작한 횟수입니다.
 
+쿠폰 1개 재고 시나리오만 빠르게 보고 싶다면 전용 런북을 사용할 수 있습니다.
+
+```bash
+./load-test/k6/run-single-coupon-stock-runbook.sh exact
+./load-test/k6/run-single-coupon-stock-runbook.sh oversubscribed
+./load-test/k6/run-single-coupon-stock-runbook.sh single-stock
+```
+
+- `exact`
+  - 사용자 1,000명 / 쿠폰 1개 / 재고 1,000개
+- `oversubscribed`
+  - 사용자 1,000명 / 쿠폰 1개 / 재고 900개
+- `single-stock`
+  - 사용자 1,000명 / 쿠폰 1개 / 재고 1개
+
 ```bash
 k6 run \
   --out influxdb=http://localhost:8086/myk6db \
@@ -321,6 +405,36 @@ node load-test/k6/run-with-slack.mjs issue-burst --profile local -- \
   -e ISSUE_BURST_LOCK_RETRY_COUNT=3 \
   -e ISSUE_BURST_LOCK_RETRY_DELAY_MS=250
 ```
+
+Kafka accepted-model 경로를 검증하려면 아래 async burst 시나리오를 사용합니다.
+
+```bash
+k6 run \
+  --out influxdb=http://localhost:8086/myk6db \
+  -e BASE_URL=http://127.0.0.1:18080 \
+  -e ISSUE_REQUEST_BURST_VUS=1000 \
+  -e ISSUE_REQUEST_BURST_STOCK=1000 \
+  -e ISSUE_REQUEST_POLL_TIMEOUT_SECONDS=30 \
+  -e ISSUE_REQUEST_POLL_INTERVAL_MS=500 \
+  load-test/k6/issue-request-burst.js
+```
+
+```bash
+k6 run \
+  --out influxdb=http://localhost:8086/myk6db \
+  -e BASE_URL=http://127.0.0.1:18080 \
+  -e ISSUE_REQUEST_BURST_VUS=1000 \
+  -e ISSUE_REQUEST_BURST_STOCK=900 \
+  -e ISSUE_REQUEST_POLL_TIMEOUT_SECONDS=30 \
+  -e ISSUE_REQUEST_POLL_INTERVAL_MS=500 \
+  load-test/k6/issue-request-burst.js
+```
+
+- 기대 결과
+  - 모든 요청이 `202 Accepted`로 정상 접수
+  - 최종 결과가 `SUCCEEDED` 또는 `FAILED(OUT_OF_STOCK)`로만 수렴
+  - `DEAD` 요청: `0`
+  - 재고 정합성 검증: `100%`
 
 ```bash
 node load-test/k6/run-with-slack.mjs issue-burst --profile local -- \
@@ -392,11 +506,29 @@ node load-test/k6/run-with-slack.mjs smoke --profile local -- \
 ```
 
 ```bash
+node load-test/k6/run-with-slack.mjs issue-request-smoke --profile local -- \
+  --out influxdb=http://localhost:8086/myk6db \
+  -e BASE_URL=http://127.0.0.1:18080 \
+  -e ADMIN_EMAIL=loadtest-admin@coupon.local \
+  -e ADMIN_PASSWORD='admin1234!'
+```
+
+```bash
 node load-test/k6/run-with-slack.mjs baseline --profile local -- \
   --out influxdb=http://localhost:8086/myk6db \
   -e BASE_URL=http://127.0.0.1:18080 \
   -e BASELINE_VUS=20 \
   -e BASELINE_DURATION=10m
+```
+
+```bash
+node load-test/k6/run-with-slack.mjs issue-request-burst --profile local -- \
+  --out influxdb=http://localhost:8086/myk6db \
+  -e BASE_URL=http://127.0.0.1:18080 \
+  -e ISSUE_REQUEST_BURST_VUS=1000 \
+  -e ISSUE_REQUEST_BURST_STOCK=1000 \
+  -e ISSUE_REQUEST_POLL_TIMEOUT_SECONDS=30 \
+  -e ISSUE_REQUEST_POLL_INTERVAL_MS=500
 ```
 
 ```bash
@@ -416,6 +548,73 @@ node load-test/k6/run-with-slack.mjs issue-overload --profile local -- \
   -e ISSUE_OVERLOAD_COUPON_POOL_SIZE=500
 ```
 
+Kafka accepted-model 경로를 end-to-end로 지속 과부하하려면 아래 시나리오를 사용합니다.
+
+```bash
+k6 run \
+  --out influxdb=http://localhost:8086/myk6db \
+  -e BASE_URL=http://127.0.0.1:18080 \
+  -e ISSUE_REQUEST_OVERLOAD_VUS=50 \
+  -e ISSUE_REQUEST_OVERLOAD_DURATION=10m \
+  -e ISSUE_REQUEST_OVERLOAD_COUPON_POOL_SIZE=200 \
+  -e ISSUE_REQUEST_OVERLOAD_STOCK_PER_COUPON=100000 \
+  -e ISSUE_REQUEST_POLL_TIMEOUT_SECONDS=30 \
+  -e ISSUE_REQUEST_POLL_INTERVAL_MS=500 \
+  load-test/k6/issue-request-overload.js
+```
+
+```bash
+node load-test/k6/run-with-slack.mjs issue-request-overload --profile local -- \
+  --out influxdb=http://localhost:8086/myk6db \
+  -e BASE_URL=http://127.0.0.1:18080 \
+  -e ISSUE_REQUEST_OVERLOAD_VUS=50 \
+  -e ISSUE_REQUEST_OVERLOAD_DURATION=10m \
+  -e ISSUE_REQUEST_OVERLOAD_COUPON_POOL_SIZE=200 \
+  -e ISSUE_REQUEST_OVERLOAD_STOCK_PER_COUPON=100000 \
+  -e ISSUE_REQUEST_POLL_TIMEOUT_SECONDS=30 \
+  -e ISSUE_REQUEST_POLL_INTERVAL_MS=500
+```
+
+이 시나리오는 `POST /coupon-issue-requests`를 보내고 끝내는 것이 아니라, 각 요청이 최종 상태로 수렴할 때까지 polling합니다. 즉, Kafka relay/consumer를 포함한 전체 발급 파이프라인 처리량을 보는 용도입니다.
+
+비교 대상 저장소처럼 `202 Accepted` 기반 request intake 성능만 보고 싶다면 아래 ramp 시나리오를 사용합니다.
+
+```bash
+k6 run \
+  --out influxdb=http://localhost:8086/myk6db \
+  -e BASE_URL=http://127.0.0.1:18080 \
+  -e ISSUE_REQUEST_RAMP_STAGE1_TARGET=3000 \
+  -e ISSUE_REQUEST_RAMP_STAGE3_TARGET=5000 \
+  -e ISSUE_REQUEST_RAMP_STAGE5_TARGET=7000 \
+  load-test/k6/issue-request-ramp.js
+```
+
+```bash
+node load-test/k6/run-with-slack.mjs issue-request-ramp --profile local -- \
+  --out influxdb=http://localhost:8086/myk6db \
+  -e BASE_URL=http://127.0.0.1:18080
+```
+
+이 시나리오는 request가 실제로 `SUCCEEDED`까지 갔는지는 보지 않고, intake 성능과 error rate만 봅니다. 최종 수렴 정합성은 `issue-request-burst`, `issue-request-overload`가 담당합니다.
+
+실사용자 가정으로 같은 패턴을 돌리고 싶다면 아래 시나리오를 사용합니다.
+
+```bash
+node load-test/k6/run-with-slack.mjs issue-request-real-ramp --profile local -- \
+  --out influxdb=http://localhost:8086/myk6db \
+  -e BASE_URL=http://127.0.0.1:18080 \
+  -e ISSUE_REQUEST_REAL_RAMP_USER_POOL_SIZE=7000 \
+  -e ISSUE_REQUEST_REAL_RAMP_COUPON_POOL_SIZE=1000 \
+  -e ISSUE_REQUEST_REAL_RAMP_STOCK_PER_COUPON=100000
+```
+
+이 시나리오는 다음 특징이 있습니다.
+
+- synthetic endpoint가 아니라 실제 `/coupon-issue-requests` 사용
+- 사용자 회원가입/로그인 후 access token으로 호출
+- request status polling은 하지 않음
+- 비교 대상 저장소의 `202 Accepted` 중심 테스트 의도와 가장 가깝지만, setup 비용이 큼
+
 ## 환경변수
 
 - `BASE_URL`
@@ -426,10 +625,18 @@ node load-test/k6/run-with-slack.mjs issue-overload --profile local -- \
 - `STARTUP_TIMEOUT_SECONDS`
 - `STARTUP_POLL_INTERVAL_SECONDS`
 - `SMOKE_VUS`
+- `ISSUE_REQUEST_SYNTHETIC_USER_ID_BASE`
+- `ISSUE_REQUEST_SMOKE_VUS`
 - `BASELINE_VUS`
 - `BASELINE_DURATION`
 - `BASELINE_SESSION_POOL_SIZE`
 - `BASELINE_COUPON_POOL_SIZE`
+- `ISSUE_REQUEST_POLL_TIMEOUT_SECONDS`
+- `ISSUE_REQUEST_POLL_INTERVAL_MS`
+- `ISSUE_REQUEST_BURST_VUS`
+- `ISSUE_REQUEST_BURST_STOCK`
+- `ISSUE_REQUEST_BURST_MAX_DURATION`
+- `ISSUE_REQUEST_BURST_SETUP_TIMEOUT`
 - `CONTENTION_VUS`
 - `CONTENTION_MAX_DURATION`
 - `ISSUE_OVERLOAD_VUS`
@@ -437,6 +644,31 @@ node load-test/k6/run-with-slack.mjs issue-overload --profile local -- \
 - `ISSUE_OVERLOAD_USER_POOL_SIZE`
 - `ISSUE_OVERLOAD_COUPON_POOL_SIZE`
 - `ISSUE_OVERLOAD_SETUP_TIMEOUT`
+- `ISSUE_REQUEST_OVERLOAD_VUS`
+- `ISSUE_REQUEST_OVERLOAD_DURATION`
+- `ISSUE_REQUEST_OVERLOAD_COUPON_POOL_SIZE`
+- `ISSUE_REQUEST_OVERLOAD_STOCK_PER_COUPON`
+- `ISSUE_REQUEST_OVERLOAD_SETUP_TIMEOUT`
+- `ISSUE_REQUEST_RAMP_STOCK`
+- `ISSUE_REQUEST_RAMP_STAGE1_DURATION`
+- `ISSUE_REQUEST_RAMP_STAGE1_TARGET`
+- `ISSUE_REQUEST_RAMP_STAGE2_DURATION`
+- `ISSUE_REQUEST_RAMP_STAGE2_TARGET`
+- `ISSUE_REQUEST_RAMP_STAGE3_DURATION`
+- `ISSUE_REQUEST_RAMP_STAGE3_TARGET`
+- `ISSUE_REQUEST_RAMP_STAGE4_DURATION`
+- `ISSUE_REQUEST_RAMP_STAGE4_TARGET`
+- `ISSUE_REQUEST_RAMP_STAGE5_DURATION`
+- `ISSUE_REQUEST_RAMP_STAGE5_TARGET`
+- `ISSUE_REQUEST_RAMP_STAGE6_DURATION`
+- `ISSUE_REQUEST_RAMP_STAGE6_TARGET`
+- `ISSUE_REQUEST_RAMP_STAGE7_DURATION`
+- `ISSUE_REQUEST_RAMP_STAGE7_TARGET`
+- `ISSUE_REQUEST_RAMP_GRACEFUL_STOP`
+- `ISSUE_REQUEST_REAL_RAMP_USER_POOL_SIZE`
+- `ISSUE_REQUEST_REAL_RAMP_COUPON_POOL_SIZE`
+- `ISSUE_REQUEST_REAL_RAMP_STOCK_PER_COUPON`
+- `ISSUE_REQUEST_REAL_RAMP_SETUP_TIMEOUT`
 - `SLOW_REQUEST_SAMPLE_LIMIT`
 - `SLOW_REQUEST_PREVIEW_MAX_LENGTH`
 - `LOAD_TEST_SLACK_WEBHOOK`
@@ -471,6 +703,18 @@ node load-test/k6/run-with-slack.mjs issue-overload --profile local -- \
 - `issue_coupon: unexpected response status=500`
   - 서버가 실제로 버티지 못한 것입니다.
   - 같은 시간대 Grafana의 `p95/p99`, failed rate, `/actuator/prometheus`, 애플리케이션 로그를 같이 봅니다.
+- `coupon issue request ... did not reach terminal status`
+  - Kafka relay, consumer, reconciliation 중 하나가 병목이거나 멈춘 상태일 수 있습니다.
+  - `t_coupon_issue_request`, `t_outbox_event`, Kafka UI, worker 로그를 같이 확인합니다.
+- `issue_request_ramp accepted` check 실패
+  - local synthetic acceptance endpoint가 예상대로 `PENDING` request를 반환하지 못한 상태입니다.
+  - load-test endpoint 응답 body, request row 생성 여부, relay 과도 선행 여부를 같이 확인합니다.
+- `issue_request_real_ramp capacity exhausted`
+  - 실사용자/쿠폰 조합이 부족합니다.
+  - `ISSUE_REQUEST_REAL_RAMP_USER_POOL_SIZE x ISSUE_REQUEST_REAL_RAMP_COUPON_POOL_SIZE`를 늘려야 합니다.
+- `issue_request_overload unexpected terminal status`
+  - accepted-model은 동작했지만 최종 상태가 `SUCCEEDED` 외의 값으로 수렴했습니다.
+  - request 상태별 비율과 `resultCode`, `failureReason`을 먼저 봅니다.
 - `app_ready` 또는 `admin_signin_ready` timeout
   - 부하 테스트 이전에 앱 기동이나 local bootstrap이 준비되지 않은 상태입니다.
   - `docker compose ... up --build`, `/actuator/health`, `/load-test/admin/signin`부터 다시 확인합니다.
