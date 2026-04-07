@@ -14,6 +14,7 @@ import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.http.HttpStatus
+import org.springframework.http.ResponseEntity
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
@@ -30,16 +31,21 @@ class CouponIssueController(
     private val couponIssueFacade: CouponIssueFacade,
     private val couponIssueService: CouponIssueService,
 ) {
-    @Operation(summary = "쿠폰 발급 요청", description = "쿠폰 발급을 즉시 판정하고 SUCCESS, DUPLICATE, SOLD_OUT 중 하나를 반환합니다.")
+    @Operation(
+        summary = "쿠폰 발급 요청",
+        description = "쿠폰 발급을 즉시 판정하고 ApiResponse.data.result 에 SUCCESS, DUPLICATE, SOLD_OUT 중 하나를 반환합니다.",
+    )
     @PostMapping
     fun issueCoupon(
         @Parameter(hidden = true) user: User,
         @RequestBody request: CouponIssueRequest,
-    ): CouponIssueMessageResponse {
+    ): ResponseEntity<CouponIssueMessageResponse> {
         val result = couponIssueFacade.issue(request.toCommand(user.id))
         val status = if (result == CouponIssueResult.SUCCESS) HttpStatus.ACCEPTED else HttpStatus.OK
 
-        return CouponIssueMessageResponse(result.description)
+        return ResponseEntity
+            .status(status)
+            .body(CouponIssueMessageResponse.of(result))
     }
 
     @Operation(summary = "내 쿠폰 목록 조회", description = "내가 발급받은 쿠폰 목록을 조회합니다.")

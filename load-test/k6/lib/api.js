@@ -136,6 +136,36 @@ export function postWithNumericFields(
   return data;
 }
 
+export function postDataWithStatuses(
+  path,
+  payload,
+  params = {},
+  expectedStatuses = [200],
+  label = path,
+) {
+  const { response, slowRequestSample } = request('POST', path, payload, params, label);
+  maybeRecordSlowRequestSample(response, slowRequestSample);
+  const body = parseJson(response, label);
+  const isExpectedStatus = expectedStatuses.includes(response.status);
+  const isSuccessEnvelope = body && body.success === true;
+
+  check(response, {
+    [`${label} status ${expectedStatuses.join('/')}`]: () => isExpectedStatus,
+    [`${label} success envelope`]: () => isSuccessEnvelope,
+  });
+
+  if (!isExpectedStatus || !isSuccessEnvelope) {
+    fail(
+      `${label}: unexpected response status=${response.status} body=${response.body}`,
+    );
+  }
+
+  return {
+    data: body.data,
+    status: response.status,
+  };
+}
+
 export function postText(path, payload, params = {}, expectedStatus = 200, label = path) {
   return postTextWithStatuses(path, payload, params, [expectedStatus], label).body;
 }

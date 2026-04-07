@@ -1,5 +1,5 @@
 import { check, fail, sleep } from 'k6';
-import { authHeaders, get, post, postTextWithStatuses, postVoid, postWithNumericFields } from './api.js';
+import { authHeaders, get, post, postDataWithStatuses, postVoid, postWithNumericFields } from './api.js';
 import { config } from './config.js';
 
 function formatLocalDateTime(date) {
@@ -51,9 +51,9 @@ export function createCoupon(accessToken, payload) {
 }
 
 export function acceptIssueCoupon(accessToken, couponId) {
-  const response = postTextWithStatuses(
+  const response = postDataWithStatuses(
     '/coupon-issues',
-    `{"couponId":${couponId}}`,
+    { couponId },
     {
       headers: authHeaders(accessToken),
       tags: {
@@ -70,7 +70,8 @@ export function acceptIssueCoupon(accessToken, couponId) {
   );
 
   return {
-    result: response.body,
+    result: response.data?.result,
+    message: response.data?.message,
     status: response.status,
   };
 }
@@ -82,7 +83,10 @@ export function requestIssueCoupon(accessToken, couponId) {
 export function issueCoupon(accessToken, couponId) {
   const issueResult = acceptIssueCoupon(accessToken, couponId);
   if (issueResult.result !== 'SUCCESS') {
-    fail(`issue_coupon: expected SUCCESS but got ${issueResult.result}`);
+    fail(
+      `issue_coupon: expected SUCCESS but got result=${issueResult.result} ` +
+        `status=${issueResult.status} message=${issueResult.message || '<empty>'}`,
+    );
   }
 
   return waitForIssuedCouponInMyCoupons(accessToken, couponId);
@@ -111,7 +115,7 @@ export function tryIssueCoupon(
       outcome: allowOutOfStock ? 'OUT_OF_STOCK' : 'UNEXPECTED_ERROR',
       status: issueResult.status,
       errorClassName: 'SOLD_OUT',
-      message: 'SOLD_OUT',
+      message: issueResult.message || 'SOLD_OUT',
     };
   }
 
@@ -120,7 +124,7 @@ export function tryIssueCoupon(
       outcome: 'UNEXPECTED_ERROR',
       status: issueResult.status,
       errorClassName: 'DUPLICATE',
-      message: 'DUPLICATE',
+      message: issueResult.message || 'DUPLICATE',
     };
   }
 
@@ -129,7 +133,7 @@ export function tryIssueCoupon(
       outcome: 'UNEXPECTED_ERROR',
       status: 500,
       errorClassName: issueResult.result || 'UNKNOWN_ERROR',
-      message: issueResult.result || '<empty>',
+      message: issueResult.message || issueResult.result || '<empty>',
     };
   }
 
@@ -137,7 +141,7 @@ export function tryIssueCoupon(
     outcome: 'UNEXPECTED_ERROR',
     status: 500,
     errorClassName: issueResult.result || 'UNKNOWN_ERROR',
-    message: issueResult.result || '<empty>',
+    message: issueResult.message || issueResult.result || '<empty>',
   };
 }
 
@@ -263,7 +267,7 @@ export function getCoupon(couponId, accessToken = null) {
 
 export function getCouponIssuePage(accessToken, couponId, size = 1) {
   return get(
-    `/coupons/${couponId}/coupon-issues?page=0&size=${size}`,
+    `/coupon-issues/coupons/${couponId}?page=0&size=${size}`,
     {
       headers: authHeaders(accessToken),
       tags: {
