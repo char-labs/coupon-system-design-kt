@@ -18,6 +18,10 @@ class OutboxDispatcher(
 ) {
     private val log by logger()
 
+    /**
+     * Executes exactly one outbox event after it has already been claimed by the poller.
+     * The handler returns a semantic result and the dispatcher converts that into SUCCEEDED, FAILED(backoff), or DEAD.
+     */
     fun dispatch(event: OutboxEvent) {
         val startedAt = clock.instant()
         val result = dispatchInternal(event)

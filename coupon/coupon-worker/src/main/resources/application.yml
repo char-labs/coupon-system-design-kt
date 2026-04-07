@@ -5,6 +5,7 @@ spring:
   config:
     import:
       - db-core.yml
+      - redis.yml
       - logging.yml
       - monitoring.yml
       - worker.yml
@@ -12,5 +13,19 @@ spring:
   servlet:
     encoding:
       charset: UTF-8
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+      acks: all
+      properties:
+        enable.idempotence: true
+        max.in.flight.requests.per.connection: 1
+    consumer:
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      enable-auto-commit: false
+      auto-offset-reset: earliest
 
 server.port: ${WORKER_SERVER_PORT:8081}

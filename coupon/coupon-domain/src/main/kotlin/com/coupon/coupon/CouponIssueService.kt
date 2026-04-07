@@ -23,6 +23,10 @@ class CouponIssueService(
         private const val ISSUE_COUPON_LOCK_TIMEOUT_MILLIS = 15_000L
     }
 
+    /**
+     * Legacy synchronous issue path.
+     * The API waits for lock acquisition, validation, issuance, and quantity decrease in one request.
+     */
     fun issueCoupon(command: CouponIssueCommand.Issue): CouponIssue =
         Lock.executeWithLockRequiresNew(
             key = "COUPON_ISSUE:${command.couponId}",
@@ -32,8 +36,8 @@ class CouponIssueService(
         }
 
     /**
-     * Internal execution path reused by async request workers.
-     * Callers must provide the surrounding transaction and lock boundary.
+     * Shared issuance core used by both the synchronous API and the Kafka consumer path.
+     * The caller owns the outer lock and transaction boundary.
      */
     fun executeIssue(command: CouponIssueCommand.Issue): CouponIssue {
         couponIssueValidator.validateIssuable(command.userId, command.couponId)
@@ -68,6 +72,10 @@ class CouponIssueService(
         request: OffsetPageRequest,
     ): Page<CouponIssue.Detail> = couponIssueRepository.findAllByCouponId(couponId, request)
 
+    /**
+     * Coupon use is still a synchronous source-of-truth update.
+     * The outbox event only represents a follow-up projection, not the state transition itself.
+     */
     fun useCoupon(command: CouponIssueCommand.Use): CouponIssue.Detail =
         Lock.executeWithLockRequiresNew(
             key = "COUPON_ISSUE_STATUS:${command.couponIssueId}",
@@ -92,6 +100,9 @@ class CouponIssueService(
             couponIssueRepository.findDetailById(command.couponIssueId)
         }
 
+    /**
+     * Coupon cancel keeps quantity restoration in the same critical section as the issue status change.
+     */
     fun cancelCoupon(command: CouponIssueCommand.Cancel): CouponIssue.Detail {
         val couponIssue = couponIssueRepository.findById(command.couponIssueId)
 

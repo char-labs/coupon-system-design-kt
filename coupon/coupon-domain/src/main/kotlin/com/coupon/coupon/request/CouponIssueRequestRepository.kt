@@ -12,9 +12,35 @@ interface CouponIssueRequestRepository {
 
     fun findByIdempotencyKey(idempotencyKey: String): CouponIssueRequest?
 
-    fun markProcessing(
+    fun findOldestByStatus(status: CouponIssueRequestStatus): CouponIssueRequest?
+
+    fun findStaleByStatuses(
+        statuses: Set<CouponIssueRequestStatus>,
+        updatedBefore: LocalDateTime,
+        limit: Int,
+    ): List<CouponIssueRequest>
+
+    fun findInconsistentSucceeded(limit: Int): List<CouponIssueRequest>
+
+    fun recoverStuckProcessing(updatedBefore: LocalDateTime): Int
+
+    fun markEnqueued(
         requestId: Long,
         candidateStatuses: Set<CouponIssueRequestStatus> = setOf(CouponIssueRequestStatus.PENDING),
+        enqueuedAt: LocalDateTime = LocalDateTime.now(),
+    ): Boolean
+
+    fun markEnqueuedForRetry(
+        requestId: Long,
+        lastDeliveryError: String,
+        candidateStatuses: Set<CouponIssueRequestStatus> = setOf(CouponIssueRequestStatus.PROCESSING),
+        enqueuedAt: LocalDateTime = LocalDateTime.now(),
+    ): Boolean
+
+    fun markProcessing(
+        requestId: Long,
+        candidateStatuses: Set<CouponIssueRequestStatus> = setOf(CouponIssueRequestStatus.ENQUEUED),
+        processingStartedAt: LocalDateTime = LocalDateTime.now(),
     ): Boolean
 
     fun markSucceeded(
@@ -34,6 +60,11 @@ interface CouponIssueRequestRepository {
         requestId: Long,
         resultCode: CouponCommandResultCode,
         failureReason: String,
+        candidateStatuses: Set<CouponIssueRequestStatus> =
+            setOf(
+                CouponIssueRequestStatus.ENQUEUED,
+                CouponIssueRequestStatus.PROCESSING,
+            ),
         processedAt: LocalDateTime = LocalDateTime.now(),
     ): Boolean
 }

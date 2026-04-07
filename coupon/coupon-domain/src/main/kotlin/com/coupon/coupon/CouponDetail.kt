@@ -4,6 +4,8 @@ import com.coupon.enums.coupon.CouponStatus
 import com.coupon.enums.coupon.CouponType
 import java.time.LocalDateTime
 
+fun CouponDetail.isActive(): Boolean = status == CouponStatus.ACTIVE
+
 data class CouponDetail(
     val id: Long,
     val code: String,
