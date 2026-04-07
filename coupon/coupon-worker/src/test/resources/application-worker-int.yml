@@ -3,10 +3,8 @@ worker:
     enabled: true
     fixed-delay: 1h
     initial-delay: 1h
-  coupon-issue-request-reconciliation:
-    enabled: false
   kafka:
-    coupon-issue-request:
+    coupon-issue:
       enabled: true
       concurrency: 1
       observation-enabled: false

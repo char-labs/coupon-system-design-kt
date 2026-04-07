@@ -41,10 +41,10 @@ abstract class CouponWorkerKafkaIntegrationSupport {
             registry.add("spring.kafka.bootstrap-servers") { kafkaContainer.bootstrapServers }
             registry.add("core.storage.redis.host") { redisContainer.host }
             registry.add("core.storage.redis.port") { redisContainer.getMappedPort(REDIS_PORT) }
-            registry.add("worker.kafka.coupon-issue-request.topic") { "coupon.issue.requested.$TOPIC_SUFFIX" }
-            registry.add("worker.kafka.coupon-issue-request.dlq-topic") { "coupon.issue.requested.$TOPIC_SUFFIX.dlq" }
-            registry.add("worker.kafka.coupon-issue-request.group-id") { "coupon-issue-request-group-$TOPIC_SUFFIX" }
-            registry.add("worker.kafka.coupon-issue-request.dlq-group-id") { "coupon-issue-request-dlq-group-$TOPIC_SUFFIX" }
+            registry.add("worker.kafka.coupon-issue.topic") { "coupon.issue.$TOPIC_SUFFIX" }
+            registry.add("worker.kafka.coupon-issue.dlq-topic") { "coupon.issue.$TOPIC_SUFFIX.dlq" }
+            registry.add("worker.kafka.coupon-issue.group-id") { "coupon-issue-group-$TOPIC_SUFFIX" }
+            registry.add("worker.kafka.coupon-issue.dlq-group-id") { "coupon-issue-dlq-group-$TOPIC_SUFFIX" }
         }
 
         @JvmStatic
