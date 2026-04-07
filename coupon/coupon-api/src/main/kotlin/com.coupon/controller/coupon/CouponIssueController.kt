@@ -1,41 +1,45 @@
 package com.coupon.controller.coupon
 
 import com.coupon.controller.coupon.request.CouponIssueRequest
+import com.coupon.controller.coupon.response.CouponIssueMessageResponse
 import com.coupon.controller.coupon.response.CouponIssuePageResponse
 import com.coupon.controller.coupon.response.CouponIssueResponse
+import com.coupon.coupon.CouponIssueFacade
 import com.coupon.coupon.CouponIssueService
 import com.coupon.coupon.command.CouponIssueCommand
+import com.coupon.enums.coupon.CouponIssueResult
 import com.coupon.support.page.OffsetPageRequest
 import com.coupon.user.User
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.http.HttpStatus
+import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
-import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 
 @Tag(name = "Coupon Issue API", description = "쿠폰 발급 관련 API")
 @RestController
 @RequestMapping("/coupon-issues")
 class CouponIssueController(
+    private val couponIssueFacade: CouponIssueFacade,
     private val couponIssueService: CouponIssueService,
 ) {
-    @Operation(summary = "쿠폰 발급", description = "사용자에게 쿠폰을 발급합니다.")
+    @Operation(summary = "쿠폰 발급 요청", description = "쿠폰 발급을 즉시 판정하고 SUCCESS, DUPLICATE, SOLD_OUT 중 하나를 반환합니다.")
     @PostMapping
-    @ResponseStatus(HttpStatus.CREATED)
     fun issueCoupon(
         @Parameter(hidden = true) user: User,
-        @RequestBody request: CouponIssueRequest.Issue,
-    ): CouponIssueResponse.Detail {
-        val couponIssue = couponIssueService.issueCoupon(request.toCommand(user.id))
-        val detail = couponIssueService.getCouponIssue(couponIssue.id)
-        return CouponIssueResponse.Detail.from(detail)
+        @RequestBody request: CouponIssueRequest,
+    ): CouponIssueMessageResponse {
+        val result = couponIssueFacade.issue(request.toCommand(user.id))
+        val status = if (result == CouponIssueResult.SUCCESS) HttpStatus.ACCEPTED else HttpStatus.OK
+
+        return CouponIssueMessageResponse(result.description)
     }
 
     @Operation(summary = "내 쿠폰 목록 조회", description = "내가 발급받은 쿠폰 목록을 조회합니다.")
@@ -47,6 +51,19 @@ class CouponIssueController(
     ): CouponIssuePageResponse =
         CouponIssuePageResponse.from(
             couponIssueService.getMyCoupons(user.id, OffsetPageRequest(page, size)),
+        )
+
+    @Operation(summary = "쿠폰별 발급 목록 조회", description = "특정 쿠폰의 발급 목록을 페이징하여 조회합니다. (관리자 전용)")
+    @GetMapping("/coupons/{couponId}")
+    @PreAuthorize("hasAuthority('ADMIN')")
+    fun getCouponIssues(
+        @Parameter(hidden = true) user: User,
+        @PathVariable couponId: Long,
+        @RequestParam(defaultValue = "0") page: Int,
+        @RequestParam(defaultValue = "20") size: Int,
+    ): CouponIssuePageResponse =
+        CouponIssuePageResponse.from(
+            couponIssueService.getCouponIssues(couponId, OffsetPageRequest(page, size)),
         )
 
     @Operation(summary = "쿠폰 발급 상세 조회", description = "쿠폰 발급 상세 정보를 조회합니다.")
@@ -74,7 +91,7 @@ class CouponIssueController(
         @PathVariable couponIssueId: Long,
     ): CouponIssueResponse.Detail =
         CouponIssueResponse.Detail.from(
-            couponIssueService.cancelCoupon(
+            couponIssueFacade.cancelCoupon(
                 CouponIssueCommand.Cancel(couponIssueId, user.id),
             ),
         )

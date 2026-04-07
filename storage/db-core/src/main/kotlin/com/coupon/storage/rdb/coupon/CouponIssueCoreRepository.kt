@@ -95,6 +95,8 @@ class CouponIssueCoreRepository(
         couponId: Long,
     ): Boolean = couponIssueJpaRepository.existsByUserIdAndCouponId(userId, couponId)
 
+    override fun findUserIdsByCouponId(couponId: Long): Set<Long> = couponIssueJpaRepository.findDistinctUserIdsByCouponId(couponId).toSet()
+
     override fun useIfIssued(couponIssueId: Long): Boolean =
         couponIssueJpaRepository.useIfIssued(
             couponIssueId = couponIssueId,

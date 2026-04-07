@@ -70,4 +70,8 @@ enum class ErrorType(
     ALREADY_ISSUED_COUPON(409, ErrorKind.CLIENT_ERROR, "이미 발급받은 쿠폰입니다.", ErrorLevel.WARN),
     INVALID_COUPON_STATUS(400, ErrorKind.CLIENT_ERROR, "쿠폰 상태가 유효하지 않습니다.", ErrorLevel.WARN),
     FORBIDDEN_COUPON_ISSUE(403, ErrorKind.FORBIDDEN_ERROR, "쿠폰에 대한 권한이 없습니다.", ErrorLevel.WARN),
+    COUPON_ISSUE_REDIS_ERROR(500, ErrorKind.INTERNAL_SERVER_ERROR, "쿠폰 발급 Redis 처리에 실패했습니다.", ErrorLevel.ERROR),
+    COUPON_ISSUE_KAFKA_ERROR(500, ErrorKind.INTERNAL_SERVER_ERROR, "쿠폰 발급 Kafka 전송에 실패했습니다.", ErrorLevel.ERROR),
+    COUPON_REQUIRES_SYNC_ISSUE(409, ErrorKind.CLIENT_ERROR, "해당 쿠폰은 동기 발급 경로만 사용할 수 있습니다.", ErrorLevel.WARN),
+    COUPON_REQUIRES_ASYNC_ISSUE(409, ErrorKind.CLIENT_ERROR, "해당 쿠폰은 선착순 비동기 발급 경로만 사용할 수 있습니다.", ErrorLevel.WARN),
 }

@@ -21,14 +21,12 @@ import org.springframework.scheduling.annotation.EnableScheduling
     basePackages = [
         "com.coupon.coupon",
         "com.coupon.user",
-        "com.coupon.auth",
         "com.coupon.support",
         "com.coupon.storage.rdb",
         "com.coupon.redis",
         "com.coupon.config",
         "com.coupon.outbox",
         "com.coupon.kafka",
-        "com.coupon.reconciliation",
         "com.coupon.health",
     ],
 )

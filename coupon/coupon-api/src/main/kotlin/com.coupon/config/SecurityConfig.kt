@@ -3,6 +3,7 @@ package com.coupon.config
 import com.coupon.filter.JwtAuthenticationFilter
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.core.annotation.Order
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity
@@ -21,6 +22,20 @@ class SecurityConfig(
     private val objectMapper: ObjectMapper,
     private val jwtAuthenticationFilter: JwtAuthenticationFilter,
 ) {
+    companion object {
+        private val PUBLIC_ENDPOINTS =
+            arrayOf(
+                "/swagger-ui/**",
+                "/v3/api-docs/**",
+                "/swagger-ui.html",
+                "/signup",
+                "/signin",
+                "/h2-console/**",
+                "/actuator/**",
+                "/ping",
+            )
+    }
+
     @Bean
     fun grantedAuthorityDefaults(): GrantedAuthorityDefaults = GrantedAuthorityDefaults("")
 
@@ -28,10 +43,31 @@ class SecurityConfig(
     fun passwordEncoder(): PasswordEncoder = PasswordEncoderFactories.createDelegatingPasswordEncoder()
 
     @Bean
-    fun securityFilterChain(http: HttpSecurity): SecurityFilterChain {
-        // JWT 필터 추가
+    @Order(1)
+    fun publicSecurityFilterChain(http: HttpSecurity): SecurityFilterChain {
+        configureStatelessHttp(http)
+        http.securityMatcher(*PUBLIC_ENDPOINTS)
+        http.authorizeHttpRequests { authorize ->
+            authorize.anyRequest().permitAll()
+        }
+
+        return http.build()
+    }
+
+    @Bean
+    @Order(2)
+    fun authenticatedSecurityFilterChain(http: HttpSecurity): SecurityFilterChain {
+        configureStatelessHttp(http)
         http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter::class.java)
 
+        http.authorizeHttpRequests { authorize ->
+            authorize.anyRequest().authenticated()
+        }
+
+        return http.build()
+    }
+
+    private fun configureStatelessHttp(http: HttpSecurity) {
         http
             .cors { }
             .headers { it.frameOptions { option -> option.disable() } }
@@ -39,31 +75,5 @@ class SecurityConfig(
             .formLogin { it.disable() }
             .sessionManagement { it.sessionCreationPolicy(SessionCreationPolicy.STATELESS) }
             .exceptionHandling { it.authenticationEntryPoint(CustomAuthenticationEntryPoint(objectMapper)) }
-
-        http.authorizeHttpRequests { authorize ->
-            // Swagger 인증
-            authorize
-                .requestMatchers(
-                    "/swagger-ui/**",
-                    "/v3/api-docs/**",
-                    "/swagger-ui.html",
-                ).permitAll()
-
-            // 인증 없이 허용할 API
-            authorize
-                .requestMatchers(
-                    "/signup",
-                    "/signin",
-                    "/load-test/**",
-                ).permitAll()
-
-            // 추가로 열어줄 API
-            authorize.requestMatchers("/h2-console/**", "/actuator/**", "/ping").permitAll()
-
-            // 나머지는 인증 필요 (권한 체크는 @PreAuthorize로 처리)
-            authorize.anyRequest().authenticated()
-        }
-
-        return http.build()
     }
 }

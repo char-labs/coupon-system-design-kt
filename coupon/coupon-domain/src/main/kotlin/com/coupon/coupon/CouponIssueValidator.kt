@@ -5,32 +5,12 @@ import com.coupon.error.ErrorException
 import org.springframework.stereotype.Component
 
 @Component
-class CouponIssueValidator(
-    private val couponIssueRepository: CouponIssueRepository,
-    private val couponValidator: CouponValidator,
-) {
-    fun validateIssuable(
-        userId: Long,
-        couponId: Long,
-    ) {
-        validateNotAlreadyIssued(userId, couponId)
-        couponValidator.validateAvailability(couponId)
-    }
-
+class CouponIssueValidator {
     fun validateOwnedCouponIssue(
         couponIssue: CouponIssue,
         userId: Long,
     ) {
         validateOwner(couponIssue, userId)
-    }
-
-    private fun validateNotAlreadyIssued(
-        userId: Long,
-        couponId: Long,
-    ) {
-        if (couponIssueRepository.existsByUserIdAndCouponId(userId, couponId)) {
-            throw ErrorException(ErrorType.ALREADY_ISSUED_COUPON)
-        }
     }
 
     private fun validateOwner(

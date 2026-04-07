@@ -50,7 +50,7 @@ class OutboxDispatcher(
 
         return when (processingResult) {
             OutboxProcessingResult.Success -> markSucceeded(event)
-            is OutboxProcessingResult.Retry -> reschedule(event, processingResult.reason)
+            is OutboxProcessingResult.Retry -> reschedule(event, processingResult.reason, processingResult.retryAfter)
             is OutboxProcessingResult.Dead -> {
                 markDead(event, processingResult.reason)
                 DispatchOutcome.DEAD
@@ -78,6 +78,7 @@ class OutboxDispatcher(
     private fun reschedule(
         event: OutboxEvent,
         reason: String,
+        retryAfter: Duration? = null,
     ): DispatchOutcome {
         val nextRetryCount = event.retryCount + 1
 
@@ -89,7 +90,9 @@ class OutboxDispatcher(
         val rescheduled =
             outboxEventService.reschedule(
                 eventId = event.id,
-                availableAt = outboxRetryPolicy.nextAvailableAt(nextRetryCount),
+                availableAt =
+                    retryAfter?.let { LocalDateTime.ofInstant(clock.instant().plus(it), clock.zone) }
+                        ?: outboxRetryPolicy.nextAvailableAt(nextRetryCount),
                 retryCount = nextRetryCount,
                 lastError = reason,
             )

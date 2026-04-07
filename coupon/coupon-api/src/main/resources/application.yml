@@ -10,10 +10,21 @@ spring:
       - swagger.yml
       - logging.yml
       - monitoring.yml
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
   web.resources.add-mappings: false
   servlet:
     encoding:
       charset: UTF-8
+
+api:
+  kafka:
+    coupon-issue:
+      enabled: true
+      topic: coupon.issue.v1
+      ack-timeout: 10s
+      topic-partitions: 3
+      topic-replicas: 1
 
 server:
   tomcat:

@@ -16,8 +16,8 @@ class StorageRedissonConfig(
         config
             .useSingleServer()
             .setAddress("redis://${redisProperties.host}:${redisProperties.port}")
-            .setConnectionMinimumIdleSize(1)
-            .setConnectionPoolSize(5)
+            .setConnectionMinimumIdleSize(10)
+            .setConnectionPoolSize(50)
             .setConnectTimeout(3000)
             .retryAttempts = 3
         return Redisson.create(config)

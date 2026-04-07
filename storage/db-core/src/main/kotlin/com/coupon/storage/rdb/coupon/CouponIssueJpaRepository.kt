@@ -24,6 +24,15 @@ interface CouponIssueJpaRepository : JpaRepository<CouponIssueEntity, Long> {
         couponId: Long,
     ): Boolean
 
+    @Query(
+        """
+        select distinct issue.userId
+          from CouponIssueEntity issue
+         where issue.couponId = :couponId
+        """,
+    )
+    fun findDistinctUserIdsByCouponId(couponId: Long): List<Long>
+
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query(
         """

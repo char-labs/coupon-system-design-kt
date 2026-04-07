@@ -4,6 +4,7 @@ import com.coupon.coupon.Coupon
 import com.coupon.coupon.CouponDetail
 import com.coupon.coupon.criteria.CouponCriteria
 import com.coupon.enums.coupon.CouponStatus
+import com.coupon.enums.coupon.CouponTrafficPolicy
 import com.coupon.enums.coupon.CouponType
 import com.coupon.storage.rdb.support.BaseEntity
 import jakarta.persistence.Column
@@ -28,6 +29,9 @@ class CouponEntity(
     @Enumerated(EnumType.STRING)
     @Column(columnDefinition = "varchar(20)", nullable = false)
     var status: CouponStatus = CouponStatus.ACTIVE,
+    @Enumerated(EnumType.STRING)
+    @Column(name = "traffic_policy", columnDefinition = "varchar(20)", nullable = false)
+    var trafficPolicy: CouponTrafficPolicy = CouponTrafficPolicy.HOT_FCFS_ASYNC,
     @Column(name = "discount_amount", nullable = false)
     var discountAmount: Long,
     @Column(name = "max_discount_amount")
@@ -47,6 +51,7 @@ class CouponEntity(
         couponCode = criteria.couponCode,
         name = criteria.name,
         couponType = criteria.couponType,
+        trafficPolicy = criteria.trafficPolicy,
         discountAmount = criteria.discountAmount,
         maxDiscountAmount = criteria.maxDiscountAmount,
         minOrderAmount = criteria.minOrderAmount,
@@ -63,6 +68,7 @@ class CouponEntity(
             name = name,
             type = couponType,
             status = status,
+            trafficPolicy = trafficPolicy,
         )
 
     fun toCouponDetail() =
@@ -72,6 +78,7 @@ class CouponEntity(
             name = name,
             type = couponType,
             status = status,
+            trafficPolicy = trafficPolicy,
             discountAmount = discountAmount,
             maxDiscountAmount = maxDiscountAmount,
             minOrderAmount = minOrderAmount,
@@ -88,6 +95,7 @@ class CouponEntity(
         criteria.discountAmount?.let { this.discountAmount = it }
         criteria.maxDiscountAmount?.let { this.maxDiscountAmount = it }
         criteria.minOrderAmount?.let { this.minOrderAmount = it }
+        criteria.trafficPolicy?.let { this.trafficPolicy = it }
         criteria.availableAt?.let { this.availableAt = it }
         criteria.endAt?.let { this.endAt = it }
     }

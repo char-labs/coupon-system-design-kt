@@ -1,6 +1,7 @@
 package com.coupon.coupon
 
 import com.coupon.enums.coupon.CouponStatus
+import com.coupon.enums.coupon.CouponTrafficPolicy
 import com.coupon.enums.coupon.CouponType
 
 data class Coupon(
@@ -9,4 +10,5 @@ data class Coupon(
     val name: String,
     val type: CouponType,
     val status: CouponStatus,
+    val trafficPolicy: CouponTrafficPolicy,
 )

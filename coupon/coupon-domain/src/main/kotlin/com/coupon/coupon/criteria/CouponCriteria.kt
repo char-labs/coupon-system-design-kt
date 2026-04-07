@@ -1,6 +1,7 @@
 package com.coupon.coupon.criteria
 
 import com.coupon.coupon.command.CouponCommand
+import com.coupon.enums.coupon.CouponTrafficPolicy
 import com.coupon.enums.coupon.CouponType
 import java.time.LocalDateTime
 
@@ -13,6 +14,7 @@ sealed class CouponCriteria {
         val maxDiscountAmount: Long?,
         val minOrderAmount: Long?,
         val totalQuantity: Long,
+        val trafficPolicy: CouponTrafficPolicy,
         val availableAt: LocalDateTime,
         val endAt: LocalDateTime,
     ) {
@@ -28,6 +30,7 @@ sealed class CouponCriteria {
                 maxDiscountAmount = command.maxDiscountAmount,
                 minOrderAmount = command.minOrderAmount,
                 totalQuantity = command.totalQuantity,
+                trafficPolicy = command.trafficPolicy,
                 availableAt = command.availableAt,
                 endAt = command.endAt,
             )
@@ -39,6 +42,7 @@ sealed class CouponCriteria {
         val discountAmount: Long?,
         val maxDiscountAmount: Long?,
         val minOrderAmount: Long?,
+        val trafficPolicy: CouponTrafficPolicy?,
         val availableAt: LocalDateTime?,
         val endAt: LocalDateTime?,
     ) {
@@ -49,6 +53,7 @@ sealed class CouponCriteria {
                     discountAmount = command.discountAmount,
                     maxDiscountAmount = command.maxDiscountAmount,
                     minOrderAmount = command.minOrderAmount,
+                    trafficPolicy = command.trafficPolicy,
                     availableAt = command.availableAt,
                     endAt = command.endAt,
                 )

@@ -10,8 +10,10 @@ class CouponValidator(
     private val couponRepository: CouponRepository,
 ) {
     fun validateAvailability(couponId: Long) {
-        val coupon = couponRepository.findDetailById(couponId)
+        validateAvailability(couponRepository.findDetailById(couponId))
+    }
 
+    fun validateAvailability(coupon: CouponDetail) {
         validateStatus(coupon)
         validateIssuablePeriod(coupon)
     }

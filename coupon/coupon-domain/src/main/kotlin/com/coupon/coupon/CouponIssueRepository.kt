@@ -26,6 +26,8 @@ interface CouponIssueRepository {
         couponId: Long,
     ): Boolean
 
+    fun findUserIdsByCouponId(couponId: Long): Set<Long>
+
     fun useIfIssued(couponIssueId: Long): Boolean
 
     fun cancelIfIssued(couponIssueId: Long): Boolean

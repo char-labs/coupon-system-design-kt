@@ -63,6 +63,11 @@ spring:
   config:
     activate:
       on-profile: "!local & !test"
+  jpa:
+    properties:
+      hibernate:
+        show_sql: false
+        format_sql: false
 
 datasource:
   db:
@@ -72,11 +77,12 @@ datasource:
       username: ${DATASOURCE_DB_CORE_USERNAME:coupon-admin}
       password: ${DATASOURCE_DB_CORE_PASSWORD:coupon!@#}
       pool-name: core-db-pool
-      maximum-pool-size: 10
-      connection-timeout: 1500
-      keepalive-time: 30000
-      validation-timeout: 1000
-      max-lifetime: 600000
+      maximum-pool-size: ${DATASOURCE_DB_CORE_MAXIMUM_POOL_SIZE:50}
+      minimum-idle: ${DATASOURCE_DB_CORE_MINIMUM_IDLE:10}
+      connection-timeout: ${DATASOURCE_DB_CORE_CONNECTION_TIMEOUT_MS:1500}
+      keepalive-time: ${DATASOURCE_DB_CORE_KEEPALIVE_TIME_MS:30000}
+      validation-timeout: ${DATASOURCE_DB_CORE_VALIDATION_TIMEOUT_MS:1000}
+      max-lifetime: ${DATASOURCE_DB_CORE_MAX_LIFETIME_MS:600000}
       data-source-properties:
         cachePrepStmts: true
         prepStmtCacheSize: 250

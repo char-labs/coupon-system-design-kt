@@ -2,6 +2,7 @@ package com.coupon.controller.coupon.request
 
 import com.coupon.coupon.command.CouponCommand
 import com.coupon.coupon.command.CouponPreviewCommand
+import com.coupon.enums.coupon.CouponTrafficPolicy
 import com.coupon.enums.coupon.CouponType
 import io.swagger.v3.oas.annotations.media.Schema
 import java.time.LocalDateTime
@@ -35,6 +36,7 @@ sealed class CouponRequest {
                 maxDiscountAmount = maxDiscountAmount,
                 minOrderAmount = minOrderAmount,
                 totalQuantity = totalQuantity,
+                trafficPolicy = CouponTrafficPolicy.HOT_FCFS_ASYNC,
                 availableAt = availableAt,
                 endAt = endAt,
             )
@@ -61,6 +63,7 @@ sealed class CouponRequest {
                 discountAmount = discountAmount,
                 maxDiscountAmount = maxDiscountAmount,
                 minOrderAmount = minOrderAmount,
+                trafficPolicy = null,
                 availableAt = availableAt,
                 endAt = endAt,
             )
