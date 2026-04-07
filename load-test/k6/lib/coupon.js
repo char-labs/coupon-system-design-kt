@@ -283,3 +283,57 @@ export function getCouponIssuePage(accessToken, couponId, size = 1) {
     'get_coupon_issue_page',
   );
 }
+
+export function waitForCouponIssueSettlement(
+  accessToken,
+  couponId,
+  {
+    totalQuantity,
+    expectedIssuedCount,
+    expectedRemainingQuantity,
+    timeoutSeconds = config.issueSettlementTimeoutSeconds,
+    pollIntervalMs = config.issueSettlementPollIntervalMs,
+  },
+) {
+  const deadline = Date.now() + timeoutSeconds * 1000;
+  let lastSnapshot = {
+    issuedCount: 0,
+    remainingQuantity: totalQuantity,
+    integrityOk: false,
+    expectedResultOk: false,
+  };
+
+  while (Date.now() < deadline) {
+    const coupon = getCoupon(couponId, accessToken);
+    const couponIssuePage = getCouponIssuePage(accessToken, couponId, 1);
+    const issuedCount = Number(couponIssuePage.totalCount || 0);
+    const remainingQuantity = Number(coupon.remainingQuantity || 0);
+    const integrityOk =
+      typeof totalQuantity === 'number'
+        ? issuedCount + remainingQuantity === totalQuantity
+        : true;
+    const expectedResultOk =
+      typeof expectedIssuedCount === 'number' &&
+      typeof expectedRemainingQuantity === 'number'
+        ? issuedCount === expectedIssuedCount &&
+          remainingQuantity === expectedRemainingQuantity
+        : integrityOk;
+
+    lastSnapshot = {
+      coupon,
+      couponIssuePage,
+      issuedCount,
+      remainingQuantity,
+      integrityOk,
+      expectedResultOk,
+    };
+
+    if (integrityOk && expectedResultOk) {
+      return lastSnapshot;
+    }
+
+    sleep(Math.max(pollIntervalMs, 0) / 1000);
+  }
+
+  return lastSnapshot;
+}

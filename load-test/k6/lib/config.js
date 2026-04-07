@@ -35,6 +35,8 @@ export const config = {
   issuePollIntervalMs: Number(
     __ENV.ISSUE_POLL_INTERVAL_MS || __ENV.ISSUE_REQUEST_POLL_INTERVAL_MS || 500,
   ),
+  issueSettlementTimeoutSeconds: Number(__ENV.ISSUE_SETTLEMENT_TIMEOUT_SECONDS || 120),
+  issueSettlementPollIntervalMs: Number(__ENV.ISSUE_SETTLEMENT_POLL_INTERVAL_MS || 1000),
   issueRampGracefulStop:
     __ENV.ISSUE_RAMP_GRACEFUL_STOP || __ENV.ISSUE_REQUEST_RAMP_GRACEFUL_STOP || '30s',
   issueRampStock: Number(__ENV.ISSUE_RAMP_STOCK || __ENV.ISSUE_REQUEST_RAMP_STOCK || 10000000),

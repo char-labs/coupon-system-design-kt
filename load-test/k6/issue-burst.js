@@ -8,9 +8,8 @@ import {
   activateCoupon,
   buildCouponPayload,
   createCoupon,
-  getCoupon,
-  getCouponIssuePage,
   tryIssueCoupon,
+  waitForCouponIssueSettlement,
 } from './lib/coupon.js';
 
 const issueBurstSuccessCount = new Counter('issue_burst_success_count');
@@ -114,14 +113,19 @@ export default function (data) {
 
 export function teardown(data) {
   const adminToken = waitForAdminSignin(config.adminEmail, config.adminPassword);
-  const coupon = getCoupon(data.couponId, adminToken.accessToken);
-  const couponIssuePage = getCouponIssuePage(adminToken.accessToken, data.couponId, 1);
-  const issuedCount = Number(couponIssuePage.totalCount || 0);
-  const remainingQuantity = Number(coupon.remainingQuantity || 0);
-  const integrityOk = issuedCount + remainingQuantity === data.totalQuantity;
-  const expectedResultOk =
-    issuedCount === data.expectedSuccessCount &&
-    remainingQuantity === data.expectedRemainingQuantity;
+  const snapshot = waitForCouponIssueSettlement(
+    adminToken.accessToken,
+    data.couponId,
+    {
+      totalQuantity: data.totalQuantity,
+      expectedIssuedCount: data.expectedSuccessCount,
+      expectedRemainingQuantity: data.expectedRemainingQuantity,
+    },
+  );
+  const issuedCount = snapshot.issuedCount;
+  const remainingQuantity = snapshot.remainingQuantity;
+  const integrityOk = snapshot.integrityOk;
+  const expectedResultOk = snapshot.expectedResultOk;
 
   issueBurstFinalIssuedCount.add(issuedCount);
   issueBurstFinalRemainingQuantity.add(remainingQuantity);
