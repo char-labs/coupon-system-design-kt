@@ -82,7 +82,7 @@ const scenarioLabels = {
   'issue-burst': '대량 동시 발급 정합성 확인',
   contention: '동시 발급 경합 확인',
   'issue-overload': '쿠폰 발급 진입 과부하',
-  'issue-ramp': 'synthetic immediate issue 성능 확인',
+  'issue-ramp': 'prepared-user immediate issue 성능 확인',
   'issue-real-ramp': '실사용자 immediate issue 성능 확인',
 };
 
@@ -524,7 +524,7 @@ function buildLoadSummary(scenario, parsedEnv, envSource) {
     case 'issue-overload':
       return `${resolveValue('ISSUE_OVERLOAD_VUS')}명이 ${resolveValue('ISSUE_OVERLOAD_DURATION')} 동안 immediate SUCCESS issue를 반복 호출`;
     case 'issue-ramp':
-      return `synthetic immediate issue intake를 3000 -> 5000 -> 7000 VU 단계로 상승`;
+      return `prepared-user immediate issue intake를 3000 -> 5000 -> 7000 VU 단계로 상승`;
     case 'issue-real-ramp':
       return `실사용자 세션 기준으로 immediate issue intake를 3000 -> 5000 -> 7000 VU 단계로 상승`;
     default:
@@ -597,7 +597,7 @@ function explainFailure({ failureReason, scenario, parsedEnv, envSource, thresho
     return {
       summary: '락 기반 경로에서 일부 요청이 제한에 걸렸습니다.',
       cause: '이 결과는 구버전 동기 락 기반 시나리오에서만 의미가 있습니다.',
-      action: '현재 synthetic sync issue 시나리오라면 lock retry가 아니라 서버 오류와 정합성 지표를 먼저 확인해 주세요.',
+      action: '현재 direct Kafka issue 시나리오에서는 lock retry보다 서버 오류와 정합성 지표를 먼저 확인해 주세요.',
     };
   }
 

@@ -5,6 +5,10 @@
 현재 발급의 기준 공개 계약은 아래입니다.
 
 - `POST /coupon-issues`
+- `GET /coupon-issues/my`
+- `GET /coupon-issues/coupons/{couponId}`
+
+`POST /coupon-issues` 는 raw text가 아니라 `ApiResponse` envelope를 반환합니다. 측정 기준은 `data.result` 이고 성공 시 HTTP `202`, 중복/품절 시 HTTP `200` 입니다.
 
 ## 추천 흐름
 
@@ -76,7 +80,7 @@ node load-test/k6/run-with-slack.mjs smoke --profile local -- \
 - 관리자 로그인
 - 쿠폰 생성/활성화
 - 사용자 회원가입/로그인
-- immediate issue result
+- immediate issue result (`data.result`)
 - 내 쿠폰 조회 기반 발급 완료 확인
 - coupon use
 
@@ -95,7 +99,7 @@ node load-test/k6/run-with-slack.mjs issue-burst --profile local -- \
 목적:
 
 - 동일 쿠폰 동시 발급
-- immediate SUCCESS / SOLD_OUT 분포 확인
+- immediate `SUCCESS / SOLD_OUT / DUPLICATE` 분포 확인
 - 최종 발급 건수 / 잔여 재고 검증
 - `issued + remaining == initial stock` 확인
 
@@ -162,7 +166,7 @@ burst, overload, ramp 계열 시나리오는 측정 구간 전에 실제 API로 
 
 - `/signup`
 - `/signin`
-- `/coupon-issues`
+- `/coupons`
 
 의도는 단순합니다.
 
@@ -264,7 +268,7 @@ burst, overload, ramp 계열 시나리오는 측정 구간 전에 실제 API로 
 
 조치:
 
-- coupon issue count
+- `/coupon-issues/coupons/{couponId}` totalCount
 - remaining quantity
 - server error count
 

@@ -11,21 +11,21 @@
 #   - 1명의 실제 사용자 세션이 1개의 HOT_FCFS_ASYNC 쿠폰 발급을 요청하고 terminal status까지 수렴하는지 확인합니다.
 #   - 발급 이후 쿠폰 사용까지 포함한 최소 회귀 시나리오입니다.
 # - ramp
-#   - HOT_FCFS_ASYNC 쿠폰 기준 synthetic user Kafka intake 성능만 봅니다.
+#   - HOT_FCFS_ASYNC 쿠폰 기준 실제 회원가입 세션으로 immediate issue intake 성능만 봅니다.
 #   - 기본값은 3,000 -> 5,000 -> 7,000 VU로 점진 증가시키고, 재고는 충분히 크게 잡아 품절이 병목으로 끼지 않게 합니다.
-#   - setup에서 synthetic 사용자 풀과 쿠폰 풀을 먼저 준비하고, 본 실행에서는 발급 요청만 보냅니다.
+#   - setup에서 실제 사용자 세션 풀과 쿠폰 풀을 먼저 준비하고, 본 실행에서는 발급 요청만 보냅니다.
 # - real-ramp
 #   - 실제 인증된 사용자 세션 풀로 HOT_FCFS_ASYNC intake를 확인합니다.
 #   - 기본값은 사용자 풀 7,000명, 쿠폰 풀 1,000개, 쿠폰당 재고 100,000개입니다.
 # - burst
 #   - 한 종류의 HOT_FCFS_ASYNC 쿠폰에 대해 동시에 몰리는 선착순 상황을 검증합니다.
 #   - 기본값은 "사용자 1,000명 동시 발급 시도 / 쿠폰 수량 1,000개"입니다.
-#   - setup에서 사용자 1,000명을 먼저 bulk prepare한 뒤, measured phase에서 동시에 쿠폰 발급을 호출합니다.
+#   - setup에서 사용자 1,000명의 실제 세션을 먼저 준비한 뒤, measured phase에서 동시에 쿠폰 발급을 호출합니다.
 #   - 지금 기본 검증 대상은 이 시나리오입니다.
 # - overload
 #   - 일정 시간 동안 HOT_FCFS_ASYNC 발급 요청이 지속적으로 들어오는 상황을 검증합니다.
 #   - 기본값은 50 VU가 10분 동안 200개 쿠폰 풀을 대상으로 요청하고, 쿠폰당 재고는 100,000개입니다.
-#   - setup에서 synthetic 사용자 풀과 쿠폰 풀을 미리 준비해, sustained load 동안 user 생성이 섞이지 않게 합니다.
+#   - setup에서 실제 사용자 세션 풀과 쿠폰 풀을 미리 준비해, sustained load 동안 user 생성이 섞이지 않게 합니다.
 #
 # Read this file as:
 # - up/check: 로컬 스택 준비
@@ -120,7 +120,7 @@ Behavior:
   up        Start docker stack only
   check     Verify app, worker, Grafana, InfluxDB, Kafka UI
   smoke     Run Redis reserve + async execution smoke test
-  ramp      Run synthetic immediate-issue ramp test (optional)
+  ramp      Run prepared-user immediate-issue ramp test (optional)
   real-ramp Run real-user immediate-issue ramp test
   burst     Run standard burst integrity test
   overload  Run HOT_FCFS_ASYNC sustained overload test

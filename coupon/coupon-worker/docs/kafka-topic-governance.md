@@ -2,175 +2,123 @@
 
 ## 목적
 
-이 문서는 쿠폰 시스템에서 Kafka topic을 어떻게 정의하고, 언제 늘리고, 어떤 기준으로 운영할지 정리한 명세 문서다.
-
-핵심 원칙은 다음과 같다.
-
-- topic은 비즈니스 의미 단위로 나눈다.
-- source of truth는 DB request 상태다.
-- topic 설계는 consumer 편의보다 정합성과 운영 추적 가능성을 우선한다.
+이 문서는 현재 쿠폰 시스템에서 Kafka topic 을 어떻게 이름 짓고, 어떤 기준으로 운영하고, 언제 확장할지 정리한다.
 
 ## 현재 topic 목록
 
 | topic | 역할 | producer | consumer | 상태 |
 | --- | --- | --- | --- | --- |
-| `coupon.issue.requested.v2` | strict FCFS accepted coupon issue request 실행 버스 | outbox relay | coupon worker consumer | 사용 중 |
-| `coupon.issue.requested.v2.dlq` | request consumer retry 소진 후 격리 | Kafka error handler | DLQ listener | 사용 중 |
+| `coupon.issue.v1` | accepted coupon issue command bus | coupon-api | coupon-worker | 사용 중 |
+| `coupon.issue.v1.dlq` | retry 소진 후 격리 | Kafka error handler | coupon-worker DLQ listener | 사용 중 |
 
-## topic naming 규칙
+현재는 lifecycle outbox 를 위한 별도 Kafka topic 은 없다. lifecycle 후속 projection 은 worker outbox runtime 이 DB outbox 를 직접 poll 해서 처리한다.
 
-현재 저장소는 아래 규칙을 따른다.
+## naming 규칙
 
-`{domain}.{usecase}.{event}.v{version}`
+현재 naming 규칙:
 
-예시:
+`{domain}.{usecase}.v{version}`
 
-- `coupon.issue.requested.v2`
+예:
 
-DLQ는 아래 규칙을 따른다.
+- `coupon.issue.v1`
+
+DLQ 규칙:
 
 `{original-topic}.dlq`
 
-예시:
+예:
 
-- `coupon.issue.requested.v2.dlq`
+- `coupon.issue.v1.dlq`
 
-## partition/key 전략
+## partition / key 전략
 
-### 현재 전략
+현재 설정:
 
 - partition count: `3`
 - producer record key: `couponId.toString()`
 
-이 선택의 의미는 다음과 같다.
+의도:
 
-- 같은 couponId 요청은 항상 같은 partition으로 들어간다.
-- Kafka가 같은 couponId 내부 순서를 보장한다.
-- 대신 hot coupon은 단일 partition에 집중된다.
+- 같은 couponId 는 같은 partition 으로 보낸다
+- hot coupon 내부 순서를 Kafka partition 수준에서 유지한다
+- 대신 특정 hot coupon 은 한 partition 에 집중될 수 있다
 
-현재 구조에서는 이게 맞다.
+이 trade-off 는 현재 설계 의도와 맞다.
 
-- strict FCFS는 `HOT_FCFS_ASYNC` 쿠폰에만 요구한다.
-- couponId key만으로는 충분하지 않아서, relay가 같은 couponId의 oldest pending request만 publish한다.
-- FCFS 기준 순서는 `t_coupon_issue_request.created_at`, tie-breaker `id`다.
+## consumer group
 
-### relay ordering gate
+| group id | 역할 |
+| --- | --- |
+| `coupon-issue-group` | main consumer |
+| `coupon-issue-dlq-group` | DLQ consumer |
 
-현재 저장소는 publish 전에 아래 조건을 추가로 확인한다.
+규칙:
 
-- 같은 couponId 기준 relay lock 획득
-- `findOldestPendingByCouponId(couponId)` 조회
-- 현재 request가 oldest pending request일 때만 publish
+- main group 은 실제 발급 실행만 담당
+- DLQ group 은 최종 격리와 Redis release 만 담당
+- audit / analytics consumer 는 같은 group 을 공유하지 않는다
 
-이 gate가 필요한 이유는 다음과 같다.
+## provisioning 정책
 
-- 여러 worker가 outbox를 병렬 claim해도 publish 순서가 뒤집히지 않게 한다.
-- Kafka partition ordering이 실제 accepted 순서를 그대로 반영하게 한다.
-- strict FCFS의 기준을 DB request 생성순으로 고정할 수 있다.
+현재는 app-managed topic creation 을 사용한다.
 
-## replication / retention 기준
+관련 파일:
+
+- [`CouponIssueKafkaConfig.kt`](../src/main/kotlin/com.coupon/config/CouponIssueKafkaConfig.kt)
+- [`CouponIssueKafkaProperties.kt`](../src/main/kotlin/com.coupon/config/CouponIssueKafkaProperties.kt)
+
+장점:
+
+- local/dev 에서 compose 만 올려도 바로 실행 가능
+- topic 누락으로 초기 개발 흐름이 끊기지 않음
+
+운영형 권장:
+
+- local/dev: app-managed 허용
+- stage/prod: platform-managed provisioning 선호
+
+## retention / replication 기본값
 
 ### local
 
 - replicas: `1`
-- retention: broker default 허용
-- 목적: 구조 학습, 기능 확인
+- retention: broker default
 
 ### stage / prod 권장
 
 - replicas: `3`
 - `min.insync.replicas`: `2`
 - cleanup policy: `delete`
-- retention:
-  - command topic은 짧게
-  - DLQ topic은 더 길게
+- DLQ retention 은 main topic 보다 길게
 
-이유:
+## topic 추가 원칙
 
-- command topic은 장기 보관보다 재처리와 관측이 중요하다.
-- DLQ는 운영자가 원인 분석할 수 있도록 더 오래 남겨야 한다.
+새 topic 은 아래일 때만 추가한다.
 
-## topic provisioning 정책
-
-### 지금
-
-현재는 [`CouponIssueRequestKafkaConfig.kt`](/Users/yunbeom/ybcha/coupon-system-design-kt/coupon/coupon-worker/src/main/kotlin/com.coupon/config/CouponIssueRequestKafkaConfig.kt) 의 `NewTopic` bean으로 topic을 자동 생성한다.
-
-이 방식은 local/dev에는 좋다.
-
-- 새로운 동료가 compose만 올려도 바로 실행된다.
-- topic 누락으로 앱이 죽지 않는다.
-
-### 앞으로
-
-운영형 환경에서는 아래 정책으로 전환한다.
-
-- local/dev: app-managed topic creation 허용
-- staging/prod: platform-managed topic provisioning
-
-즉, 이후 구현 계획에서는 `NewTopic` bean을 profile 또는 flag로 꺼야 한다.
-
-## consumer group 규칙
-
-현재 consumer group은 다음과 같다.
-
-| group id | 역할 |
-| --- | --- |
-| `coupon-issue-request-group` | main request consumer |
-| `coupon-issue-request-dlq-group` | DLQ final convergence |
-
-규칙:
-
-- main group은 실제 request execution만 담당
-- DLQ group은 최종 `DEAD` 수렴만 담당
-- analytics/audit용 consumer는 같은 group을 공유하지 않는다
-
-## 확장 시 topic 추가 원칙
-
-새 topic은 아래 조건을 만족할 때만 추가한다.
-
-- consumer 책임이 명확히 다를 때
-- retry / DLQ 전략이 다를 때
-- ordering 요구사항이 다를 때
+- ordering 요구가 완전히 다를 때
+- retry / DLQ 정책이 다를 때
 - retention 정책이 다를 때
+- consumer 책임이 명확히 분리될 때
 
-반대로 아래 경우는 새 topic을 만들지 않는다.
+아래는 새 topic 을 만들지 않는다.
 
-- 단순히 payload field가 늘어남
-- 같은 request execution을 다른 이름으로 구분하고 싶음
-- consumer 코드만 조금 달라짐
+- payload 필드가 조금 늘어나는 경우
+- 같은 책임인데 이름만 바꾸고 싶은 경우
+- 현재 consumer 안에서 충분히 분기 가능한 경우
 
-## 향후 후보 topic
-
-아직 구현하지 않았지만, 아래는 추가 후보로 볼 수 있다.
+## 향후 후보
 
 | topic | 도입 조건 |
 | --- | --- |
-| `coupon.lifecycle.v1` | `issued/used/canceled` fan-out consumer 분리 필요 |
-| `coupon.issue.result.v1` | 외부 시스템에 발급 성공/실패 결과를 전파해야 할 때 |
-| `coupon.issue.requested.v3` | payload 호환성을 유지할 수 없을 정도로 계약이 바뀔 때 |
+| `coupon.lifecycle.v1` | lifecycle projection 을 Kafka fan-out 으로 분리해야 할 때 |
+| `coupon.issue.result.v1` | 외부 시스템으로 발급 결과를 내보내야 할 때 |
+| `coupon.issue.v2` | payload 호환성이 깨질 정도로 계약이 바뀔 때 |
 
-## 운영자가 반드시 알아야 하는 것
+## 운영 해석 포인트
 
-- `coupon.issue.requested.v2` backlog가 늘었다고 바로 broker 문제는 아니다
-- 먼저 `ENQUEUED` age, consumer lag, DB lock 대기, request 상태 수렴을 같이 봐야 한다
-- topic partition 수를 늘리기 전에 consumer bottleneck과 DB lock 병목을 먼저 확인해야 한다
+- `coupon.issue.v1` lag 증가는 broker 문제일 수도 있고 DB/lock 병목일 수도 있다
+- DLQ 증가는 consumer retry 로 해결되지 않는 terminal failure 신호다
+- partition 을 늘리기 전에 lock, DB pool, hot coupon 집중도를 먼저 본다
 
-## 현재 프로젝트에서 유지할 원칙
-
-- command topic은 적게 유지
-- versioning은 이름으로 명시
-- DLQ는 원본 topic suffix로 통일
-- strict FCFS command topic은 couponId ordering 우선
-- 운영형 전환 전에는 app auto topic creation 허용
-
-## 참고 파일
-
-- [`CouponIssueRequestKafkaProperties.kt`](../src/main/kotlin/com.coupon/config/CouponIssueRequestKafkaProperties.kt)
-- [`CouponIssueRequestKafkaConfig.kt`](../src/main/kotlin/com.coupon/config/CouponIssueRequestKafkaConfig.kt)
-- [`worker.yml`](../src/main/resources/worker.yml)
-
-## 참고 링크
-
-- [Apache Kafka: Topic naming and management basics](https://kafka.apache.org/documentation/)
-- [Confluent: Kafka topic design considerations](https://developer.confluent.io/learn-kafka/architecture/get-started/)
+최신 전체 흐름은 [coupon-kafka-runtime-guide.md](./coupon-kafka-runtime-guide.md) 를 참고한다.

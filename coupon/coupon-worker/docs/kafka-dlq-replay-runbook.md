@@ -1,212 +1,114 @@
-# Kafka DLQ and Replay Runbook
+# Kafka DLQ Replay Runbook
 
 ## 목적
 
-이 문서는 쿠폰 발급 request가 Kafka retry를 모두 소진하고 DLQ로 이동했을 때, 운영자가 어떤 순서로 확인하고 어떻게 재처리할지 정리한 런북이다.
+이 문서는 현재 direct Kafka issue flow 에서 메시지가 DLQ 로 이동했을 때 운영자가 어떤 순서로 확인하고 어떻게 재시도할지 정리한 런북이다.
 
-이 문서의 목표는 두 가지다.
+현재 기준 topic:
 
-- `DEAD` request를 애매한 상태로 방치하지 않는다.
-- 운영자가 코드를 몰라도 최소한 원인 분류와 1차 대응은 할 수 있게 한다.
+- main: `coupon.issue.v1`
+- DLQ: `coupon.issue.v1.dlq`
 
-## 현재 구조에서 DLQ의 의미
+## 현재 DLQ 의미
 
-현재 쿠폰 시스템에서 DLQ는 `최종 자동 복구 실패`를 의미한다.
+DLQ 로 이동했다는 뜻은 아래와 같다.
 
-흐름:
+- Redis reserve 는 성공했다
+- Kafka publish 도 성공했다
+- worker consumer 가 여러 번 재시도했지만 끝내 처리하지 못했다
+- DLQ listener 가 Redis reserve 를 release 했다
 
-1. request가 `PENDING`으로 저장됨
-2. outbox relay가 Kafka publish
-3. request가 `ENQUEUED`
-4. consumer가 처리 시도
-5. retryable failure는 Kafka error handler 재시도
-6. 재시도 소진 시 `coupon.issue.requested.v2.dlq` 로 이동
-7. DLQ listener가 request를 `DEAD`로 마킹
+즉, DLQ 이후에는 같은 `couponId/userId` 조합이 Redis 에 묶여 있지 않아야 한다.
 
-즉, DLQ는 “메시지를 잃지 않기 위한 저장소”가 아니라 “자동 복구 범위를 벗어난 건을 사람에게 넘기는 경계”다.
+## 가장 먼저 볼 것
 
-## 관련 코드
+1. `coupon-worker` 로그에서 DLQ 원인 확인
+2. Kafka UI 에서 `coupon.issue.v1.dlq` 적재 메시지 확인
+3. 같은 `couponId/userId` 의 `t_coupon_issue` row 존재 여부 확인
+4. Redis state 가 이미 release 되었는지 확인
 
-- listener: [`CouponIssueRequestKafkaListener.kt`](../src/main/kotlin/com.coupon/kafka/CouponIssueRequestKafkaListener.kt)
-- metrics: [`CouponIssueRequestKafkaMetrics.kt`](../src/main/kotlin/com.coupon/kafka/CouponIssueRequestKafkaMetrics.kt)
-- reconciliation: [`CouponIssueRequestReconciliationService.kt`](../../coupon-domain/src/main/kotlin/com/coupon/coupon/request/CouponIssueRequestReconciliationService.kt)
+## 확인 순서
 
-## 운영 신호
+### Step 1. 이미 발급이 끝난 건 아닌지 확인
 
-아래 신호가 보이면 DLQ 또는 replay 대응이 필요하다.
+DLQ 전에 worker 가 마지막 commit 직전까지 갔을 수는 없지만, 운영상 가장 먼저 확인할 값은 DB truth 다.
 
-- `coupon.issue.request.kafka.dlq` 증가
-- `ENQUEUED` oldest age 증가
-- `PROCESSING` oldest age 증가
-- request 상태 중 `DEAD` 증가
-- Kafka UI에서 DLQ topic 메시지 누적
+확인 대상:
 
-## 원인 분류
+- `t_coupon_issue` 에 같은 `coupon_id`, `user_id` row 가 있는가
+- `t_coupon.remaining_quantity` 가 이미 감소했는가
 
-DLQ는 아래 세 부류 중 하나로 본다.
+판단:
 
-### 1. payload 문제
+- 발급 row 가 있으면 manual replay 는 하지 않는다
+- 발급 row 가 없으면 다음 단계로 진행한다
 
-예시:
+### Step 2. Redis reserve 가 풀렸는지 확인
 
-- message schema mismatch
-- aggregateId 파싱 실패
-- 필수 필드 누락
+현재 DLQ listener 는 아래 보상을 수행한다.
 
-조치:
+- reserved user marker release
+- occupied count release
 
-- 동일 payload로는 재처리해도 다시 실패한다
-- 즉시 replay하지 않는다
-- producer/outbox payload 버전 문제를 먼저 수정한다
+그래서 동일 사용자가 다시 발급을 시도할 수 있어야 한다.
 
-### 2. 비즈니스 상태 불일치
+관련 파일:
 
-예시:
+- [`CouponIssueKafkaListener.kt`](../src/main/kotlin/com.coupon/kafka/CouponIssueKafkaListener.kt)
+- [`CouponIssueService.kt`](../../coupon-domain/src/main/kotlin/com/coupon/coupon/CouponIssueService.kt)
 
-- request는 살아 있는데 coupon이 이미 삭제됨
-- request 상태와 실제 coupon_issue row가 어긋남
-- 잘못된 상태 전이
+### Step 3. 재시도 방식을 결정한다
 
-조치:
+권장 순서는 아래와 같다.
 
-- reconciliation 결과를 먼저 본다
-- request를 바로 replay하지 말고 현재 DB truth를 확인한다
+1. 가능하면 같은 비즈니스 요청을 다시 호출한다
+   - `POST /coupon-issues`
+   - 이유: 현재 구조에는 request table 이 없어서, 가장 안전한 재진입점은 공개 API 이다
+2. 운영상 꼭 필요할 때만 Kafka message replay 를 검토한다
+   - 이 경우에도 먼저 DB truth 와 Redis state 가 깨끗한지 확인한다
 
-### 3. 일시적 시스템 장애가 장기화된 경우
+## 권장 대응 시나리오
 
-예시:
+### A. 일시 장애였다
 
-- DB lock 장기 대기
-- Redis 장애
-- Kafka consumer timeout 반복
+예:
 
-조치:
+- DB connection 일시 오류
+- lock contention spike
+- worker restart 중간 구간
 
-- 현재는 DEAD까지 왔으므로 단순 재시도만으로 충분하지 않았다는 뜻이다
-- 장애 원인 제거 후 replay 후보로 분류할 수 있다
+대응:
 
-## 운영 확인 순서
+1. worker / DB / Redis 상태 정상화
+2. 동일 사용자의 발급 재시도 유도 또는 운영 도구로 API 재호출
+3. `t_coupon_issue` 생성 여부 확인
 
-### Step 1. request 상태 확인
+### B. payload 또는 코드 버그였다
 
-확인 항목:
+예:
 
-- request id
-- 현재 status
-- result code
-- failure reason
-- last delivery error
-- delivery attempt count
+- 역직렬화 문제
+- 잘못된 validation
+- 특정 coupon 상태 버그
 
-핵심 질문:
+대응:
 
-- 이 request는 `FAILED`가 맞는가, `DEAD`가 맞는가
-- business terminal failure를 잘못 replay하려는 건 아닌가
+1. 원인 코드 수정
+2. 발급 성공 row 가 없는 것만 선별
+3. 필요한 건만 재호출
 
-### Step 2. 실제 coupon issue row 확인
+## 하지 말아야 할 것
 
-확인 항목:
+- 존재하지 않는 request row 를 복구하려고 하지 않는다
+- 과거 `PENDING/ENQUEUED` 상태 머신 문서를 기준으로 수동 DB 보정을 하지 않는다
+- `t_coupon_issue` row 존재 여부를 보지 않고 DLQ 메시지를 무조건 replay 하지 않는다
 
-- `t_coupon_issue_request.coupon_issue_id`
-- 해당 `coupon_issue_id` row 존재 여부
-- 같은 `(couponId, userId)` 조합의 중복 발급 여부
+## 운영 체크포인트
 
-핵심 질문:
+- DLQ 증가량
+- main topic lag
+- worker retry 로그
+- `t_coupon_issue` 생성 실패 패턴
+- Redis release 누락 여부
 
-- 이미 발급이 성공했는데 상태만 꼬인 것인가
-- 실제 발급이 없어서 replay 대상인가
-
-### Step 3. coupon 수량 확인
-
-확인 항목:
-
-- `t_coupon.remaining_quantity`
-- 동일 쿠폰의 발급 건수
-
-핵심 질문:
-
-- request replay가 수량 정합성을 깨뜨리지 않는가
-
-### Step 4. DLQ payload 확인
-
-Kafka UI에서 아래를 확인한다.
-
-- original topic
-- partition
-- offset
-- payload
-- 예외 메시지
-
-핵심 질문:
-
-- payload 자체가 잘못됐는가
-- consumer 환경 문제였는가
-
-## replay 판단 기준
-
-### replay 가능
-
-아래 조건을 모두 만족하면 replay 후보로 본다.
-
-- request status가 `DEAD`
-- 실제 `coupon_issue` row 없음
-- payload가 정상
-- coupon과 user 상태가 아직 발급 가능
-- 원인이 일시적 시스템 장애였고 현재는 복구됨
-
-### replay 금지
-
-아래 중 하나면 replay하지 않는다.
-
-- 이미 `coupon_issue` row가 존재함
-- 비즈니스 실패가 명확함
-  - 품절
-  - 이미 발급됨
-  - 잘못된 상태 전이
-- payload가 malformed
-- coupon이 삭제되었거나 정책상 더 이상 발급 불가
-
-## replay 방식 원칙
-
-현재 저장소 기준 원칙은 다음과 같다.
-
-- Kafka DLQ message를 그대로 다시 밀어 넣는 것보다, DB request 상태를 기준으로 재발행하는 쪽이 더 안전하다
-- 즉, replay는 “메시지 재전송”보다 “request 재수렴”을 우선한다
-
-권장 방식:
-
-1. request row를 점검
-2. replay 가능 판정
-3. request를 `PENDING` 또는 `ENQUEUED`로 복구하는 운영 도구 실행
-4. outbox 재발행 또는 consumer 재처리
-
-## 앞으로 필요한 구현 항목
-
-이 문서는 현재 수동 대응 기준이다. 이후 아래 구현이 필요하다.
-
-- admin replay endpoint 또는 운영 CLI
-- replay audit log
-- replay reason 기록
-- “한 request를 몇 번까지 수동 replay했는지” 저장
-
-## 운영자용 즉시 체크리스트
-
-- DLQ message의 requestId 확인
-- request row 조회
-- coupon_issue row 존재 여부 확인
-- 동일 user/coupon 중복 발급 여부 확인
-- failure reason이 payload 문제인지, infra 문제인지 분류
-- replay 가능 여부 결정
-- replay 후 `ENQUEUED -> PROCESSING -> SUCCEEDED|FAILED` 수렴 확인
-
-## 현재 프로젝트에서의 결론
-
-- DLQ는 자동 복구 실패의 끝이다
-- replay는 반드시 DB request 상태를 기준으로 한다
-- payload 문제와 business terminal failure는 replay 대상이 아니다
-- replay 기능은 아직 수동 운영 단계이며, 다음 개발 단계에서 도구화한다
-
-## 참고 링크
-
-- [Spring for Apache Kafka: Error handling and DLT](https://docs.spring.io/spring-kafka/reference/kafka/annotation-error-handling.html)
-- [Confluent: Dead letter queue concepts](https://www.confluent.io/learn/kafka-dead-letter-queue/)
+최신 전체 흐름은 [coupon-kafka-runtime-guide.md](./coupon-kafka-runtime-guide.md) 를 본다.

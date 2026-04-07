@@ -5,13 +5,29 @@
 현재 공개 발급 계약은 아래 경로가 기준입니다.
 
 - `POST /coupon-issues`
+- `GET /coupon-issues/my`
+- `GET /coupon-issues/coupons/{couponId}`: burst teardown에서 관리자 최종 발급 건수 확인용
 
 핵심 원칙은 단순합니다.
 
-- 발급 API는 즉시 `SUCCESS`, `DUPLICATE`, `SOLD_OUT` 중 하나를 반환합니다.
-- `SUCCESS`는 Kafka 전송까지 끝난 발급 요청 성공 의미입니다.
+- 발급 API는 `ApiResponse` envelope 안의 `data.result` 로 즉시 `SUCCESS`, `DUPLICATE`, `SOLD_OUT` 중 하나를 반환합니다.
+- `SUCCESS`는 Kafka broker ack까지 끝난 발급 요청 성공 의미입니다.
 - HTTP status는 `SUCCESS=202`, `DUPLICATE|SOLD_OUT=200` 입니다.
 - load-test 시나리오는 실제 `/signup`, `/signin`, `/coupon-issues`를 사용합니다.
+
+예시 응답:
+
+```json
+{
+  "success": true,
+  "status": 202,
+  "data": {
+    "result": "SUCCESS",
+    "message": "쿠폰 발급 요청이 성공적으로 접수되었습니다. 잠시 후 쿠폰함에서 확인해주세요."
+  },
+  "timestamp": "2026-04-08T10:00:00"
+}
+```
 
 상세 운영 절차는 [RUNBOOK.md](/Users/yunbeom/ybcha/coupon-system-design-kt/load-test/k6/RUNBOOK.md)를 봅니다.
 
@@ -121,7 +137,7 @@ node load-test/k6/run-with-slack.mjs issue-ramp --profile local -- \
 - `BASE_URL`
   - 기본값은 `http://127.0.0.1:18080` 입니다.
 - `ISSUE_POLL_TIMEOUT_SECONDS`
-  - 내 쿠폰 조회 기반 완료 대기에서 사용하는 최대 시간입니다.
+  - smoke, baseline, contention, burst teardown 에서 내 쿠폰 조회 기반 완료 대기에 사용하는 최대 시간입니다.
 - `ISSUE_POLL_INTERVAL_MS`
   - 완료 대기 polling 간격입니다.
 - `ISSUE_BURST_VUS`

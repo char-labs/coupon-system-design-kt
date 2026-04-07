@@ -1,89 +1,50 @@
 # Phase 4. Coupon Request Reconciliation
 
-> 최신 전체 흐름은 [`coupon-kafka-runtime-guide.md`](./coupon-kafka-runtime-guide.md) 를 먼저 읽고, 이 문서는 reconciliation 단계만 따로 참고하는 것을 권장한다.
+> 현재 저장소에서는 더 이상 적용되지 않는 단계다.
 
-## 1. 목표
+## 무엇이 바뀌었나
 
-- `COUPON_ISSUE_REQUESTED` outbox가 복구되더라도 request가 `PROCESSING`에 영구 정지하지 않게 만든다.
-- 오래된 `PENDING` request가 활성 outbox 없이 남아 있을 때 다시 큐잉한다.
-- `SUCCEEDED`인데 실제 `couponIssue`가 없는 request를 `DEAD`로 격리해 조용한 불일치를 없앤다.
+예전 구조는 `t_coupon_issue_request` 와 request status machine 을 두고,
 
-이번 단계의 초점은 성능이 아니라 `요청 유실 0`과 `애매한 상태 수렴`이다.
+- `PENDING`
+- `ENQUEUED`
+- `PROCESSING`
+- `SUCCEEDED`
+- `FAILED`
+- `DEAD`
 
-## 2. 왜 필요했는가
+를 reconciliation 하던 모델이었다.
 
-기존 durable workflow는 다음을 보장했다.
+현재는 공개 발급 흐름이 아래처럼 단순화되었다.
 
-- request row 저장
-- outbox row 저장
-- worker 기반 비동기 실행
-- stale outbox `PROCESSING` 복구
+- Redis reserve
+- direct Kafka publish
+- worker consume
+- `t_coupon_issue` 저장
 
-하지만 여기에는 남은 구멍이 있었다.
+따라서 다음 개념은 현재 런타임에 존재하지 않는다.
 
-- worker가 request를 `PROCESSING`으로 바꾼 뒤 중단되면, outbox는 복구되어도 request는 계속 `PROCESSING`에 머물 수 있다.
-- request는 `PENDING`인데 활성 outbox가 없으면 더 이상 실행 경로를 타지 못한다.
-- request가 `SUCCEEDED`인데 실제 `couponIssue`가 없다면 사용자와 운영 모두 잘못된 성공 상태를 보게 된다.
+- `t_coupon_issue_request`
+- request reconciliation poller
+- request requeue / isolate
 
-이번 단계는 이 세 경로를 닫는 보정 layer다.
+## 현재 복구 경로
 
-## 3. 추가된 구성 요소
+request reconciliation 이 사라진 대신, 현재 실패 복구는 네 군데서 처리한다.
 
-| 구성 요소 | 역할 | 파일 |
-|---|---|---|
-| Reconciliation service | request 복구, 재큐잉, 불일치 격리 | [`CouponIssueRequestReconciliationService.kt`](../src/main/kotlin/com.coupon/../../../../coupon-domain/src/main/kotlin/com/coupon/coupon/request/CouponIssueRequestReconciliationService.kt) |
-| Reconciliation scheduler | 주기적으로 보정 실행 | [`CouponIssueRequestReconciliationPoller.kt`](../src/main/kotlin/com.coupon/reconciliation/CouponIssueRequestReconciliationPoller.kt) |
-| Reconciliation metrics | recovered / requeued / isolated 카운트 수집 | [`CouponIssueRequestReconciliationMetrics.kt`](../src/main/kotlin/com.coupon/reconciliation/CouponIssueRequestReconciliationMetrics.kt) |
-| Reconciliation properties | batch size, timeout, schedule 설정 | [`CouponIssueRequestReconciliationProperties.kt`](../src/main/kotlin/com.coupon/config/CouponIssueRequestReconciliationProperties.kt) |
+1. API publish 실패
+   - Kafka broker ack timeout 또는 publish 예외 발생
+   - 같은 요청 안에서 Redis reserve 를 즉시 release
+2. consumer retry
+   - retryable failure 는 Kafka error handler 가 backoff 재시도
+3. DLQ
+   - retry 소진 시 `coupon.issue.v1.dlq`
+   - DLQ listener 가 Redis reserve 를 release
+4. Redis rebuild
+   - cold start 또는 Redis flush 이후 `CouponIssueService.rebuildState()` 로 DB 기준 state 재구성
 
-## 4. 처리 흐름
+## 지금 참고해야 할 문서
 
-```mermaid
-flowchart TD
-    A["Reconciliation scheduler 실행"] --> B["stale PROCESSING request 복구"]
-    B --> C["stale PENDING request 조회"]
-    C --> D{"활성 outbox 존재?"}
-    D -- "예" --> E["그대로 둠"]
-    D -- "아니오" --> F["COUPON_ISSUE_REQUESTED outbox 재발행"]
-    E --> G["inconsistent SUCCEEDED request 조회"]
-    F --> G
-    G --> H{"couponIssue row 존재?"}
-    H -- "예" --> I["정상 상태 유지"]
-    H -- "아니오" --> J["request를 DEAD로 격리"]
-```
-
-## 5. 핵심 정책
-
-- `PROCESSING -> ENQUEUED` 복구는 bulk update로 수행한다.
-- `PENDING` request는 활성 outbox가 없을 때만 재큐잉한다.
-- outbox 재발행은 request idempotency key를 그대로 사용한다.
-- `SUCCEEDED` 불일치는 숨기지 않고 `DEAD`로 전환해 명시적 실패 상태로 수렴시킨다.
-- source of truth는 계속 DB이며, reconciliation은 그 DB 상태를 다시 맞추는 역할만 맡는다.
-
-## 6. 기본 설정
-
-```yaml
-worker:
-  coupon-issue-request-reconciliation:
-    enabled: true
-    batch-size: 100
-    fixed-delay: 1s
-    initial-delay: 1s
-    processing-timeout: 5m
-    pending-timeout: 30s
-```
-
-## 7. 관측성
-
-- `coupon.issue.request.reconciliation.run.count`
-- `coupon.issue.request.reconciliation.processing.recovered`
-- `coupon.issue.request.reconciliation.pending.scanned`
-- `coupon.issue.request.reconciliation.pending.requeued`
-- `coupon.issue.request.reconciliation.succeeded.inconsistent.scanned`
-- `coupon.issue.request.reconciliation.succeeded.inconsistent.isolated`
-- `coupon.issue.request.reconciliation.duration`
-
-## 8. 의미
-
-이 단계부터 worker는 단순 consumer를 넘어 `self-healing` 역할을 일부 갖게 된다.  
-핵심은 메시지를 더 빨리 처리하는 것이 아니라, 실패 이후에도 request가 결국 `PENDING / ENQUEUED / SUCCEEDED / FAILED / DEAD` 중 하나로 수렴하도록 만드는 것이다.
+- 전체 런타임: [coupon-kafka-runtime-guide.md](./coupon-kafka-runtime-guide.md)
+- DLQ 대응: [kafka-dlq-replay-runbook.md](./kafka-dlq-replay-runbook.md)
+- topic 운영: [kafka-topic-governance.md](./kafka-topic-governance.md)
