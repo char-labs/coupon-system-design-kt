@@ -3,6 +3,7 @@ rootProject.name = "coupon-system-design"
 include(
     "coupon:coupon-enum",
     "coupon:coupon-api",
+    "coupon:coupon-worker",
     "coupon:coupon-domain",
     "storage:db-core",
     "storage:redis",
@@ -36,4 +37,3 @@ pluginManagement {
         }
     }
 }
-

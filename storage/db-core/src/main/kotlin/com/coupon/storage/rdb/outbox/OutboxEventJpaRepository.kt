@@ -12,7 +12,8 @@ interface OutboxEventJpaRepository : JpaRepository<OutboxEventEntity, Long> {
         """
         update OutboxEventEntity event
            set event.status = :processingStatus,
-               event.lastError = null
+               event.lastError = null,
+               event.updatedAt = CURRENT_TIMESTAMP
          where event.id = :eventId
            and event.status in :candidateStatuses
         """,
@@ -29,7 +30,8 @@ interface OutboxEventJpaRepository : JpaRepository<OutboxEventEntity, Long> {
         update OutboxEventEntity event
            set event.status = :succeededStatus,
                event.processedAt = :processedAt,
-               event.lastError = null
+               event.lastError = null,
+               event.updatedAt = CURRENT_TIMESTAMP
          where event.id = :eventId
            and event.status = :processingStatus
         """,
@@ -49,7 +51,8 @@ interface OutboxEventJpaRepository : JpaRepository<OutboxEventEntity, Long> {
                event.availableAt = :availableAt,
                event.retryCount = :retryCount,
                event.lastError = :lastError,
-               event.processedAt = null
+               event.processedAt = null,
+               event.updatedAt = CURRENT_TIMESTAMP
          where event.id = :eventId
            and event.status = :processingStatus
         """,
@@ -69,7 +72,8 @@ interface OutboxEventJpaRepository : JpaRepository<OutboxEventEntity, Long> {
         update OutboxEventEntity event
            set event.status = :deadStatus,
                event.processedAt = :processedAt,
-               event.lastError = :lastError
+               event.lastError = :lastError,
+               event.updatedAt = CURRENT_TIMESTAMP
          where event.id = :eventId
            and event.status = :processingStatus
         """,
@@ -79,6 +83,27 @@ interface OutboxEventJpaRepository : JpaRepository<OutboxEventEntity, Long> {
         processingStatus: OutboxEventStatus,
         deadStatus: OutboxEventStatus,
         processedAt: LocalDateTime,
+        lastError: String,
+    ): Int
+
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query(
+        """
+        update OutboxEventEntity event
+           set event.status = :failedStatus,
+               event.availableAt = :availableAt,
+               event.lastError = :lastError,
+               event.processedAt = null,
+               event.updatedAt = CURRENT_TIMESTAMP
+         where event.status = :processingStatus
+           and coalesce(event.updatedAt, event.createdAt) < :updatedBefore
+        """,
+    )
+    fun recoverStuckProcessing(
+        processingStatus: OutboxEventStatus,
+        failedStatus: OutboxEventStatus,
+        updatedBefore: LocalDateTime,
+        availableAt: LocalDateTime,
         lastError: String,
     ): Int
 }

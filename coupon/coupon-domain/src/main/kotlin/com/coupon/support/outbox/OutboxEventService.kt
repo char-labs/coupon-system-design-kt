@@ -89,4 +89,17 @@ class OutboxEventService(
                 lastError = lastError,
             )
         }
+
+    fun recoverStuckProcessing(
+        updatedBefore: LocalDateTime,
+        availableAt: LocalDateTime = LocalDateTime.now(),
+        lastError: String = "Recovered stale PROCESSING event",
+    ): Int =
+        Tx.writeable {
+            outboxEventRepository.recoverStuckProcessing(
+                updatedBefore = updatedBefore,
+                availableAt = availableAt,
+                lastError = lastError,
+            )
+        }
 }

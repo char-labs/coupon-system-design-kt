@@ -38,4 +38,10 @@ interface OutboxEventRepository {
         processedAt: LocalDateTime,
         lastError: String,
     ): Boolean
+
+    fun recoverStuckProcessing(
+        updatedBefore: LocalDateTime,
+        availableAt: LocalDateTime,
+        lastError: String,
+    ): Int
 }
