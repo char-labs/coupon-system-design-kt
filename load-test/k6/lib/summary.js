@@ -24,7 +24,6 @@ function buildExtraLines(name, data) {
       return [
         `issue_burst success count: ${metricOrZero('issue_burst_success_count', 'count')}`,
         `issue_burst out_of_stock count: ${metricOrZero('issue_burst_out_of_stock_count', 'count')}`,
-        `issue_burst retryable lock failure count: ${metricOrZero('issue_burst_retryable_lock_failure_count', 'count')}`,
         `issue_burst unexpected client error count: ${metricOrZero('issue_burst_unexpected_client_error_count', 'count')}`,
         `issue_burst server error count: ${metricOrZero('issue_burst_server_error_count', 'count')}`,
         `issue_burst final issued count: ${metricValue(data, 'issue_burst_final_issued_count')}`,
@@ -32,32 +31,19 @@ function buildExtraLines(name, data) {
         `issue_burst integrity ok rate: ${metricValue(data, 'issue_burst_integrity_ok', 'rate')}`,
         `issue_burst expected result ok rate: ${metricValue(data, 'issue_burst_expected_result_ok', 'rate')}`,
       ];
-    case 'issue-request-burst':
+    case 'issue-overload':
       return [
-        `issue_request_burst accepted count: ${metricOrZero('issue_request_burst_accepted_count', 'count')}`,
-        `issue_request_burst succeeded count: ${metricOrZero('issue_request_burst_succeeded_count', 'count')}`,
-        `issue_request_burst out_of_stock count: ${metricOrZero('issue_request_burst_out_of_stock_count', 'count')}`,
-        `issue_request_burst dead count: ${metricOrZero('issue_request_burst_dead_count', 'count')}`,
-        `issue_request_burst unexpected failure count: ${metricOrZero('issue_request_burst_unexpected_failure_count', 'count')}`,
-        `issue_request_burst final issued count: ${metricValue(data, 'issue_request_burst_final_issued_count')}`,
-        `issue_request_burst final remaining quantity: ${metricValue(data, 'issue_request_burst_final_remaining_quantity')}`,
-        `issue_request_burst integrity ok rate: ${metricValue(data, 'issue_request_burst_integrity_ok', 'rate')}`,
-        `issue_request_burst expected result ok rate: ${metricValue(data, 'issue_request_burst_expected_result_ok', 'rate')}`,
+        `issue_overload success count: ${metricOrZero('issue_overload_success_count', 'count')}`,
+        `issue_overload sold_out count: ${metricOrZero('issue_overload_sold_out_count', 'count')}`,
+        `issue_overload unexpected failure count: ${metricOrZero('issue_overload_unexpected_failure_count', 'count')}`,
       ];
-    case 'issue-request-overload':
+    case 'issue-ramp':
       return [
-        `issue_request_overload accepted count: ${metricOrZero('issue_request_overload_accepted_count', 'count')}`,
-        `issue_request_overload succeeded count: ${metricOrZero('issue_request_overload_succeeded_count', 'count')}`,
-        `issue_request_overload dead count: ${metricOrZero('issue_request_overload_dead_count', 'count')}`,
-        `issue_request_overload unexpected failure count: ${metricOrZero('issue_request_overload_unexpected_failure_count', 'count')}`,
+        `issue_ramp success count: ${metricOrZero('issue_ramp_success_count', 'count')}`,
       ];
-    case 'issue-request-ramp':
+    case 'issue-real-ramp':
       return [
-        `issue_request_ramp accepted count: ${metricOrZero('issue_request_ramp_accepted_count', 'count')}`,
-      ];
-    case 'issue-request-real-ramp':
-      return [
-        `issue_request_real_ramp accepted count: ${metricOrZero('issue_request_real_ramp_accepted_count', 'count')}`,
+        `issue_real_ramp success count: ${metricOrZero('issue_real_ramp_success_count', 'count')}`,
       ];
     default:
       return [];

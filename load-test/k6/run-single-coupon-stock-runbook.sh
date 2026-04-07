@@ -4,7 +4,7 @@
 #
 # Purpose:
 # - Keep the target fixed to "쿠폰 1개"로 두고, 재고 수량만 바꿔가며 동시 발급 정합성을 검증합니다.
-# - 모든 시나리오는 issue-request-burst를 재사용하며, measured phase에서는 사용자 1,000명이 동시에 같은 쿠폰 발급을 시도합니다.
+# - 모든 시나리오는 HOT_FCFS_ASYNC 쿠폰에 대한 issue-burst를 재사용하며, measured phase에서는 사용자 1,000명이 동시에 같은 쿠폰 발급을 시도합니다.
 #
 # Standard cases:
 # - exact
@@ -51,15 +51,15 @@ run_burst_case() {
 
   (
     cd "${ROOT_DIR}"
-    node load-test/k6/run-with-slack.mjs issue-request-burst --profile "${PROFILE}" -- \
+    node load-test/k6/run-with-slack.mjs issue-burst --profile "${PROFILE}" -- \
       --out "${INFLUX_OUT}" \
       -e BASE_URL="${BASE_URL}" \
       -e ADMIN_EMAIL="${ADMIN_EMAIL}" \
       -e ADMIN_PASSWORD="${ADMIN_PASSWORD}" \
-      -e ISSUE_REQUEST_BURST_VUS="${BURST_VUS}" \
-      -e ISSUE_REQUEST_BURST_STOCK="${stock}" \
-      -e ISSUE_REQUEST_POLL_TIMEOUT_SECONDS="${POLL_TIMEOUT_SECONDS}" \
-      -e ISSUE_REQUEST_POLL_INTERVAL_MS="${POLL_INTERVAL_MS}"
+      -e ISSUE_BURST_VUS="${BURST_VUS}" \
+      -e ISSUE_BURST_STOCK="${stock}" \
+      -e ISSUE_POLL_TIMEOUT_SECONDS="${POLL_TIMEOUT_SECONDS}" \
+      -e ISSUE_POLL_INTERVAL_MS="${POLL_INTERVAL_MS}"
   )
 }
 

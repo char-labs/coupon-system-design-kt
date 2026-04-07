@@ -1,8 +1,19 @@
 import exec from 'k6/execution';
+import { check } from 'k6';
+import { Counter } from 'k6/metrics';
 import { config } from './lib/config.js';
 import { buildSummary } from './lib/summary.js';
-import { signin, signupUser, waitForAdminSignin } from './lib/api.js';
-import { activateCoupon, buildCouponPayload, createCoupon, issueCoupon } from './lib/coupon.js';
+import { prepareUserSessions, waitForAdminSignin } from './lib/api.js';
+import {
+  acceptIssueCoupon,
+  activateCoupon,
+  buildCouponPayload,
+  createCoupon,
+} from './lib/coupon.js';
+
+const issueOverloadSuccessCount = new Counter('issue_overload_success_count');
+const issueOverloadSoldOutCount = new Counter('issue_overload_sold_out_count');
+const issueOverloadUnexpectedFailureCount = new Counter('issue_overload_unexpected_failure_count');
 
 export const options = {
   scenarios: {
@@ -17,6 +28,7 @@ export const options = {
   thresholds: {
     checks: ['rate>0.99'],
     http_req_failed: ['rate<0.05'],
+    issue_overload_unexpected_failure_count: ['count==0'],
   },
 };
 
@@ -24,7 +36,10 @@ export function setup() {
   const adminToken = waitForAdminSignin(config.adminEmail, config.adminPassword);
   const runId = Date.now();
   const couponIds = [];
-  const userTokens = [];
+  const preparedUsers = prepareUserSessions(
+    config.issueOverloadUserPoolSize,
+    { prefix: 'k6-issue-overload-user' },
+  );
 
   for (let index = 0; index < config.issueOverloadCouponPoolSize; index += 1) {
     const coupon = createCoupon(
@@ -38,18 +53,9 @@ export function setup() {
     couponIds.push(coupon.id);
   }
 
-  for (let index = 0; index < config.issueOverloadUserPoolSize; index += 1) {
-    const email = `k6-issue-overload+${runId}-${index}@coupon.local`;
-    const name = `Issue Overload User ${index + 1}`;
-
-    signupUser(email, config.testUserPassword, name);
-    const userToken = signin(email, config.testUserPassword);
-    userTokens.push(userToken.accessToken);
-  }
-
   return {
     couponIds,
-    userTokens,
+    userTokens: preparedUsers.accessTokens,
   };
 }
 
@@ -81,7 +87,37 @@ export default function (data) {
   if (!target) {
     return;
   }
-  issueCoupon(target.accessToken, target.couponId);
+
+  const issueResult = acceptIssueCoupon(target.accessToken, target.couponId);
+  if (issueResult.result !== 'SUCCESS') {
+    if (issueResult.result === 'SOLD_OUT') {
+      issueOverloadSoldOutCount.add(1);
+      check(issueResult, {
+        'issue_overload should not be sold out': () => false,
+      });
+      return;
+    }
+
+    if (issueResult.result === 'DUPLICATE') {
+      issueOverloadUnexpectedFailureCount.add(1);
+      check(issueResult, {
+        'issue_overload duplicate should not happen': () => false,
+      });
+      return;
+    }
+
+    issueOverloadUnexpectedFailureCount.add(1);
+    check(issueResult, {
+      'issue_overload unexpected issue result': () => false,
+    });
+    return;
+  }
+
+  issueOverloadSuccessCount.add(1);
+  check(issueResult, {
+    'issue_overload success should be accepted': (result) =>
+      result.result === 'SUCCESS' && result.status === 202,
+  });
 }
 
 export function handleSummary(data) {

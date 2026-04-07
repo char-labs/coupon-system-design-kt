@@ -18,9 +18,6 @@ const scenarioDefaults = {
   smoke: {
     SMOKE_VUS: '1',
   },
-  'issue-request-smoke': {
-    ISSUE_REQUEST_SMOKE_VUS: '1',
-  },
   baseline: {
     BASELINE_VUS: '20',
     BASELINE_DURATION: '10m',
@@ -29,8 +26,6 @@ const scenarioDefaults = {
     ISSUE_BURST_VUS: '1000',
     ISSUE_BURST_STOCK: '1000',
     ISSUE_BURST_MAX_DURATION: '5m',
-    ISSUE_BURST_LOCK_RETRY_COUNT: '3',
-    ISSUE_BURST_LOCK_RETRY_DELAY_MS: '250',
   },
   contention: {
     CONTENTION_VUS: '100',
@@ -42,71 +37,53 @@ const scenarioDefaults = {
     ISSUE_OVERLOAD_USER_POOL_SIZE: '200',
     ISSUE_OVERLOAD_COUPON_POOL_SIZE: '500',
   },
-  'issue-request-burst': {
-    ISSUE_REQUEST_BURST_VUS: '1000',
-    ISSUE_REQUEST_BURST_STOCK: '1000',
-    ISSUE_REQUEST_BURST_MAX_DURATION: '10m',
-    ISSUE_REQUEST_POLL_TIMEOUT_SECONDS: '30',
-    ISSUE_REQUEST_POLL_INTERVAL_MS: '500',
+  'issue-ramp': {
+    ISSUE_RAMP_STOCK: '10000000',
+    ISSUE_RAMP_STAGE1_DURATION: '3m',
+    ISSUE_RAMP_STAGE1_TARGET: '3000',
+    ISSUE_RAMP_STAGE2_DURATION: '1m',
+    ISSUE_RAMP_STAGE2_TARGET: '3000',
+    ISSUE_RAMP_STAGE3_DURATION: '2m',
+    ISSUE_RAMP_STAGE3_TARGET: '5000',
+    ISSUE_RAMP_STAGE4_DURATION: '3m',
+    ISSUE_RAMP_STAGE4_TARGET: '5000',
+    ISSUE_RAMP_STAGE5_DURATION: '2m',
+    ISSUE_RAMP_STAGE5_TARGET: '7000',
+    ISSUE_RAMP_STAGE6_DURATION: '5m',
+    ISSUE_RAMP_STAGE6_TARGET: '7000',
+    ISSUE_RAMP_STAGE7_DURATION: '3m',
+    ISSUE_RAMP_STAGE7_TARGET: '0',
   },
-  'issue-request-overload': {
-    ISSUE_REQUEST_OVERLOAD_VUS: '50',
-    ISSUE_REQUEST_OVERLOAD_DURATION: '10m',
-    ISSUE_REQUEST_OVERLOAD_COUPON_POOL_SIZE: '200',
-    ISSUE_REQUEST_OVERLOAD_STOCK_PER_COUPON: '100000',
-    ISSUE_REQUEST_POLL_TIMEOUT_SECONDS: '30',
-    ISSUE_REQUEST_POLL_INTERVAL_MS: '500',
-  },
-  'issue-request-ramp': {
-    ISSUE_REQUEST_RAMP_STOCK: '10000000',
-    ISSUE_REQUEST_RAMP_STAGE1_DURATION: '3m',
-    ISSUE_REQUEST_RAMP_STAGE1_TARGET: '3000',
-    ISSUE_REQUEST_RAMP_STAGE2_DURATION: '1m',
-    ISSUE_REQUEST_RAMP_STAGE2_TARGET: '3000',
-    ISSUE_REQUEST_RAMP_STAGE3_DURATION: '2m',
-    ISSUE_REQUEST_RAMP_STAGE3_TARGET: '5000',
-    ISSUE_REQUEST_RAMP_STAGE4_DURATION: '3m',
-    ISSUE_REQUEST_RAMP_STAGE4_TARGET: '5000',
-    ISSUE_REQUEST_RAMP_STAGE5_DURATION: '2m',
-    ISSUE_REQUEST_RAMP_STAGE5_TARGET: '7000',
-    ISSUE_REQUEST_RAMP_STAGE6_DURATION: '5m',
-    ISSUE_REQUEST_RAMP_STAGE6_TARGET: '7000',
-    ISSUE_REQUEST_RAMP_STAGE7_DURATION: '3m',
-    ISSUE_REQUEST_RAMP_STAGE7_TARGET: '0',
-  },
-  'issue-request-real-ramp': {
-    ISSUE_REQUEST_REAL_RAMP_USER_POOL_SIZE: '7000',
-    ISSUE_REQUEST_REAL_RAMP_COUPON_POOL_SIZE: '1000',
-    ISSUE_REQUEST_REAL_RAMP_STOCK_PER_COUPON: '100000',
-    ISSUE_REQUEST_REAL_RAMP_SETUP_TIMEOUT: '30m',
-    ISSUE_REQUEST_RAMP_STAGE1_DURATION: '3m',
-    ISSUE_REQUEST_RAMP_STAGE1_TARGET: '3000',
-    ISSUE_REQUEST_RAMP_STAGE2_DURATION: '1m',
-    ISSUE_REQUEST_RAMP_STAGE2_TARGET: '3000',
-    ISSUE_REQUEST_RAMP_STAGE3_DURATION: '2m',
-    ISSUE_REQUEST_RAMP_STAGE3_TARGET: '5000',
-    ISSUE_REQUEST_RAMP_STAGE4_DURATION: '5m',
-    ISSUE_REQUEST_RAMP_STAGE4_TARGET: '5000',
-    ISSUE_REQUEST_RAMP_STAGE5_DURATION: '2m',
-    ISSUE_REQUEST_RAMP_STAGE5_TARGET: '7000',
-    ISSUE_REQUEST_RAMP_STAGE6_DURATION: '5m',
-    ISSUE_REQUEST_RAMP_STAGE6_TARGET: '7000',
-    ISSUE_REQUEST_RAMP_STAGE7_DURATION: '3m',
-    ISSUE_REQUEST_RAMP_STAGE7_TARGET: '0',
+  'issue-real-ramp': {
+    ISSUE_REAL_RAMP_USER_POOL_SIZE: '7000',
+    ISSUE_REAL_RAMP_COUPON_POOL_SIZE: '1000',
+    ISSUE_REAL_RAMP_STOCK_PER_COUPON: '100000',
+    ISSUE_REAL_RAMP_SETUP_TIMEOUT: '30m',
+    ISSUE_RAMP_STAGE1_DURATION: '3m',
+    ISSUE_RAMP_STAGE1_TARGET: '3000',
+    ISSUE_RAMP_STAGE2_DURATION: '1m',
+    ISSUE_RAMP_STAGE2_TARGET: '3000',
+    ISSUE_RAMP_STAGE3_DURATION: '2m',
+    ISSUE_RAMP_STAGE3_TARGET: '5000',
+    ISSUE_RAMP_STAGE4_DURATION: '5m',
+    ISSUE_RAMP_STAGE4_TARGET: '5000',
+    ISSUE_RAMP_STAGE5_DURATION: '2m',
+    ISSUE_RAMP_STAGE5_TARGET: '7000',
+    ISSUE_RAMP_STAGE6_DURATION: '5m',
+    ISSUE_RAMP_STAGE6_TARGET: '7000',
+    ISSUE_RAMP_STAGE7_DURATION: '3m',
+    ISSUE_RAMP_STAGE7_TARGET: '0',
   },
 };
 
 const scenarioLabels = {
   smoke: '기본 기능 확인',
-  'issue-request-smoke': '비동기 발급 요청 기본 확인',
   baseline: '일반 사용량 기준 부하',
   'issue-burst': '대량 동시 발급 정합성 확인',
   contention: '동시 발급 경합 확인',
-  'issue-overload': '쿠폰 발급 API 과부하',
-  'issue-request-burst': '비동기 발급 요청 동시성 확인',
-  'issue-request-overload': '비동기 발급 요청 과부하',
-  'issue-request-ramp': '비동기 발급 요청 수락 성능 확인',
-  'issue-request-real-ramp': '실사용자 가정 비동기 발급 수락 성능 확인',
+  'issue-overload': '쿠폰 발급 진입 과부하',
+  'issue-ramp': 'synthetic immediate issue 성능 확인',
+  'issue-real-ramp': '실사용자 immediate issue 성능 확인',
 };
 
 function usage() {
@@ -512,38 +489,19 @@ function buildLoadDescription(scenario, parsedEnv, envSource) {
         `ISSUE_OVERLOAD_USER_POOL_SIZE=${resolveValue('ISSUE_OVERLOAD_USER_POOL_SIZE')}`,
         `ISSUE_OVERLOAD_COUPON_POOL_SIZE=${resolveValue('ISSUE_OVERLOAD_COUPON_POOL_SIZE')}`,
       ].join(', ');
-    case 'issue-request-smoke':
-      return `ISSUE_REQUEST_SMOKE_VUS=${resolveValue('ISSUE_REQUEST_SMOKE_VUS')}`;
-    case 'issue-request-burst':
+    case 'issue-ramp':
       return [
-        `ISSUE_REQUEST_BURST_VUS=${resolveValue('ISSUE_REQUEST_BURST_VUS')}`,
-        `ISSUE_REQUEST_BURST_STOCK=${resolveValue('ISSUE_REQUEST_BURST_STOCK')}`,
-        `ISSUE_REQUEST_BURST_MAX_DURATION=${resolveValue('ISSUE_REQUEST_BURST_MAX_DURATION')}`,
-        `ISSUE_REQUEST_POLL_TIMEOUT_SECONDS=${resolveValue('ISSUE_REQUEST_POLL_TIMEOUT_SECONDS')}`,
-        `ISSUE_REQUEST_POLL_INTERVAL_MS=${resolveValue('ISSUE_REQUEST_POLL_INTERVAL_MS')}`,
+        `ISSUE_RAMP_STAGE1_TARGET=${resolveValue('ISSUE_RAMP_STAGE1_TARGET')}`,
+        `ISSUE_RAMP_STAGE3_TARGET=${resolveValue('ISSUE_RAMP_STAGE3_TARGET')}`,
+        `ISSUE_RAMP_STAGE5_TARGET=${resolveValue('ISSUE_RAMP_STAGE5_TARGET')}`,
+        `ISSUE_RAMP_STOCK=${resolveValue('ISSUE_RAMP_STOCK')}`,
       ].join(', ');
-    case 'issue-request-overload':
+    case 'issue-real-ramp':
       return [
-        `ISSUE_REQUEST_OVERLOAD_VUS=${resolveValue('ISSUE_REQUEST_OVERLOAD_VUS')}`,
-        `ISSUE_REQUEST_OVERLOAD_DURATION=${resolveValue('ISSUE_REQUEST_OVERLOAD_DURATION')}`,
-        `ISSUE_REQUEST_OVERLOAD_COUPON_POOL_SIZE=${resolveValue('ISSUE_REQUEST_OVERLOAD_COUPON_POOL_SIZE')}`,
-        `ISSUE_REQUEST_OVERLOAD_STOCK_PER_COUPON=${resolveValue('ISSUE_REQUEST_OVERLOAD_STOCK_PER_COUPON')}`,
-        `ISSUE_REQUEST_POLL_TIMEOUT_SECONDS=${resolveValue('ISSUE_REQUEST_POLL_TIMEOUT_SECONDS')}`,
-        `ISSUE_REQUEST_POLL_INTERVAL_MS=${resolveValue('ISSUE_REQUEST_POLL_INTERVAL_MS')}`,
-      ].join(', ');
-    case 'issue-request-ramp':
-      return [
-        `ISSUE_REQUEST_RAMP_STAGE1_TARGET=${resolveValue('ISSUE_REQUEST_RAMP_STAGE1_TARGET')}`,
-        `ISSUE_REQUEST_RAMP_STAGE3_TARGET=${resolveValue('ISSUE_REQUEST_RAMP_STAGE3_TARGET')}`,
-        `ISSUE_REQUEST_RAMP_STAGE5_TARGET=${resolveValue('ISSUE_REQUEST_RAMP_STAGE5_TARGET')}`,
-        `ISSUE_REQUEST_RAMP_STOCK=${resolveValue('ISSUE_REQUEST_RAMP_STOCK')}`,
-      ].join(', ');
-    case 'issue-request-real-ramp':
-      return [
-        `ISSUE_REQUEST_REAL_RAMP_USER_POOL_SIZE=${resolveValue('ISSUE_REQUEST_REAL_RAMP_USER_POOL_SIZE')}`,
-        `ISSUE_REQUEST_REAL_RAMP_COUPON_POOL_SIZE=${resolveValue('ISSUE_REQUEST_REAL_RAMP_COUPON_POOL_SIZE')}`,
-        `ISSUE_REQUEST_REAL_RAMP_STOCK_PER_COUPON=${resolveValue('ISSUE_REQUEST_REAL_RAMP_STOCK_PER_COUPON')}`,
-        `ISSUE_REQUEST_RAMP_STAGE5_TARGET=${resolveValue('ISSUE_REQUEST_RAMP_STAGE5_TARGET')}`,
+        `ISSUE_REAL_RAMP_USER_POOL_SIZE=${resolveValue('ISSUE_REAL_RAMP_USER_POOL_SIZE')}`,
+        `ISSUE_REAL_RAMP_COUPON_POOL_SIZE=${resolveValue('ISSUE_REAL_RAMP_COUPON_POOL_SIZE')}`,
+        `ISSUE_REAL_RAMP_STOCK_PER_COUPON=${resolveValue('ISSUE_REAL_RAMP_STOCK_PER_COUPON')}`,
+        `ISSUE_RAMP_STAGE5_TARGET=${resolveValue('ISSUE_RAMP_STAGE5_TARGET')}`,
       ].join(', ');
     default:
       return 'n/a';
@@ -564,17 +522,11 @@ function buildLoadSummary(scenario, parsedEnv, envSource) {
     case 'contention':
       return `${resolveValue('CONTENTION_VUS')}명이 같은 쿠폰에 동시에 발급 요청`;
     case 'issue-overload':
-      return `${resolveValue('ISSUE_OVERLOAD_VUS')}명이 ${resolveValue('ISSUE_OVERLOAD_DURATION')} 동안 coupon-issue를 반복 호출`;
-    case 'issue-request-smoke':
-      return `${resolveValue('ISSUE_REQUEST_SMOKE_VUS')}명이 비동기 발급 요청 기본 흐름을 1회 실행`;
-    case 'issue-request-burst':
-      return `${resolveValue('ISSUE_REQUEST_BURST_VUS')}명이 같은 쿠폰에 동시에 비동기 발급 요청`;
-    case 'issue-request-overload':
-      return `${resolveValue('ISSUE_REQUEST_OVERLOAD_VUS')}명이 ${resolveValue('ISSUE_REQUEST_OVERLOAD_DURATION')} 동안 비동기 발급 요청을 반복 호출`;
-    case 'issue-request-ramp':
-      return `비동기 발급 요청 intake를 3000 -> 5000 -> 7000 VU 단계로 상승`;
-    case 'issue-request-real-ramp':
-      return `실사용자 세션 기준으로 비동기 발급 요청 intake를 3000 -> 5000 -> 7000 VU 단계로 상승`;
+      return `${resolveValue('ISSUE_OVERLOAD_VUS')}명이 ${resolveValue('ISSUE_OVERLOAD_DURATION')} 동안 immediate SUCCESS issue를 반복 호출`;
+    case 'issue-ramp':
+      return `synthetic immediate issue intake를 3000 -> 5000 -> 7000 VU 단계로 상승`;
+    case 'issue-real-ramp':
+      return `실사용자 세션 기준으로 immediate issue intake를 3000 -> 5000 -> 7000 VU 단계로 상승`;
     default:
       return '설정값 확인 필요';
   }
@@ -626,7 +578,7 @@ function explainFailure({ failureReason, scenario, parsedEnv, envSource, thresho
     return {
       summary: '애플리케이션 준비가 끝나기 전에 테스트를 시작해서 실행하지 못했습니다.',
       cause: '앱 기동 또는 테스트용 관리자 로그인 준비가 아직 끝나지 않았습니다.',
-      action: '/actuator/health 와 /load-test/admin/signin 응답이 정상인지 먼저 확인해 주세요.',
+      action: '/actuator/health 와 /signin 응답이 정상인지 먼저 확인해 주세요.',
     };
   }
 
@@ -643,9 +595,9 @@ function explainFailure({ failureReason, scenario, parsedEnv, envSource, thresho
     failureReason?.includes('LOCK_ACQUISITION_FAILED')
   ) {
     return {
-      summary: '락 경합이 심해서 일부 요청이 재시도 한도 안에서 끝나지 못했습니다.',
-      cause: '같은 쿠폰에 요청이 너무 많이 몰려 락 대기 시간이 부족했거나 재시도 횟수를 모두 소진했습니다.',
-      action: 'ISSUE_BURST_LOCK_RETRY_COUNT, ISSUE_BURST_LOCK_RETRY_DELAY_MS, 서버 락 timeout을 같이 조정해 다시 확인해 주세요.',
+      summary: '락 기반 경로에서 일부 요청이 제한에 걸렸습니다.',
+      cause: '이 결과는 구버전 동기 락 기반 시나리오에서만 의미가 있습니다.',
+      action: '현재 synthetic sync issue 시나리오라면 lock retry가 아니라 서버 오류와 정합성 지표를 먼저 확인해 주세요.',
     };
   }
 
@@ -763,7 +715,6 @@ function buildScenarioExtraMetrics(scenario, summary) {
     textLines: [
       `• *성공 발급 건수:* ${metricOrZero('issue_burst_success_count', 'count')}`,
       `• *재고 부족 건수:* ${metricOrZero('issue_burst_out_of_stock_count', 'count')}`,
-      `• *재시도 시도 횟수:* ${metricOrZero('issue_burst_retryable_lock_failure_count', 'count')}`,
       `• *예상 밖 클라이언트 오류 건수:* ${metricOrZero('issue_burst_unexpected_client_error_count', 'count')}`,
       `• *서버 오류 건수:* ${metricOrZero('issue_burst_server_error_count', 'count')}`,
       `• *최종 발급 건수:* ${metricValue(summary, 'issue_burst_final_issued_count')}`,
@@ -779,10 +730,6 @@ function buildScenarioExtraMetrics(scenario, summary) {
       {
         type: 'mrkdwn',
         text: `*재고 부족 건수*\n${metricOrZero('issue_burst_out_of_stock_count', 'count')}`,
-      },
-      {
-        type: 'mrkdwn',
-        text: `*재시도 시도 횟수*\n${metricOrZero('issue_burst_retryable_lock_failure_count', 'count')}`,
       },
       {
         type: 'mrkdwn',

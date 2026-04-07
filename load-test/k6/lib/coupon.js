@@ -1,10 +1,6 @@
-import http from 'k6/http';
 import { check, fail, sleep } from 'k6';
-import { authHeaders, get, post, postVoid, postWithNumericFields } from './api.js';
+import { authHeaders, get, post, postTextWithStatuses, postVoid, postWithNumericFields } from './api.js';
 import { config } from './config.js';
-import { maybeRecordSlowRequestSample } from './slow-requests.js';
-
-const terminalRequestStatuses = new Set(['SUCCEEDED', 'FAILED', 'DEAD']);
 
 function formatLocalDateTime(date) {
   const pad = (value) => `${value}`.padStart(2, '0');
@@ -54,11 +50,10 @@ export function createCoupon(accessToken, payload) {
   );
 }
 
-export function issueCoupon(accessToken, couponId) {
-  return postWithNumericFields(
+export function acceptIssueCoupon(accessToken, couponId) {
+  const response = postTextWithStatuses(
     '/coupon-issues',
     `{"couponId":${couponId}}`,
-    ['id'],
     {
       headers: authHeaders(accessToken),
       tags: {
@@ -70,136 +65,27 @@ export function issueCoupon(accessToken, couponId) {
         requestName: 'issue_coupon',
       },
     },
-    201,
+    [200, 202],
     'issue_coupon',
   );
+
+  return {
+    result: response.body,
+    status: response.status,
+  };
 }
 
 export function requestIssueCoupon(accessToken, couponId) {
-  return postWithNumericFields(
-    '/coupon-issue-requests',
-    `{"couponId":${couponId}}`,
-    ['id', 'couponId', 'userId', 'couponIssueId'],
-    {
-      headers: authHeaders(accessToken),
-      tags: {
-        request_group: 'business',
-        request_name: 'issue_coupon_request',
-      },
-      slowRequestSample: {
-        requestGroup: 'business',
-        requestName: 'issue_coupon_request',
-      },
-    },
-    202,
-    'issue_coupon_request',
-  );
+  return acceptIssueCoupon(accessToken, couponId);
 }
 
-export function requestIssueCouponLoadTest(couponId, userId) {
-  return postWithNumericFields(
-    `/load-test/coupons/${couponId}/issue-requests`,
-    { userId },
-    ['id', 'couponId', 'userId', 'couponIssueId'],
-    {
-      tags: {
-        request_group: 'business',
-        request_name: 'issue_coupon_request',
-      },
-      slowRequestSample: {
-        requestGroup: 'business',
-        requestName: 'issue_coupon_request',
-      },
-    },
-    202,
-    'issue_coupon_request_load_test',
-  );
-}
-
-export function getCouponIssueRequest(accessToken, requestId) {
-  return get(
-    `/coupon-issue-requests/${requestId}`,
-    {
-      headers: authHeaders(accessToken),
-      tags: {
-        request_group: 'business',
-        request_name: 'get_coupon_issue_request',
-      },
-      slowRequestSample: {
-        requestGroup: 'business',
-        requestName: 'get_coupon_issue_request',
-      },
-    },
-    200,
-    'get_coupon_issue_request',
-  );
-}
-
-export function getCouponIssueRequestLoadTest(requestId) {
-  return get(
-    `/load-test/coupon-issue-requests/${requestId}`,
-    {
-      tags: {
-        request_group: 'business',
-        request_name: 'get_coupon_issue_request',
-      },
-      slowRequestSample: {
-        requestGroup: 'business',
-        requestName: 'get_coupon_issue_request',
-      },
-    },
-    200,
-    'get_coupon_issue_request_load_test',
-  );
-}
-
-function waitForCouponIssueRequestTerminalInternal(
-  fetchRequest,
-  requestId,
-  {
-    timeoutSeconds = config.issueRequestPollTimeoutSeconds,
-    pollIntervalMs = config.issueRequestPollIntervalMs,
-  } = {},
-) {
-  const deadline = Date.now() + timeoutSeconds * 1000;
-  let latestRequest = null;
-
-  while (Date.now() < deadline) {
-    latestRequest = fetchRequest();
-    if (terminalRequestStatuses.has(latestRequest.status)) {
-      return latestRequest;
-    }
-
-    sleep(Math.max(pollIntervalMs, 0) / 1000);
+export function issueCoupon(accessToken, couponId) {
+  const issueResult = acceptIssueCoupon(accessToken, couponId);
+  if (issueResult.result !== 'SUCCESS') {
+    fail(`issue_coupon: expected SUCCESS but got ${issueResult.result}`);
   }
 
-  fail(
-    `coupon issue request ${requestId} did not reach terminal status within ${timeoutSeconds}s ` +
-      `(lastStatus=${latestRequest?.status || 'UNKNOWN'}, lastResultCode=${latestRequest?.resultCode || 'n/a'})`,
-  );
-}
-
-export function waitForCouponIssueRequestTerminal(
-  accessToken,
-  requestId,
-  options = {},
-) {
-  return waitForCouponIssueRequestTerminalInternal(
-    () => getCouponIssueRequest(accessToken, requestId),
-    requestId,
-    options,
-  );
-}
-
-export function waitForCouponIssueRequestTerminalLoadTest(
-  requestId,
-  options = {},
-) {
-  return waitForCouponIssueRequestTerminalInternal(
-    () => getCouponIssueRequestLoadTest(requestId),
-    requestId,
-    options,
-  );
+  return waitForIssuedCouponInMyCoupons(accessToken, couponId);
 }
 
 export function tryIssueCoupon(
@@ -211,93 +97,47 @@ export function tryIssueCoupon(
     label = 'issue_coupon',
   } = {},
 ) {
-  const expectedStatuses = [201];
-  if (allowOutOfStock) {
-    expectedStatuses.push(400);
-  }
-  if (allowRetryableLockFailure) {
-    expectedStatuses.push(429);
-  }
-  const response = http.post(
-    `${config.baseUrl}/coupon-issues`,
-    JSON.stringify({ couponId }),
-    {
-      headers: {
-        ...authHeaders(accessToken),
-        'Content-Type': 'application/json',
-      },
-      tags: {
-        name: label,
-        request_group: 'business',
-        request_name: 'issue_coupon',
-      },
-      responseCallback: http.expectedStatuses(...expectedStatuses),
-    },
-  );
+  const issueResult = acceptIssueCoupon(accessToken, couponId);
 
-  let body = null;
-
-  try {
-    body = response.json();
-  } catch (error) {
-    body = null;
-  }
-
-  const hasEnvelope = body && typeof body.success === 'boolean';
-  maybeRecordSlowRequestSample(response, {
-    requestGroup: 'business',
-    requestName: 'issue_coupon',
-  });
-  check(response, {
-    [`${label} response envelope`]: () => hasEnvelope,
-  });
-
-  if (!hasEnvelope) {
-    return {
-      outcome: 'UNEXPECTED_RESPONSE',
-      status: response.status,
-      errorClassName: 'INVALID_RESPONSE_ENVELOPE',
-      message: response.body || '<empty>',
-    };
-  }
-
-  if (response.status === 201 && body.success === true) {
+  if (issueResult.result === 'SUCCESS') {
     return {
       outcome: 'SUCCESS',
-      status: response.status,
-      issueId: body.data?.id ?? null,
+      status: issueResult.status,
     };
   }
 
-  const errorClassName = body.data?.errorClassName || 'UNKNOWN_ERROR';
-  const message = body.data?.message || response.body || '<empty>';
-
-  if (response.status === 400 && errorClassName === 'COUPON_OUT_OF_STOCK') {
+  if (issueResult.result === 'SOLD_OUT') {
     return {
-      outcome: 'OUT_OF_STOCK',
-      status: response.status,
-      errorClassName,
-      message,
+      outcome: allowOutOfStock ? 'OUT_OF_STOCK' : 'UNEXPECTED_ERROR',
+      status: issueResult.status,
+      errorClassName: 'SOLD_OUT',
+      message: 'SOLD_OUT',
     };
   }
 
-  if (
-    response.status === 429 &&
-    errorClassName === 'LOCK_ACQUISITION_FAILED'
-  ) {
+  if (issueResult.result === 'DUPLICATE') {
     return {
-      outcome: 'RETRYABLE_LOCK_FAILURE',
-      status: response.status,
-      errorClassName,
-      message,
+      outcome: 'UNEXPECTED_ERROR',
+      status: issueResult.status,
+      errorClassName: 'DUPLICATE',
+      message: 'DUPLICATE',
+    };
+  }
+
+  if (allowRetryableLockFailure) {
+    return {
+      outcome: 'UNEXPECTED_ERROR',
+      status: 500,
+      errorClassName: issueResult.result || 'UNKNOWN_ERROR',
+      message: issueResult.result || '<empty>',
     };
   }
 
   return {
     outcome: 'UNEXPECTED_ERROR',
-    status: response.status,
-    errorClassName,
-    message,
+    status: 500,
+    errorClassName: issueResult.result || 'UNKNOWN_ERROR',
+    message: issueResult.result || '<empty>',
   };
 }
 
@@ -357,9 +197,9 @@ export function cancelCoupon(accessToken, couponIssueId) {
   );
 }
 
-export function getMyCoupons(accessToken) {
+export function getMyCoupons(accessToken, size = 20) {
   return get(
-    '/coupon-issues/my?page=0&size=20',
+    `/coupon-issues/my?page=0&size=${size}`,
     {
       headers: authHeaders(accessToken),
       tags: {
@@ -374,6 +214,30 @@ export function getMyCoupons(accessToken) {
     200,
     'get_my_coupons',
   );
+}
+
+function waitForIssuedCouponInMyCoupons(
+  accessToken,
+  couponId,
+  {
+    timeoutSeconds = config.issuePollTimeoutSeconds,
+    pollIntervalMs = config.issuePollIntervalMs,
+  } = {},
+) {
+  const deadline = Date.now() + timeoutSeconds * 1000;
+  const expectedCouponId = `${couponId}`;
+
+  while (Date.now() < deadline) {
+    const page = getMyCoupons(accessToken, 100);
+    const issue = (page.content || []).find((item) => `${item.couponId}` === expectedCouponId);
+    if (issue) {
+      return issue;
+    }
+
+    sleep(Math.max(pollIntervalMs, 0) / 1000);
+  }
+
+  fail(`coupon issue for couponId=${couponId} did not appear in my coupons within ${timeoutSeconds}s`);
 }
 
 export function getCoupon(couponId, accessToken = null) {

@@ -1,5 +1,5 @@
 services:
-  # Source of truth database for coupon, coupon_issue, coupon_issue_request, and outbox rows.
+  # Source of truth database for coupon, coupon_issue, coupon_activity, and outbox rows.
   mysql:
     image: mysql:8.0
     container_name: coupon-system-mysql
@@ -10,7 +10,7 @@ services:
       MYSQL_USER: coupon-admin
       MYSQL_PASSWORD: coupon!@#
       TZ: Asia/Seoul
-    command: [ "mysqld", "--character-set-server=utf8mb4", "--collation-server=utf8mb4_general_ci" ]
+    command: [ "mysqld", "--character-set-server=utf8mb4", "--collation-server=utf8mb4_general_ci", "--max-connections=200" ]
     healthcheck:
       test: [ "CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-proot", "--silent" ]
       interval: 5s
@@ -82,6 +82,9 @@ services:
       DATASOURCE_DB_CORE_JDBC_URL: jdbc:mysql://mysql:3306/coupon-db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Seoul&characterEncoding=UTF-8
       DATASOURCE_DB_CORE_USERNAME: coupon-admin
       DATASOURCE_DB_CORE_PASSWORD: coupon!@#
+      DATASOURCE_DB_CORE_MAXIMUM_POOL_SIZE: 100
+      DATASOURCE_DB_CORE_MINIMUM_IDLE: 20
+      DATASOURCE_DB_CORE_CONNECTION_TIMEOUT_MS: 5000
       REDIS_HOST: redis
       REDIS_PORT: 6379
       ADMIN_NAME: Load Test Admin
@@ -90,6 +93,7 @@ services:
       ACCESS_TOKEN_EXPIRATION_SECONDS: 2880
       REFRESH_TOKEN_EXPIRATION_SECONDS: 43200
       JWT_SECRET_KEY: couponJwtSecretKeyForAuthenticationSecuritySystem2024!@#
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
     depends_on:
       mysql:
         condition: service_healthy

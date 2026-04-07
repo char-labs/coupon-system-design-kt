@@ -1,9 +1,9 @@
 import exec from 'k6/execution';
-import { check, sleep } from 'k6';
+import { check } from 'k6';
 import { Counter, Gauge, Rate } from 'k6/metrics';
 import { config } from './lib/config.js';
 import { buildSummary } from './lib/summary.js';
-import { signin, signupUser, waitForAdminSignin } from './lib/api.js';
+import { prepareUserSessions, waitForAdminSignin } from './lib/api.js';
 import {
   activateCoupon,
   buildCouponPayload,
@@ -19,9 +19,6 @@ const issueBurstUnexpectedClientErrorCount = new Counter(
   'issue_burst_unexpected_client_error_count',
 );
 const issueBurstServerErrorCount = new Counter('issue_burst_server_error_count');
-const issueBurstRetryableLockFailureCount = new Counter(
-  'issue_burst_retryable_lock_failure_count',
-);
 const issueBurstFinalIssuedCount = new Gauge('issue_burst_final_issued_count');
 const issueBurstFinalRemainingQuantity = new Gauge(
   'issue_burst_final_remaining_quantity',
@@ -60,81 +57,58 @@ export function setup() {
     }),
   );
   activateCoupon(adminToken.accessToken, coupon.id);
-
-  const userTokens = [];
-
-  for (let index = 0; index < config.issueBurstVus; index += 1) {
-    const email = `k6-issue-burst+${runId}-${index}@coupon.local`;
-    const name = `Issue Burst User ${index + 1}`;
-
-    signupUser(email, config.testUserPassword, name);
-    const userToken = signin(email, config.testUserPassword);
-    userTokens.push(userToken.accessToken);
-  }
+  const preparedUsers = prepareUserSessions(
+    config.issueBurstVus,
+    { prefix: 'k6-issue-burst-user' },
+  );
 
   return {
     adminAccessToken: adminToken.accessToken,
     couponId: coupon.id,
+    userTokens: preparedUsers.accessTokens,
     totalQuantity: config.issueBurstStock,
     expectedSuccessCount: Math.min(config.issueBurstVus, config.issueBurstStock),
     expectedRemainingQuantity: Math.max(config.issueBurstStock - config.issueBurstVus, 0),
     allowOutOfStock: config.issueBurstStock < config.issueBurstVus,
-    userTokens,
   };
 }
 
 export default function (data) {
-  const tokenIndex = Math.max((exec.vu.idInTest || 1) - 1, 0);
-  const maxAttempts = Math.max(config.issueBurstLockRetryCount + 1, 1);
+  const accessToken = data.userTokens[Math.max((exec.vu.idInTest || 1) - 1, 0)];
+  const outcome = tryIssueCoupon(
+    accessToken,
+    data.couponId,
+    {
+      allowOutOfStock: data.allowOutOfStock,
+      label: 'issue_burst_issue_coupon',
+    },
+  );
 
-  for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
-    const outcome = tryIssueCoupon(
-      data.userTokens[tokenIndex],
-      data.couponId,
-      {
-        allowOutOfStock: data.allowOutOfStock,
-        allowRetryableLockFailure: true,
-        label: 'issue_burst_issue_coupon',
-      },
-    );
-
-    switch (outcome.outcome) {
-      case 'SUCCESS':
-        issueBurstSuccessCount.add(1);
-        return;
-      case 'OUT_OF_STOCK':
-        issueBurstOutOfStockCount.add(1);
-        if (!data.allowOutOfStock) {
-          issueBurstUnexpectedClientErrorCount.add(1);
-          check(outcome, {
-            'issue_burst unexpected out_of_stock': () => false,
-          });
-        }
-        return;
-      case 'RETRYABLE_LOCK_FAILURE':
-        issueBurstRetryableLockFailureCount.add(1);
-        if (attempt < maxAttempts - 1) {
-          sleep((config.issueBurstLockRetryDelayMs * (attempt + 1)) / 1000);
-          continue;
-        }
+  switch (outcome.outcome) {
+    case 'SUCCESS':
+      issueBurstSuccessCount.add(1);
+      return;
+    case 'OUT_OF_STOCK':
+      issueBurstOutOfStockCount.add(1);
+      if (!data.allowOutOfStock) {
         issueBurstUnexpectedClientErrorCount.add(1);
         check(outcome, {
-          'issue_burst lock retry exhausted': () => false,
+          'issue_burst unexpected out_of_stock': () => false,
         });
-        return;
-      case 'UNEXPECTED_ERROR':
-      case 'UNEXPECTED_RESPONSE':
-      default:
-        if (outcome.status >= 500) {
-          issueBurstServerErrorCount.add(1);
-        } else {
-          issueBurstUnexpectedClientErrorCount.add(1);
-        }
-        check(outcome, {
-          'issue_burst unexpected response': () => false,
-        });
-        return;
-    }
+      }
+      return;
+    case 'UNEXPECTED_ERROR':
+    case 'UNEXPECTED_RESPONSE':
+    default:
+      if (outcome.status >= 500) {
+        issueBurstServerErrorCount.add(1);
+      } else {
+        issueBurstUnexpectedClientErrorCount.add(1);
+      }
+      check(outcome, {
+        'issue_burst unexpected response': () => false,
+      });
+      return;
   }
 }
 

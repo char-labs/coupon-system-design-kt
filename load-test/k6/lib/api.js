@@ -136,6 +136,31 @@ export function postWithNumericFields(
   return data;
 }
 
+export function postText(path, payload, params = {}, expectedStatus = 200, label = path) {
+  return postTextWithStatuses(path, payload, params, [expectedStatus], label).body;
+}
+
+export function postTextWithStatuses(path, payload, params = {}, expectedStatuses = [200], label = path) {
+  const { response, slowRequestSample } = request('POST', path, payload, params, label);
+  maybeRecordSlowRequestSample(response, slowRequestSample);
+
+  const isExpectedStatus = expectedStatuses.includes(response.status);
+  check(response, {
+    [`${label} status ${expectedStatuses.join('/')}`]: () => isExpectedStatus,
+  });
+
+  if (!isExpectedStatus) {
+    fail(
+      `${label}: unexpected response status=${response.status} body=${response.body}`,
+    );
+  }
+
+  return {
+    body: `${response.body || ''}`.trim(),
+    status: response.status,
+  };
+}
+
 export function postVoid(path, payload, params = {}, expectedStatus = 200, label = path) {
   const { response, slowRequestSample } = request('POST', path, payload, params, label);
   maybeRecordSlowRequestSample(response, slowRequestSample);
@@ -242,32 +267,12 @@ export function waitForAdminSignin(email, password) {
   waitForAppReady();
 
   return waitUntil(() => {
-    const bootstrap = request(
-      'POST',
-      '/load-test/admin/signin',
-      {},
-      {
-        responseCallback: readinessResponseCallback,
-      },
-      'admin_bootstrap_signin',
-    );
-    const bootstrapBody = parseJsonIfPresent(bootstrap.response);
-    const bootstrapToken = bootstrapBody && bootstrapBody.success === true ? bootstrapBody.data : null;
-
-    if (bootstrap.response.status === 200 && bootstrapToken && bootstrapToken.accessToken) {
-      return {
-        ready: true,
-        data: bootstrapToken,
-        response: bootstrap.response,
-      };
-    }
-
     const signin = request(
       'POST',
       '/signin',
       { email, password },
       {
-        responseCallback: readinessResponseCallback,
+        responseCallback: http.expectedStatuses(200, 400, 401, 404, 503),
       },
       'admin_signin_ready',
     );
@@ -282,28 +287,84 @@ export function waitForAdminSignin(email, password) {
   }, 'admin_signin_ready');
 }
 
-export function prepareSyntheticUsers(
+export function prepareUserSessions(
   count,
-  startSequence = config.issueRequestSyntheticUserIdBase,
+  {
+    prefix = 'k6-user',
+    password = config.testUserPassword,
+    batchSize = config.userSetupBatchSize,
+    runId = Date.now(),
+  } = {},
 ) {
-  return post(
-    '/load-test/users/prepare',
-    {
-      startSequence,
-      count,
-    },
-    {},
-    200,
-    'prepare_synthetic_users',
-  );
+  if (count < 0) {
+    fail(`prepare_user_sessions: count must be >= 0 (received=${count})`);
+  }
+
+  if (count === 0) {
+    return {
+      accessTokens: [],
+    };
+  }
+
+  const accessTokens = [];
+  const normalizedBatchSize = Math.max(1, batchSize);
+
+  for (let startIndex = 0; startIndex < count; startIndex += normalizedBatchSize) {
+    const endIndex = Math.min(startIndex + normalizedBatchSize, count);
+    const batchRequests = [];
+    const batchMeta = [];
+
+    for (let index = startIndex; index < endIndex; index += 1) {
+      const email = `${prefix}+${runId}-${index}@coupon.local`;
+      const name = `${prefix} user ${index + 1}`;
+
+      batchMeta.push({ email });
+      batchRequests.push([
+        'POST',
+        makeUrl('/signup'),
+        JSON.stringify({ name, email, password }),
+        {
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          tags: {
+            request_group: 'setup',
+            request_name: 'signup_user',
+          },
+        },
+      ]);
+    }
+
+    const responses = http.batch(batchRequests);
+    responses.forEach((response, offset) => {
+      const meta = batchMeta[offset];
+      const body = parseJsonIfPresent(response);
+      const token = body && body.success === true ? body.data : null;
+      const isExpectedStatus = response.status === 201;
+
+      check(response, {
+        'prepare_user_sessions signup status 201': () => isExpectedStatus,
+        'prepare_user_sessions signup success envelope': () => body && body.success === true,
+      });
+
+      if (!isExpectedStatus || !token || !token.accessToken) {
+        fail(
+          `prepare_user_sessions: signup failed for email=${meta.email} ` +
+            `status=${response.status} body=${renderBody(response)}`,
+        );
+      }
+
+      accessTokens.push(token.accessToken);
+    });
+  }
+
+  return {
+    accessTokens,
+  };
 }
 
 export function createVuEmail(prefix = 'k6-user') {
   const vuId = exec.vu.idInTest || 0;
   const iteration = exec.scenario.iterationInTest || 0;
   return `${prefix}+${vuId}-${iteration}-${Date.now()}@coupon.local`;
-}
-
-export function createSyntheticUserId(sequence) {
-  return config.issueRequestSyntheticUserIdBase + Number(sequence);
 }
