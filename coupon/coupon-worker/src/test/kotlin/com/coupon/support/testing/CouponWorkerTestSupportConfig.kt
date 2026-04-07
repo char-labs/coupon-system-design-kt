@@ -2,6 +2,9 @@ package com.coupon.support.testing
 
 import com.coupon.auth.AuthenticationHistoryRepository
 import com.coupon.auth.TokenRepository
+import com.coupon.coupon.CouponIssueEventPublisher
+import com.coupon.coupon.CouponIssueRedisRepository
+import com.coupon.enums.coupon.CouponIssueResult
 import com.coupon.enums.error.ErrorType
 import com.coupon.error.ErrorException
 import com.coupon.support.lock.LockRepository
@@ -12,6 +15,7 @@ import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Primary
 import org.springframework.security.crypto.factory.PasswordEncoderFactories
 import org.springframework.security.crypto.password.PasswordEncoder
+import java.time.Duration
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.locks.ReentrantLock
@@ -33,6 +37,14 @@ class CouponWorkerTestSupportConfig {
 
     @Bean
     fun passwordEncoder(): PasswordEncoder = PasswordEncoderFactories.createDelegatingPasswordEncoder()
+
+    @Bean
+    @Primary
+    fun couponIssueStateRepository(): CouponIssueRedisRepository = InMemoryCouponIssueRedisRepository()
+
+    @Bean
+    @Primary
+    fun couponIssueEventPublisher(): CouponIssueEventPublisher = mockk(relaxed = true)
 }
 
 private class InMemoryLockRepository : LockRepository {
@@ -67,4 +79,76 @@ private class InMemoryLockRepository : LockRepository {
             unlock(key)
         }
     }
+}
+
+private class InMemoryCouponIssueRedisRepository : CouponIssueRedisRepository {
+    private val states = ConcurrentHashMap<Long, IssueState>()
+
+    override fun reserve(
+        couponId: Long,
+        userId: Long,
+        totalQuantity: Long,
+        ttl: Duration,
+    ): CouponIssueResult {
+        val state = states.computeIfAbsent(couponId) { IssueState() }
+
+        return synchronized(state) {
+            when {
+                state.userIds.contains(userId) -> CouponIssueResult.DUPLICATE
+                state.occupiedCount >= totalQuantity -> CouponIssueResult.SOLD_OUT
+                else -> {
+                    state.occupiedCount += 1
+                    state.userIds.add(userId)
+                    CouponIssueResult.SUCCESS
+                }
+            }
+        }
+    }
+
+    override fun release(
+        couponId: Long,
+        userId: Long,
+    ) {
+        states[couponId]?.let { state ->
+            synchronized(state) {
+                if (state.userIds.remove(userId) && state.occupiedCount > 0) {
+                    state.occupiedCount -= 1
+                }
+            }
+        }
+    }
+
+    override fun releaseStockSlot(couponId: Long) {
+        states[couponId]?.let { state ->
+            synchronized(state) {
+                if (state.occupiedCount > 0) {
+                    state.occupiedCount -= 1
+                }
+            }
+        }
+    }
+
+    override fun rebuild(
+        couponId: Long,
+        occupiedCount: Long,
+        userIds: Set<Long>,
+        ttl: Duration,
+    ) {
+        states[couponId] =
+            IssueState(
+                occupiedCount = occupiedCount.coerceAtLeast(0),
+                userIds = userIds.toMutableSet(),
+            )
+    }
+
+    override fun hasState(couponId: Long): Boolean = states.containsKey(couponId)
+
+    override fun clear(couponId: Long) {
+        states.remove(couponId)
+    }
+
+    private data class IssueState(
+        var occupiedCount: Long = 0,
+        val userIds: MutableSet<Long> = mutableSetOf(),
+    )
 }

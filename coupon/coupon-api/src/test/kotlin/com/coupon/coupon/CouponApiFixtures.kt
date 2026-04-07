@@ -3,6 +3,7 @@ package com.coupon.coupon
 import com.appmattus.kotlinfixture.Fixture
 import com.appmattus.kotlinfixture.kotlinFixture
 import com.coupon.coupon.command.CouponCommand
+import com.coupon.enums.coupon.CouponTrafficPolicy
 import com.coupon.enums.coupon.CouponType
 import com.coupon.user.command.UserCommand
 import java.time.LocalDateTime
@@ -17,6 +18,7 @@ internal object CouponApiFixtures {
         discountAmount: Long = 1_000L,
         maxDiscountAmount: Long? = null,
         minOrderAmount: Long? = null,
+        trafficPolicy: CouponTrafficPolicy = CouponTrafficPolicy.HOT_FCFS_ASYNC,
         referenceTime: LocalDateTime = LocalDateTime.now(),
         availableAt: LocalDateTime = referenceTime.minusMinutes(5),
         endAt: LocalDateTime = referenceTime.plusHours(1),
@@ -27,6 +29,7 @@ internal object CouponApiFixtures {
             property(CouponCommand.Create::maxDiscountAmount) { maxDiscountAmount }
             property(CouponCommand.Create::minOrderAmount) { minOrderAmount }
             property(CouponCommand.Create::totalQuantity) { totalQuantity }
+            property(CouponCommand.Create::trafficPolicy) { trafficPolicy }
             property(CouponCommand.Create::availableAt) { availableAt }
             property(CouponCommand.Create::endAt) { endAt }
         }

@@ -4,6 +4,7 @@ import com.appmattus.kotlinfixture.Fixture
 import com.appmattus.kotlinfixture.kotlinFixture
 import com.coupon.coupon.CouponDetail
 import com.coupon.enums.coupon.CouponStatus
+import com.coupon.enums.coupon.CouponTrafficPolicy
 import com.coupon.enums.coupon.CouponType
 import java.time.LocalDateTime
 
@@ -16,6 +17,7 @@ internal object CouponDetailFixtureFactory {
         name: String = "쿠폰-$id",
         status: CouponStatus = CouponStatus.ACTIVE,
         type: CouponType = CouponType.FIXED,
+        trafficPolicy: CouponTrafficPolicy = CouponTrafficPolicy.HOT_FCFS_ASYNC,
         discountAmount: Long = 5_000L,
         maxDiscountAmount: Long? = null,
         minOrderAmount: Long? = null,
@@ -33,6 +35,7 @@ internal object CouponDetailFixtureFactory {
             property(CouponDetail::name) { name }
             property(CouponDetail::status) { status }
             property(CouponDetail::type) { type }
+            property(CouponDetail::trafficPolicy) { trafficPolicy }
             property(CouponDetail::discountAmount) { discountAmount }
             property(CouponDetail::maxDiscountAmount) { maxDiscountAmount }
             property(CouponDetail::minOrderAmount) { minOrderAmount }

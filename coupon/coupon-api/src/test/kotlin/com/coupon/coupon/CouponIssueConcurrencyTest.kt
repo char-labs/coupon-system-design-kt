@@ -22,6 +22,7 @@ import java.util.concurrent.atomic.AtomicInteger
 @CouponApiConcurrencyTest
 open class CouponIssueConcurrencyTest(
     private val couponService: CouponService,
+    private val couponIssueFacade: CouponIssueFacade,
     private val couponIssueService: CouponIssueService,
     private val userService: UserService,
     private val databaseCleaner: DatabaseCleaner,
@@ -41,7 +42,7 @@ open class CouponIssueConcurrencyTest(
                             actions =
                                 List(10) {
                                     {
-                                        couponIssueService.issueCoupon(
+                                        couponIssueFacade.executeIssue(
                                             CouponIssueCommand.Issue(couponId = coupon.id, userId = user.id),
                                         )
                                     }
@@ -67,7 +68,7 @@ open class CouponIssueConcurrencyTest(
                             actions =
                                 users.map {
                                     {
-                                        couponIssueService.issueCoupon(
+                                        couponIssueFacade.executeIssue(
                                             CouponIssueCommand.Issue(couponId = coupon.id, userId = it.id),
                                         )
                                     }
@@ -120,7 +121,7 @@ open class CouponIssueConcurrencyTest(
                             actions =
                                 List(10) {
                                     {
-                                        couponIssueService.cancelCoupon(
+                                        couponIssueFacade.cancelCoupon(
                                             CouponIssueCommand.Cancel(
                                                 couponIssueId = fixture.couponIssue.id,
                                                 userId = fixture.user.id,
@@ -155,7 +156,7 @@ open class CouponIssueConcurrencyTest(
                                         )
                                     },
                                     {
-                                        couponIssueService.cancelCoupon(
+                                        couponIssueFacade.cancelCoupon(
                                             CouponIssueCommand.Cancel(
                                                 couponIssueId = fixture.couponIssue.id,
                                                 userId = fixture.user.id,
@@ -191,7 +192,7 @@ open class CouponIssueConcurrencyTest(
                             actions =
                                 listOf(
                                     {
-                                        couponIssueService.cancelCoupon(
+                                        couponIssueFacade.cancelCoupon(
                                             CouponIssueCommand.Cancel(
                                                 couponIssueId = fixture.couponIssue.id,
                                                 userId = fixture.user.id,
@@ -199,7 +200,7 @@ open class CouponIssueConcurrencyTest(
                                         )
                                     },
                                     {
-                                        couponIssueService.issueCoupon(
+                                        couponIssueFacade.executeIssue(
                                             CouponIssueCommand.Issue(
                                                 couponId = fixture.coupon.id,
                                                 userId = anotherUser.id,
@@ -240,7 +241,7 @@ open class CouponIssueConcurrencyTest(
     private fun createIssuedCouponFixture(): IssuedCouponFixture {
         val coupon = createCoupon(totalQuantity = 1L)
         val user = createUser(index = 1)
-        val couponIssue = couponIssueService.issueCoupon(CouponIssueCommand.Issue(couponId = coupon.id, userId = user.id))
+        val couponIssue = couponIssueFacade.executeIssue(CouponIssueCommand.Issue(couponId = coupon.id, userId = user.id))
 
         return IssuedCouponFixture(
             coupon = coupon,

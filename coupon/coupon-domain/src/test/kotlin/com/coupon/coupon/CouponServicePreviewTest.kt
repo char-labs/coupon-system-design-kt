@@ -12,11 +12,11 @@ import io.kotest.matchers.shouldBe
 import io.mockk.every
 import io.mockk.mockk
 
-class CouponPreviewServiceTest :
+class CouponServicePreviewTest :
     BehaviorSpec({
         given("쿠폰 미리보기를 요청하면") {
             `when`("적용 가능한 정액 쿠폰이면") {
-                val context = CouponPreviewServiceTestContext()
+                val context = CouponServicePreviewTestContext()
                 val coupon = FixedCouponFixtures.standard(id = 101L, discountAmount = 5_000L)
                 val command = CouponPreviewCommandFixtures.standard(couponId = coupon.id, orderAmount = 20_000L)
 
@@ -35,7 +35,7 @@ class CouponPreviewServiceTest :
             }
 
             `when`("이미 발급한 쿠폰이면") {
-                val context = CouponPreviewServiceTestContext()
+                val context = CouponServicePreviewTestContext()
                 val coupon = FixedCouponFixtures.standard(id = 202L, discountAmount = 5_000L)
                 val command = CouponPreviewCommandFixtures.standard(couponId = coupon.id, orderAmount = 50_000L)
 
@@ -52,7 +52,7 @@ class CouponPreviewServiceTest :
             }
 
             `when`("주문 금액이 음수면") {
-                val context = CouponPreviewServiceTestContext()
+                val context = CouponServicePreviewTestContext()
                 val coupon = FixedCouponFixtures.standard(discountAmount = 5_000L)
                 val command = CouponPreviewCommandFixtures.negativeOrder(couponId = coupon.id)
 
@@ -102,7 +102,7 @@ class CouponPreviewServiceTest :
                 ),
             ).forEach { case ->
                 `when`(case.description) {
-                    val context = CouponPreviewServiceTestContext()
+                    val context = CouponServicePreviewTestContext()
                     val preview =
                         context.preview(
                             couponDetail = case.couponDetail,
@@ -119,13 +119,15 @@ class CouponPreviewServiceTest :
             }
         }
     }) {
-    private class CouponPreviewServiceTestContext {
+    private class CouponServicePreviewTestContext {
         private val couponRepository = mockk<CouponRepository>()
         private val couponIssueRepository = mockk<CouponIssueRepository>()
-        private val couponPreviewService =
-            CouponPreviewService(
+        private val couponService =
+            CouponService(
                 couponRepository = couponRepository,
                 couponIssueRepository = couponIssueRepository,
+                couponCodeGenerator = mockk(relaxed = true),
+                couponValidator = mockk(relaxed = true),
                 couponEligibilityEvaluator = CouponEligibilityEvaluator(),
                 couponDiscountCalculator = CouponDiscountCalculator(),
             )
@@ -138,7 +140,7 @@ class CouponPreviewServiceTest :
             every { couponRepository.findDetailById(command.couponId) } returns couponDetail
             every { couponIssueRepository.existsByUserIdAndCouponId(command.userId, command.couponId) } returns alreadyIssued
 
-            return couponPreviewService.preview(command)
+            return couponService.preview(command)
         }
     }
 

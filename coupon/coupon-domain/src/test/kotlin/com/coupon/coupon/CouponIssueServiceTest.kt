@@ -3,9 +3,11 @@ package com.coupon.coupon
 import com.coupon.coupon.criteria.CouponIssueCriteria
 import com.coupon.coupon.event.CouponLifecycleDomainEvent
 import com.coupon.coupon.fixture.CouponIssueFixtures
+import com.coupon.coupon.fixture.FixedCouponFixtures
 import com.coupon.coupon.support.DomainServiceTestRuntime
 import com.coupon.coupon.support.LockExecution
 import com.coupon.coupon.support.RecordingLockRepository
+import com.coupon.enums.coupon.CouponIssueResult
 import com.coupon.enums.coupon.CouponIssueStatus
 import com.coupon.enums.error.ErrorType
 import com.coupon.error.ErrorException
@@ -24,55 +26,93 @@ import org.springframework.context.ApplicationEventPublisher
 
 class CouponIssueServiceTest :
     BehaviorSpec({
-        given("CouponIssueService로 쿠폰을 발급하면") {
-            `when`("발급 가능하고 재고 차감에 성공하면") {
+        given("CouponIssueService로 Redis 발급 상태를 선점하면") {
+            `when`("상태가 아직 초기화되지 않았다면") {
+                val context = CouponIssueServiceTestContext()
+                val coupon = FixedCouponFixtures.standard(id = 12L, totalQuantity = 10L)
+
+                every { context.couponIssueRedisRepository.hasState(coupon.id) } returnsMany listOf(false, false)
+                every { context.couponIssueRepository.findUserIdsByCouponId(coupon.id) } returns setOf(1L, 2L)
+                justRun {
+                    context.couponIssueRedisRepository.rebuild(
+                        couponId = coupon.id,
+                        occupiedCount = coupon.totalQuantity - coupon.remainingQuantity,
+                        userIds = setOf(1L, 2L),
+                        ttl = any(),
+                    )
+                }
+                every {
+                    context.couponIssueRedisRepository.reserve(
+                        couponId = coupon.id,
+                        userId = 120L,
+                        totalQuantity = coupon.totalQuantity,
+                        ttl = any(),
+                    )
+                } returns CouponIssueResult.SUCCESS
+
+                val result = context.couponIssueService.reserveIssue(coupon, 120L)
+
+                then("기존 발급 상태를 복구한 뒤 reserve를 수행한다") {
+                    result shouldBe CouponIssueResult.SUCCESS
+                    context.recordedLockExecutions.single() shouldBe
+                        LockExecution(
+                            key = "COUPON_ISSUE_STATE_INIT:${coupon.id}",
+                            timeoutMillis = 1_000L,
+                            timeoutException = ErrorType.LOCK_ACQUISITION_FAILED,
+                        )
+                    verifySequence {
+                        context.couponIssueRedisRepository.hasState(coupon.id)
+                        context.couponIssueRedisRepository.hasState(coupon.id)
+                        context.couponIssueRepository.findUserIdsByCouponId(coupon.id)
+                        context.couponIssueRedisRepository.rebuild(
+                            couponId = coupon.id,
+                            occupiedCount = coupon.totalQuantity - coupon.remainingQuantity,
+                            userIds = setOf(1L, 2L),
+                            ttl = any(),
+                        )
+                        context.couponIssueRedisRepository.reserve(
+                            couponId = coupon.id,
+                            userId = 120L,
+                            totalQuantity = coupon.totalQuantity,
+                            ttl = any(),
+                        )
+                    }
+                }
+            }
+        }
+
+        given("CouponIssueService로 발급 메시지를 발행하면") {
+            `when`("쿠폰과 사용자 id가 주어지면") {
+                val context = CouponIssueServiceTestContext()
+
+                justRun { context.couponIssueEventPublisher.publish(CouponIssueMessage(10L, 100L)) }
+
+                context.couponIssueService.publishIssue(couponId = 10L, userId = 100L)
+
+                then("발급 이벤트 퍼블리셔를 호출한다") {
+                    verify(exactly = 1) { context.couponIssueEventPublisher.publish(CouponIssueMessage(10L, 100L)) }
+                }
+            }
+        }
+
+        given("CouponIssueService로 쿠폰 발급을 저장하면") {
+            `when`("검증과 재고 차감이 외부에서 끝난 command가 주어지면") {
                 val context = CouponIssueServiceTestContext()
                 val command = CouponIssueFixtures.issueCommand(couponId = 10L, userId = 100L)
                 val issuedCoupon = CouponIssueFixtures.issued(id = 1L, couponId = command.couponId, userId = command.userId)
                 val criteriaSlot = slot<CouponIssueCriteria.Create>()
 
-                justRun { context.couponIssueValidator.validateIssuable(command.userId, command.couponId) }
                 every { context.couponIssueRepository.save(capture(criteriaSlot)) } returns issuedCoupon
-                every { context.couponRepository.decreaseQuantityIfAvailable(command.couponId) } returns true
 
-                val result = context.couponIssueService.issueCoupon(command)
+                val result = context.couponIssueService.executeIssue(command)
 
-                then("락 안에서 검증 후 발급 저장과 재고 차감을 수행한다") {
+                then("발급 row를 저장하고 issued 이벤트를 발행한다") {
                     result shouldBe issuedCoupon
                     criteriaSlot.captured shouldBe CouponIssueCriteria.Create.of(command)
-                    context.recordedLockExecutions.single() shouldBe
-                        LockExecution(
-                            key = "COUPON_ISSUE:${command.couponId}",
-                            timeoutMillis = 15_000L,
-                            timeoutException = ErrorType.LOCK_ACQUISITION_FAILED,
-                        )
                     verifySequence {
-                        context.couponIssueValidator.validateIssuable(command.userId, command.couponId)
                         context.couponIssueRepository.save(any())
-                        context.couponRepository.decreaseQuantityIfAvailable(command.couponId)
                         context.applicationEventPublisher.publishEvent(any<CouponLifecycleDomainEvent.Issued>())
                     }
-                }
-            }
-
-            `when`("발급은 저장됐지만 재고 차감에 실패하면") {
-                val context = CouponIssueServiceTestContext()
-                val command = CouponIssueFixtures.issueCommand(couponId = 11L, userId = 101L)
-
-                justRun { context.couponIssueValidator.validateIssuable(command.userId, command.couponId) }
-                every { context.couponIssueRepository.save(any()) } returns
-                    CouponIssueFixtures.issued(couponId = command.couponId, userId = command.userId)
-                every { context.couponRepository.decreaseQuantityIfAvailable(command.couponId) } returns false
-
-                val exception =
-                    shouldThrow<ErrorException> {
-                        context.couponIssueService.issueCoupon(command)
-                    }
-
-                then("재고 부족 예외를 반환한다") {
-                    exception.errorType shouldBe ErrorType.COUPON_OUT_OF_STOCK
-                    verify(exactly = 1) { context.couponRepository.decreaseQuantityIfAvailable(command.couponId) }
-                    verify(exactly = 0) { context.applicationEventPublisher.publishEvent(any<CouponLifecycleDomainEvent.Issued>()) }
                 }
             }
         }
@@ -200,37 +240,20 @@ class CouponIssueServiceTest :
                 val context = CouponIssueServiceTestContext()
                 val command = CouponIssueFixtures.cancelCommand(couponIssueId = 9L, userId = 100L)
                 val couponIssue = CouponIssueFixtures.issued(id = command.couponIssueId, couponId = 55L, userId = command.userId)
-                val detail =
-                    CouponIssueFixtures.detail(
-                        id = command.couponIssueId,
-                        couponId = couponIssue.couponId,
-                        userId = command.userId,
-                        status = CouponIssueStatus.CANCELED,
-                    )
 
                 every { context.couponIssueRepository.findById(command.couponIssueId) } returns couponIssue
                 justRun { context.couponIssueValidator.validateOwnedCouponIssue(couponIssue, command.userId) }
                 every { context.couponIssueRepository.cancelIfIssued(command.couponIssueId) } returns true
-                justRun { context.couponRepository.increaseQuantity(couponIssue.couponId) }
-                every { context.couponIssueRepository.findDetailById(command.couponIssueId) } returns detail
 
-                val result = context.couponIssueService.cancelCoupon(command)
+                val result = context.couponIssueService.cancelIssue(command)
 
-                then("상태를 취소로 바꾸고 재고를 복원한 뒤 상세 정보를 반환한다") {
-                    result shouldBe detail
-                    context.recordedLockExecutions.single() shouldBe
-                        LockExecution(
-                            key = "COUPON_ISSUE:${couponIssue.couponId}",
-                            timeoutMillis = 5_000L,
-                            timeoutException = ErrorType.LOCK_ACQUISITION_FAILED,
-                        )
+                then("상태를 취소로 바꾸고 canceled 이벤트를 발행한다") {
+                    result shouldBe couponIssue
                     verifySequence {
                         context.couponIssueRepository.findById(command.couponIssueId)
                         context.couponIssueValidator.validateOwnedCouponIssue(couponIssue, command.userId)
                         context.couponIssueRepository.cancelIfIssued(command.couponIssueId)
-                        context.couponRepository.increaseQuantity(couponIssue.couponId)
                         context.applicationEventPublisher.publishEvent(any<CouponLifecycleDomainEvent.Canceled>())
-                        context.couponIssueRepository.findDetailById(command.couponIssueId)
                     }
                 }
             }
@@ -246,13 +269,11 @@ class CouponIssueServiceTest :
 
                 val exception =
                     shouldThrow<ErrorException> {
-                        context.couponIssueService.cancelCoupon(command)
+                        context.couponIssueService.cancelIssue(command)
                     }
 
-                then("상태 변경 예외를 반환하고 재고 복원과 상세 조회는 하지 않는다") {
+                then("상태 변경 예외를 반환하고 canceled 이벤트는 발행하지 않는다") {
                     exception.errorType shouldBe ErrorType.INVALID_COUPON_STATUS
-                    verify(exactly = 0) { context.couponRepository.increaseQuantity(any()) }
-                    verify(exactly = 0) { context.couponIssueRepository.findDetailById(command.couponIssueId) }
                     verify(exactly = 0) { context.applicationEventPublisher.publishEvent(any<CouponLifecycleDomainEvent.Canceled>()) }
                 }
             }
@@ -261,19 +282,20 @@ class CouponIssueServiceTest :
     private class CouponIssueServiceTestContext {
         private val lockRepository = RecordingLockRepository()
         val couponIssueRepository = mockk<CouponIssueRepository>()
-        val couponRepository = mockk<CouponRepository>()
         val couponIssueValidator = mockk<CouponIssueValidator>()
+        val couponIssueRedisRepository = mockk<CouponIssueRedisRepository>(relaxed = true)
+        val couponIssueEventPublisher = mockk<CouponIssueEventPublisher>(relaxed = true)
         val applicationEventPublisher = mockk<ApplicationEventPublisher>(relaxed = true)
         val couponIssueService =
             CouponIssueService(
                 couponIssueRepository = couponIssueRepository,
-                couponRepository = couponRepository,
                 couponIssueValidator = couponIssueValidator,
+                couponIssueRedisRepository = couponIssueRedisRepository,
+                couponIssueEventPublisher = couponIssueEventPublisher,
                 applicationEventPublisher = applicationEventPublisher,
             )
 
-        val recordedLockExecutions: List<LockExecution>
-            get() = lockRepository.executions
+        val recordedLockExecutions get() = lockRepository.executions
 
         init {
             DomainServiceTestRuntime.initialize(lockRepository)

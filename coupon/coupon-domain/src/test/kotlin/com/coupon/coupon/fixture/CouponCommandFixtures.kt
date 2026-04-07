@@ -1,6 +1,7 @@
 package com.coupon.coupon.fixture
 
 import com.coupon.coupon.command.CouponCommand
+import com.coupon.enums.coupon.CouponTrafficPolicy
 import com.coupon.enums.coupon.CouponType
 import java.time.LocalDateTime
 
@@ -12,6 +13,7 @@ internal object CouponCommandFixtures {
         maxDiscountAmount: Long? = null,
         minOrderAmount: Long? = null,
         totalQuantity: Long = 10L,
+        trafficPolicy: CouponTrafficPolicy = CouponTrafficPolicy.HOT_FCFS_ASYNC,
         referenceTime: LocalDateTime = LocalDateTime.now(),
         availableAt: LocalDateTime = referenceTime.minusDays(1),
         endAt: LocalDateTime = referenceTime.plusDays(1),
@@ -22,6 +24,7 @@ internal object CouponCommandFixtures {
         maxDiscountAmount = maxDiscountAmount,
         minOrderAmount = minOrderAmount,
         totalQuantity = totalQuantity,
+        trafficPolicy = trafficPolicy,
         availableAt = availableAt,
         endAt = endAt,
     )
@@ -31,6 +34,7 @@ internal object CouponCommandFixtures {
         discountAmount: Long? = 7_000L,
         maxDiscountAmount: Long? = 10_000L,
         minOrderAmount: Long? = 30_000L,
+        trafficPolicy: CouponTrafficPolicy? = null,
         referenceTime: LocalDateTime = LocalDateTime.now(),
         availableAt: LocalDateTime? = referenceTime.minusHours(1),
         endAt: LocalDateTime? = referenceTime.plusDays(7),
@@ -39,6 +43,7 @@ internal object CouponCommandFixtures {
         discountAmount = discountAmount,
         maxDiscountAmount = maxDiscountAmount,
         minOrderAmount = minOrderAmount,
+        trafficPolicy = trafficPolicy,
         availableAt = availableAt,
         endAt = endAt,
     )

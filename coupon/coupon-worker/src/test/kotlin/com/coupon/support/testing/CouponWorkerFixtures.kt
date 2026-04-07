@@ -1,6 +1,7 @@
 package com.coupon.support.testing
 
 import com.coupon.coupon.command.CouponCommand
+import com.coupon.enums.coupon.CouponTrafficPolicy
 import com.coupon.enums.coupon.CouponType
 import com.coupon.user.command.UserCommand
 import java.time.LocalDateTime
@@ -19,6 +20,7 @@ internal object CouponWorkerFixtures {
 
     fun couponCreateCommand(
         totalQuantity: Long = 1L,
+        trafficPolicy: CouponTrafficPolicy = CouponTrafficPolicy.HOT_FCFS_ASYNC,
         referenceTime: LocalDateTime = LocalDateTime.now(),
     ): CouponCommand.Create =
         CouponCommand.Create(
@@ -28,6 +30,7 @@ internal object CouponWorkerFixtures {
             maxDiscountAmount = null,
             minOrderAmount = null,
             totalQuantity = totalQuantity,
+            trafficPolicy = trafficPolicy,
             availableAt = referenceTime.minusMinutes(5),
             endAt = referenceTime.plusHours(1),
         )

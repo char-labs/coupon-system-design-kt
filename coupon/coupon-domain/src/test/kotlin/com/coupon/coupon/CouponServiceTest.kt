@@ -136,8 +136,18 @@ class CouponServiceTest :
     }) {
     private class CouponServiceTestContext {
         val couponRepository = mockk<CouponRepository>()
+        val couponIssueRepository = mockk<CouponIssueRepository>()
         val couponCodeGenerator = mockk<CouponCodeGenerator>()
-        val couponService = CouponService(couponRepository = couponRepository, couponCodeGenerator = couponCodeGenerator)
+        val couponValidator = mockk<CouponValidator>(relaxed = true)
+        val couponService =
+            CouponService(
+                couponRepository = couponRepository,
+                couponIssueRepository = couponIssueRepository,
+                couponCodeGenerator = couponCodeGenerator,
+                couponValidator = couponValidator,
+                couponEligibilityEvaluator = CouponEligibilityEvaluator(),
+                couponDiscountCalculator = CouponDiscountCalculator(),
+            )
 
         init {
             DomainServiceTestRuntime.initialize()
