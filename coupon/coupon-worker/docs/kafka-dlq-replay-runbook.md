@@ -20,7 +20,7 @@
 3. request가 `ENQUEUED`
 4. consumer가 처리 시도
 5. retryable failure는 Kafka error handler 재시도
-6. 재시도 소진 시 `coupon.issue.requested.v1.dlq` 로 이동
+6. 재시도 소진 시 `coupon.issue.requested.v2.dlq` 로 이동
 7. DLQ listener가 request를 `DEAD`로 마킹
 
 즉, DLQ는 “메시지를 잃지 않기 위한 저장소”가 아니라 “자동 복구 범위를 벗어난 건을 사람에게 넘기는 경계”다.

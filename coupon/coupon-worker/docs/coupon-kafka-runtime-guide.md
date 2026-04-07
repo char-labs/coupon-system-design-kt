@@ -81,10 +81,10 @@ docker compose -f docker/docker-compose.yml up --build -d mysql redis kafka kafk
 
 ### 3. 동료 개발자가 가장 먼저 보면 좋은 것
 
-1. `POST /coupon-issue-requests` 호출
+1. `POST /coupon-issues` 호출
 2. `t_coupon_issue_request`에서 `PENDING -> ENQUEUED -> PROCESSING -> SUCCEEDED` 확인
 3. `t_outbox_event`에서 `COUPON_ISSUE_REQUESTED`가 `PENDING -> PROCESSING -> SUCCEEDED` 되는지 확인
-4. Kafka UI에서 `coupon.issue.requested.v1` 메시지 확인
+4. Kafka UI에서 `coupon.issue.requested.v2` 메시지 확인
 5. `t_coupon_issue` row 생성 확인
 
 ## 읽기 순서
@@ -92,7 +92,6 @@ docker compose -f docker/docker-compose.yml up --build -d mysql redis kafka kafk
 이 저장소는 아래 순서로 읽으면 가장 이해가 쉽다.
 
 1. API 진입점
-   - [`CouponIssueRequestController.kt`](../../coupon-api/src/main/kotlin/com.coupon/controller/coupon/CouponIssueRequestController.kt)
    - [`CouponIssueController.kt`](../../coupon-api/src/main/kotlin/com.coupon/controller/coupon/CouponIssueController.kt)
    - [`CouponController.kt`](../../coupon-api/src/main/kotlin/com.coupon/controller/coupon/CouponController.kt)
 2. 도메인 서비스
@@ -116,19 +115,17 @@ docker compose -f docker/docker-compose.yml up --build -d mysql redis kafka kafk
 | `POST /coupons` | 관리자 쓰기 | `CouponService.createCoupon()` | 아니오 | `t_coupon` |
 | `GET /coupons` | 조회 | `CouponService.getCoupons()` | 아니오 | DB read |
 | `GET /coupons/{couponId}` | 조회 | `CouponService.getCoupon()` | 아니오 | DB read |
-| `POST /coupons/{couponId}/preview` | 검증/계산 | `CouponPreviewService.preview()` | 아니오 | 계산 결과 |
+| `POST /coupons/{couponId}/preview` | 검증/계산 | `CouponService.preview()` | 아니오 | 계산 결과 |
 | `GET /coupons/{couponId}/coupon-issues` | 조회 | `CouponIssueService.getCouponIssues()` | 아니오 | DB read |
 | `PUT /coupons/{couponId}` | 관리자 쓰기 | `CouponService.modifyCoupon()` | 아니오 | `t_coupon` |
 | `POST /coupons/{couponId}/activate` | 관리자 쓰기 | `CouponService.activateCoupon()` | 아니오 | `t_coupon` |
 | `POST /coupons/{couponId}/deactivate` | 관리자 쓰기 | `CouponService.deactivateCoupon()` | 아니오 | `t_coupon` |
 | `DELETE /coupons/{couponId}` | 관리자 쓰기 | `CouponService.deleteCoupon()` | 아니오 | `t_coupon` |
-| `POST /coupon-issues` | 동기 발급 | `CouponIssueService.issueCoupon()` | 아니오 | `t_coupon_issue` |
+| `POST /coupon-issues` | 공개 발급 API + Redis 선점 | `CouponIssueService.issue()` | 예 | Redis state, Kafka message |
 | `GET /coupon-issues/my` | 조회 | `CouponIssueService.getMyCoupons()` | 아니오 | DB read |
 | `GET /coupon-issues/{couponIssueId}` | 조회 | `CouponIssueService.getCouponIssue()` | 아니오 | DB read |
 | `POST /coupon-issues/{couponIssueId}/use` | 동기 상태 전이 + outbox | `CouponIssueService.useCoupon()` | 후속 fan-out만 사용 | `t_coupon_issue` |
 | `POST /coupon-issues/{couponIssueId}/cancel` | 동기 상태 전이 + outbox | `CouponIssueService.cancelCoupon()` | 후속 fan-out만 사용 | `t_coupon_issue`, `t_coupon` |
-| `POST /coupon-issue-requests` | 비동기 발급 요청 접수 | `CouponIssueRequestService.accept()` | 예 | `t_coupon_issue_request` |
-| `GET /coupon-issue-requests/{requestId}` | 요청 상태 조회 | `CouponIssueRequestService.getRequest()` | 아니오 | `t_coupon_issue_request` |
 
 ## 상태 모델
 
@@ -194,7 +191,6 @@ sequenceDiagram
 - `GET /coupons/{couponId}/coupon-issues`
 - `GET /coupon-issues/my`
 - `GET /coupon-issues/{couponIssueId}`
-- `GET /coupon-issue-requests/{requestId}`
 
 ```mermaid
 sequenceDiagram
@@ -221,7 +217,7 @@ sequenceDiagram
 sequenceDiagram
     participant Client
     participant API as coupon-api
-    participant Preview as CouponPreviewService
+    participant Preview as CouponService
     participant DB as MySQL
 
     Client->>API: preview 요청
@@ -233,7 +229,7 @@ sequenceDiagram
     API-->>Client: 적용 가능 여부, 할인 금액
 ```
 
-### D. 동기 쿠폰 발급 API
+### D. 공개 쿠폰 발급 API
 
 대상 API
 
@@ -243,50 +239,29 @@ sequenceDiagram
 sequenceDiagram
     participant Client
     participant API as coupon-api
-    participant Service as CouponIssueService
-    participant Lock as Redis Lock
-    participant DB as MySQL
-    participant Event as ApplicationEventPublisher
-    participant Outbox as CouponLifecycleOutboxListener
+    participant Issue as CouponIssueService
+    participant Redis as Redis
+    participant Kafka as Kafka
 
-    Client->>API: 동기 발급 요청
-    API->>Service: issueCoupon(command)
-    Service->>Lock: coupon 단위 락 획득
-    Service->>DB: 중복 발급/발급 가능 검증
-    Service->>DB: coupon_issue insert
-    Service->>DB: coupon remaining quantity 감소
-    Service->>Event: COUPON_ISSUED domain event
-    Event->>Outbox: BEFORE_COMMIT listener
-    Outbox->>DB: lifecycle outbox 저장
-    Service-->>API: couponIssue 반환
-    API-->>Client: 발급 성공 응답
+    Client->>API: issue 요청
+    API->>Issue: issue(command)
+    Issue->>Redis: duplicate + stock reservation
+    Redis-->>Issue: SUCCESS|DUPLICATE|SOLD_OUT
+    alt SUCCESS
+    Issue->>Kafka: coupon issue message publish
+    Kafka-->>Issue: ack
+    Issue-->>API: SUCCESS
+    API-->>Client: 202 Accepted (SUCCESS)
+    else DUPLICATE or SOLD_OUT
+    Issue-->>API: DUPLICATE|SOLD_OUT
+    API-->>Client: 200 OK (DUPLICATE|SOLD_OUT)
+    end
 ```
 
-### E. 비동기 쿠폰 발급 요청 API
-
-대상 API
-
-- `POST /coupon-issue-requests`
-
-```mermaid
-sequenceDiagram
-    participant Client
-    participant API as coupon-api
-    participant Request as CouponIssueRequestService
-    participant DB as MySQL
-
-    Client->>API: 비동기 발급 요청
-    API->>Request: accept(command)
-    Request->>DB: request row 저장 (PENDING)
-    Request->>DB: COUPON_ISSUE_REQUESTED outbox 저장
-    Request-->>API: requestId + PENDING/기존 상태 반환
-    API-->>Client: 202 Accepted
-```
-
-### F. Outbox Relay + Kafka + Consumer
+### E. Outbox Relay + Kafka + Consumer
 
 이 다이어그램이 이 구조의 핵심이다.  
-`POST /coupon-issue-requests`로 생성된 요청은 아래 경로를 통해 실제 발급으로 이어진다.
+`POST /coupon-issues`로 생성된 요청은 아래 경로를 통해 실제 발급으로 이어진다.
 
 ```mermaid
 sequenceDiagram
@@ -302,10 +277,15 @@ sequenceDiagram
     Poller->>OutboxDB: processable outbox 조회
     Poller->>OutboxDB: event claim(PROCESSING)
     Poller->>Handler: handle(COUPON_ISSUE_REQUESTED)
-    Handler->>Kafka: publish request message
-    Kafka-->>Handler: broker ack
-    Handler->>RequestDB: request ENQUEUED
-    Handler->>OutboxDB: outbox SUCCEEDED
+    Handler->>RequestDB: same coupon oldest PENDING request 조회
+    alt 현재 request가 oldest pending 아님
+        Handler->>OutboxDB: retryAfter=200ms로 재스케줄
+    else 현재 request가 oldest pending
+        Handler->>Kafka: publish request message (key = couponId)
+        Kafka-->>Handler: broker ack
+        Handler->>RequestDB: request ENQUEUED
+        Handler->>OutboxDB: outbox SUCCEEDED
+    end
 
     Kafka->>Listener: message delivery
     Listener->>RequestDB: request PROCESSING
@@ -400,7 +380,7 @@ flowchart TD
 1. Kafka 메시지가 성공이어도 최종 발급 성공은 아니다. `SUCCEEDED` request만 최종 성공이다.
 2. request와 outbox는 항상 같은 트랜잭션에서 생성된다.
 3. outbox는 "실행할 일"이고, Kafka는 "실행을 전달하는 버스"다.
-4. consumer는 `ENQUEUED` request만 `PROCESSING`으로 올릴 수 있다.
+4. strict FCFS는 `HOT_FCFS_ASYNC` 쿠폰에서만 요구하며, `couponId` key와 relay ordering gate로 보장한다.
 5. `FAILED`는 비즈니스 실패고, `DEAD`는 시스템이 더 이상 자동 복구하지 못한 상태다.
 6. lifecycle outbox(`COUPON_ISSUED`, `COUPON_USED`, `COUPON_CANCELED`)는 후속 read model과 감사 이력용이지 source of truth가 아니다.
 7. 로컬 compose에서 ZooKeeper가 없는 이유는 Kafka가 중요하지 않아서가 아니라, 구조 학습에 필요 없는 구성 요소를 줄이기 위해서다.
@@ -411,7 +391,7 @@ flowchart TD
 
 1. `t_coupon_issue_request` 상태를 본다.
 2. 같은 request id의 `t_outbox_event`를 본다.
-3. Kafka UI에서 `coupon.issue.requested.v1` 또는 DLQ를 본다.
+3. Kafka UI에서 `coupon.issue.requested.v2` 또는 DLQ를 본다.
 4. worker actuator와 메트릭을 본다.
 5. 그래도 이상하면 reconciliation 로그를 본다.
 

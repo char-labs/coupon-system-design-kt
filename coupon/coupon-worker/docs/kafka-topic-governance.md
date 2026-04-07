@@ -14,8 +14,8 @@
 
 | topic | 역할 | producer | consumer | 상태 |
 | --- | --- | --- | --- | --- |
-| `coupon.issue.requested.v1` | accepted coupon issue request 실행 버스 | outbox relay | coupon worker consumer | 사용 중 |
-| `coupon.issue.requested.v1.dlq` | request consumer retry 소진 후 격리 | Kafka error handler | DLQ listener | 사용 중 |
+| `coupon.issue.requested.v2` | strict FCFS accepted coupon issue request 실행 버스 | outbox relay | coupon worker consumer | 사용 중 |
+| `coupon.issue.requested.v2.dlq` | request consumer retry 소진 후 격리 | Kafka error handler | DLQ listener | 사용 중 |
 
 ## topic naming 규칙
 
@@ -25,7 +25,7 @@
 
 예시:
 
-- `coupon.issue.requested.v1`
+- `coupon.issue.requested.v2`
 
 DLQ는 아래 규칙을 따른다.
 
@@ -33,41 +33,40 @@ DLQ는 아래 규칙을 따른다.
 
 예시:
 
-- `coupon.issue.requested.v1.dlq`
+- `coupon.issue.requested.v2.dlq`
 
 ## partition/key 전략
 
 ### 현재 전략
 
 - partition count: `3`
-- producer record key: `requestId.toString()`
+- producer record key: `couponId.toString()`
 
 이 선택의 의미는 다음과 같다.
 
-- request 단위 분산은 좋다.
-- 특정 couponId에 모든 메시지가 몰리지 않는다.
-- 대신 couponId 기준 ordering은 Kafka가 보장하지 않는다.
+- 같은 couponId 요청은 항상 같은 partition으로 들어간다.
+- Kafka가 같은 couponId 내부 순서를 보장한다.
+- 대신 hot coupon은 단일 partition에 집중된다.
 
 현재 구조에서는 이게 맞다.
 
-- 쿠폰별 직렬화는 Kafka가 아니라 DB 락이 담당한다.
-- source of truth는 MySQL 상태 전이다.
-- Kafka는 실행 버스이므로 ordering보다 분산성과 단순성이 낫다.
+- strict FCFS는 `HOT_FCFS_ASYNC` 쿠폰에만 요구한다.
+- couponId key만으로는 충분하지 않아서, relay가 같은 couponId의 oldest pending request만 publish한다.
+- FCFS 기준 순서는 `t_coupon_issue_request.created_at`, tie-breaker `id`다.
 
-### key를 couponId로 바꾸지 않는 이유
+### relay ordering gate
 
-`couponId`를 key로 쓰면 같은 쿠폰 요청이 같은 partition으로 몰린다.
+현재 저장소는 publish 전에 아래 조건을 추가로 확인한다.
 
-장점:
+- 같은 couponId 기준 relay lock 획득
+- `findOldestPendingByCouponId(couponId)` 조회
+- 현재 request가 oldest pending request일 때만 publish
 
-- couponId 단위 ordering 확보
+이 gate가 필요한 이유는 다음과 같다.
 
-단점:
-
-- hot coupon이 생기면 특정 partition만 과열
-- consumer scale-out 효과가 줄어듦
-
-현재는 DB lock으로 정합성을 잡고 있으므로 `requestId` key가 더 적절하다.
+- 여러 worker가 outbox를 병렬 claim해도 publish 순서가 뒤집히지 않게 한다.
+- Kafka partition ordering이 실제 accepted 순서를 그대로 반영하게 한다.
+- strict FCFS의 기준을 DB request 생성순으로 고정할 수 있다.
 
 ## replication / retention 기준
 
@@ -149,11 +148,11 @@ DLQ는 아래 규칙을 따른다.
 | --- | --- |
 | `coupon.lifecycle.v1` | `issued/used/canceled` fan-out consumer 분리 필요 |
 | `coupon.issue.result.v1` | 외부 시스템에 발급 성공/실패 결과를 전파해야 할 때 |
-| `coupon.issue.requested.v2` | payload 호환성을 유지할 수 없을 정도로 계약이 바뀔 때 |
+| `coupon.issue.requested.v3` | payload 호환성을 유지할 수 없을 정도로 계약이 바뀔 때 |
 
 ## 운영자가 반드시 알아야 하는 것
 
-- `coupon.issue.requested.v1` backlog가 늘었다고 바로 broker 문제는 아니다
+- `coupon.issue.requested.v2` backlog가 늘었다고 바로 broker 문제는 아니다
 - 먼저 `ENQUEUED` age, consumer lag, DB lock 대기, request 상태 수렴을 같이 봐야 한다
 - topic partition 수를 늘리기 전에 consumer bottleneck과 DB lock 병목을 먼저 확인해야 한다
 
@@ -162,7 +161,7 @@ DLQ는 아래 규칙을 따른다.
 - command topic은 적게 유지
 - versioning은 이름으로 명시
 - DLQ는 원본 topic suffix로 통일
-- key는 request 분산 우선
+- strict FCFS command topic은 couponId ordering 우선
 - 운영형 전환 전에는 app auto topic creation 허용
 
 ## 참고 파일

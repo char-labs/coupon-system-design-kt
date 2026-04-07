@@ -122,7 +122,7 @@
 
 도입 조건:
 
-- `coupon.issue.requested.v1` backlog가 지속적으로 커짐
+- `coupon.issue.requested.v2` backlog가 지속적으로 커짐
 - worker scale-out이 partition 수에 막힘
 - lifecycle fan-out consumer가 분리됨
 
