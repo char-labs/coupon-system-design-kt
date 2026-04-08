@@ -3,7 +3,14 @@
 이 디렉터리는 `springboot-coupon-system`과 유사한 `Redis reserve -> Kafka -> consumer issue` 계약을 검증하는 `k6` 시나리오를 담고 있습니다.
 기준 런타임 계약과 관측성 규칙은 [docs/architecture/coupon-issuance-runtime.md](/Users/yunbeom/ybcha/coupon-system-design-kt/docs/architecture/coupon-issuance-runtime.md)를 따릅니다.
 
-로컬 observability compose는 `InfluxDB + Grafana` 외에 `Loki + Alloy`도 함께 띄웁니다.
+로컬 compose는 역할별로 분리되어 있습니다.
+
+- `docker-compose.infrastructure.yml`: MySQL, Redis, Kafka, Kafka UI
+- `docker-compose.runtime.yml`: `coupon-app`, `coupon-worker`
+- `docker-compose.observability.yml`: Grafana, Loki, Alloy
+- `docker-compose.load-test.yml`: InfluxDB
+
+로컬 observability stack은 `InfluxDB + Grafana` 외에 `Loki + Alloy`도 함께 띄웁니다.
 `coupon-app`, `coupon-worker` 의 docker stdout 로그는 JSON 형식으로 출력되고 Alloy가 Loki로 전달합니다.
 
 현재 공개 발급 계약은 아래 경로가 기준입니다.
@@ -61,6 +68,17 @@
 ## 빠른 시작
 
 스택을 올립니다.
+
+```bash
+docker compose \
+  -f docker/docker-compose.infrastructure.yml \
+  -f docker/docker-compose.runtime.yml \
+  -f docker/docker-compose.observability.yml \
+  -f docker/docker-compose.load-test.yml \
+  up --build
+```
+
+기존 진입점이 더 익숙하면 아래 호환 조합도 계속 사용할 수 있습니다.
 
 ```bash
 docker compose \

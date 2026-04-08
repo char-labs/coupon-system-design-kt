@@ -31,6 +31,24 @@ Promtail 대신 Alloy를 기본 collector로 두는 이유는 [loki-log-collecto
 
 ```bash
 docker compose \
+  -f docker/docker-compose.infrastructure.yml \
+  -f docker/docker-compose.runtime.yml \
+  -f docker/docker-compose.observability.yml \
+  -f docker/docker-compose.load-test.yml \
+  up --build
+```
+
+역할 기준 compose 묶음은 아래와 같습니다.
+
+- `docker-compose.infrastructure.yml`: MySQL, Redis, Kafka, Kafka UI
+- `docker-compose.runtime.yml`: `coupon-app`, `coupon-worker`
+- `docker-compose.observability.yml`: Grafana, Loki, Alloy
+- `docker-compose.load-test.yml`: InfluxDB
+
+기존 두 파일 조합이 필요하면 아래 호환 진입점도 유지됩니다.
+
+```bash
+docker compose \
   -f docker/docker-compose.yml \
   -f docker/docker-compose.k6-observability.yml \
   up --build
