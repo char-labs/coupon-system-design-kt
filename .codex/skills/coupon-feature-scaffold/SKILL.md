@@ -13,16 +13,15 @@ Use this skill to add a new feature without drifting from the project's vertical
 
 1. Read `./AGENTS.md` and [architecture.md](./references/architecture.md).
 2. Classify the feature as `crud`, `stateful`, or `auth-adjacent`.
-3. If the feature touches a third-party service, client, or alerting channel, inspect the target module `build.gradle.kts`, any repo version catalog files, and `settings.gradle.kts` before choosing a new dependency or transport style.
-4. If the feature depends on current vendor APIs or SDK capabilities, verify with official external references before scaffolding.
-5. Mirror the nearest existing feature:
+3. If the feature touches a third-party service, client, or alerting channel and the dependency choice is still open, resolve it first with [docs/agent/adoption-rubric.md](../../../docs/agent/adoption-rubric.md) or `$coupon-tech-adoption-review`.
+4. Mirror the nearest existing feature:
    - `Coupon` for aggregate CRUD
    - `CouponIssue` for state transitions, ownership checks, and quantity changes
    - `Auth` or `User` for authentication and principal-driven flows
-6. Generate a file checklist before editing:
+5. Generate a file checklist before editing:
    `python3 .codex/skills/coupon-feature-scaffold/scripts/feature_scaffold_plan.py <feature-name> --kind <crud|stateful|auth-adjacent>`
-7. Implement the smallest consistent slice through API, domain, and storage.
-8. If the flow has concurrency or cache sensitivity, explicitly decide whether it needs distributed lock handling, cache updates, a `REQUIRES_NEW` transaction runner, or monitoring updates.
+6. Implement the smallest consistent slice through API, domain, and storage.
+7. If the flow has concurrency or cache sensitivity, explicitly decide whether it needs distributed lock handling, cache updates, a `REQUIRES_NEW` transaction runner, or monitoring updates.
 
 ## Rules
 

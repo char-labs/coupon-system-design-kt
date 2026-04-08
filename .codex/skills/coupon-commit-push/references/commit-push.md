@@ -11,15 +11,19 @@
 ## Validation Mapping
 
 - domain logic or repository contract changes:
-  `JAVA_HOME=$(/usr/libexec/java_home -v 25) ./gradlew :coupon:coupon-domain:test`
+  `./gradlew :coupon:coupon-domain:test`
 - `db-core` adapter changes:
-  `JAVA_HOME=$(/usr/libexec/java_home -v 25) ./gradlew :storage:db-core:compileKotlin`
+  `./gradlew :storage:db-core:compileKotlin`
 - `redis` adapter changes:
-  `JAVA_HOME=$(/usr/libexec/java_home -v 25) ./gradlew :storage:redis:compileKotlin`
+  `./gradlew :storage:redis:compileKotlin`
 - controller, DTO, filter, or config changes:
-  `JAVA_HOME=$(/usr/libexec/java_home -v 25) ./gradlew :coupon:coupon-api:compileKotlin`
+  `./gradlew :coupon:coupon-api:compileKotlin`
+- worker runtime changes:
+  `./gradlew :coupon:coupon-worker:compileKotlin`
 - cross-module or higher confidence:
-  `JAVA_HOME=$(/usr/libexec/java_home -v 25) ./gradlew :coupon:coupon-api:build --no-daemon`
+  `./gradlew :coupon:coupon-api:build --no-daemon`
+
+If `./gradlew -version` shows a non-Java-25 launcher, rerun the same command with `JAVA_HOME=$(/usr/libexec/java_home -v 25)`.
 
 ## Commit Grouping Hints
 

@@ -1,5 +1,9 @@
 # Agent Routing
 
+- `coupon-specialist-orchestration`
+  - use as the default entrypoint for non-trivial tasks that need specialist fan-out
+  - benefit: chooses the smallest useful set of specialists, then synthesizes one implementation path
+
 - `feature_mapper`
   - use before implementation when scope is still unclear
   - benefit: finds affected modules and smallest validation scope quickly
@@ -15,6 +19,9 @@
 - `observability_guard`
   - use when adding new flows or when production debuggability matters
   - benefit: catches missing metrics, logs, and trace context
+- `tech_adoption_advisor`
+  - use before adding a dependency, SDK, or new integration style
+  - benefit: separates local repo facts from official external facts and returns a concrete recommendation
 - `ci_triager`
   - use for failing Gradle, JDK, lint, compile, or test signals
   - benefit: narrows down the smallest failing proof command

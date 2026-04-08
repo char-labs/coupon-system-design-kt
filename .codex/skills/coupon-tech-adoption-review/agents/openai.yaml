@@ -1,0 +1,4 @@
+interface:
+  display_name: "Coupon Tech Adoption Review"
+  short_description: "Evaluate whether a dependency or architecture choice fits this repo"
+  default_prompt: "Use $coupon-tech-adoption-review to evaluate this dependency, SDK, or architecture choice for the coupon system."

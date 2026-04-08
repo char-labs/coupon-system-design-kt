@@ -9,28 +9,32 @@ metadata:
 
 Use this skill when you want short copy-paste Spawn prompts.
 
+For automatic specialist fan-out on non-trivial work, prefer `$coupon-specialist-orchestration`.
+
 ## Rules
 
 1. Run from the repository root with `codex -C .` or `codex exec -C .`.
 2. Agents do not auto-run. You must explicitly request `Spawn ...`.
 3. Pick the smallest agent that matches the task.
 4. Fan out only when the work is meaningfully parallelizable.
-5. When the task involves third-party library adoption or vendor integration, include a reminder to inspect repo-local dependency declarations and official external references before concluding.
+5. For dependency or SDK adoption questions, prefer `tech_adoption_advisor` before broader reviewers.
 
 ## Review
 
 - General review:
-  `Spawn code_reviewer to review this branch for bugs, regressions, missing tests, and architecture drift. If the diff introduces a custom external client or claims a dependency is absent, inspect repo-local dependency declarations and official external references before concluding. Wait for it and summarize only concrete findings in Korean.`
+  `Spawn code_reviewer to review this branch for bugs, regressions, missing tests, and architecture drift. If dependency or SDK choice is part of the review, spawn tech_adoption_advisor first. Wait for it and summarize only concrete findings in Korean.`
 - Bottleneck review:
   `Spawn performance_reviewer to review this branch for N+1, slow query risk, lock contention, cache hot keys, thread-pool saturation, retry storms, and event backpressure. Wait for it and summarize only concrete findings in Korean.`
 - Storage review:
   `Spawn storage_reliability_specialist to review whether db-core and redis changes match repository, transaction, cache, and lock patterns. Wait for it and summarize the real risks in Korean.`
 - Architecture lens:
-  `Spawn architecture-auditor to review this branch for dependency drift and layer boundary violations. If third-party integration or library adoption direction matters, inspect repo-local dependency declarations and official external references before concluding. Wait for it and summarize only concrete findings in Korean.`
+  `Spawn architecture-auditor to review this branch for dependency drift and layer boundary violations. If library or SDK adoption direction matters, spawn tech_adoption_advisor first. Wait for it and summarize only concrete findings in Korean.`
 - Security lens:
   `Spawn security-auditor to review this branch for auth, validation, secret exposure, and unsafe default risks. Wait for it and summarize only concrete findings in Korean.`
 - Style lens:
   `Spawn style-auditor to review this branch for Kotlin idioms, naming drift, duplication, test quality, and error-handling inconsistency. Wait for it and summarize only concrete findings in Korean.`
+- Tech adoption:
+  `Spawn tech_adoption_advisor to evaluate this dependency or architecture choice using repo-local facts first and official sources second. Return a recommendation in Korean.`
 
 ## High-Scale
 
@@ -48,9 +52,9 @@ Use this skill when you want short copy-paste Spawn prompts.
 ## Storage, CI, Commit
 
 - Feature mapping:
-  `Spawn feature_mapper to map the affected modules, files, lock/cache/tx touchpoints, and smallest validation scope for this coupon feature. If third-party integration or client choice matters, inspect repo-local dependency declarations and official external references before concluding. Wait for it and return one implementation plan in Korean.`
+  `Spawn feature_mapper to map the affected modules, files, lock/cache/tx touchpoints, and smallest validation scope for this coupon feature. If client or SDK choice is still open, spawn tech_adoption_advisor first. Wait for it and return one implementation plan in Korean.`
 - Observability guard:
-  `Spawn observability_guard to review logs, metrics, tracing, dashboard readiness, and alerting integration for this change. If vendor SDK or alert transport choice matters, inspect repo-local dependency declarations and official external references before concluding. Wait for it and summarize the concrete gaps in Korean.`
+  `Spawn observability_guard to review logs, metrics, tracing, dashboard readiness, and alerting integration for this change. If vendor SDK or alert transport choice matters, spawn tech_adoption_advisor first. Wait for it and summarize the concrete gaps in Korean.`
 - CI triage:
   `Spawn ci_triager to explain why the selected Java 25 Gradle validation command is failing. Return the root cause, the smallest proof command, and the next fix to try in Korean.`
 - Commit planning:
