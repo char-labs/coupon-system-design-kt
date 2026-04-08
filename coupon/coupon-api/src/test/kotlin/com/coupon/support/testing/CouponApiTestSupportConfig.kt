@@ -1,10 +1,14 @@
 package com.coupon.support.testing
 
 import com.coupon.coupon.CouponIssueEventPublisher
+import com.coupon.coupon.CouponIssueFacade
+import com.coupon.coupon.CouponIssueMessage
 import com.coupon.coupon.CouponIssueRedisRepository
+import com.coupon.coupon.command.CouponIssueCommand
 import com.coupon.enums.coupon.CouponIssueResult
-import io.mockk.mockk
+import com.coupon.support.cache.CacheRepository
 import jakarta.persistence.EntityManager
+import org.springframework.beans.factory.ObjectProvider
 import org.springframework.boot.test.context.TestConfiguration
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Primary
@@ -22,7 +26,12 @@ class CouponApiTestSupportConfig {
 
     @Bean
     @Primary
-    fun couponIssueEventPublisher(): CouponIssueEventPublisher = mockk(relaxed = true)
+    fun cacheRepository(): CacheRepository = InMemoryCacheRepository()
+
+    @Bean
+    @Primary
+    fun couponIssueEventPublisher(couponIssueFacadeProvider: ObjectProvider<CouponIssueFacade>): CouponIssueEventPublisher =
+        SynchronousCouponIssueEventPublisher(couponIssueFacadeProvider)
 }
 
 private class InMemoryCouponIssueRedisRepository : CouponIssueRedisRepository {
@@ -95,4 +104,35 @@ private class InMemoryCouponIssueRedisRepository : CouponIssueRedisRepository {
         var occupiedCount: Long = 0,
         val userIds: MutableSet<Long> = mutableSetOf(),
     )
+}
+
+private class InMemoryCacheRepository : CacheRepository {
+    private val values = ConcurrentHashMap<String, String>()
+
+    override fun get(key: String): String? = values[key]
+
+    override fun put(
+        key: String,
+        value: String,
+        ttl: Long,
+    ) {
+        values[key] = value
+    }
+
+    override fun delete(key: String) {
+        values.remove(key)
+    }
+}
+
+private class SynchronousCouponIssueEventPublisher(
+    private val couponIssueFacadeProvider: ObjectProvider<CouponIssueFacade>,
+) : CouponIssueEventPublisher {
+    override fun publish(message: CouponIssueMessage) {
+        couponIssueFacadeProvider.getObject().executeIssue(
+            CouponIssueCommand.Issue(
+                couponId = message.couponId,
+                userId = message.userId,
+            ),
+        )
+    }
 }

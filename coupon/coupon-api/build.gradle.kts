@@ -14,6 +14,7 @@ dependencies {
 
     // Validation
     testImplementation("org.springframework.boot:spring-boot-starter-test")
+    testImplementation("org.springframework.boot:spring-boot-starter-webmvc-test")
 
     implementation(project(":coupon:coupon-enum"))
     implementation(project(":coupon:coupon-domain"))
