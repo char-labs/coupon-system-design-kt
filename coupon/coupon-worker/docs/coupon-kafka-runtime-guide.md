@@ -97,12 +97,12 @@ docker compose -f docker/docker-compose.yml up --build -d mysql redis kafka kafk
 | `POST /coupons/{couponId}/activate` | 관리자 쓰기 | `CouponService.activateCoupon()` | 아니오 | `t_coupon` |
 | `POST /coupons/{couponId}/deactivate` | 관리자 쓰기 | `CouponService.deactivateCoupon()` | 아니오 | `t_coupon` |
 | `DELETE /coupons/{couponId}` | 관리자 쓰기 | `CouponService.deleteCoupon()` | 아니오 | `t_coupon` |
-| `POST /coupon-issues` | 공개 발급 intake | `CouponIssueFacade.issue()` | 예 | Redis reserve + Kafka ack |
+| `POST /coupon-issues` | 공개 발급 intake | `CouponIssueIntakeFacade.issue()` | 예 | Redis reserve + Kafka ack |
 | `GET /coupon-issues/my` | 조회 | `CouponIssueService.getMyCoupons()` | 아니오 | DB read |
 | `GET /coupon-issues/coupons/{couponId}` | 관리자용 발급 목록 조회 | `CouponIssueService.getCouponIssues()` | 아니오 | DB read |
 | `GET /coupon-issues/{couponIssueId}` | 조회 | `CouponIssueService.getCouponIssue()` | 아니오 | DB read |
 | `POST /coupon-issues/{couponIssueId}/use` | 동기 상태 전이 | `CouponIssueService.useCoupon()` | 후속 outbox만 사용 | `t_coupon_issue` |
-| `POST /coupon-issues/{couponIssueId}/cancel` | 동기 상태 전이 | `CouponIssueFacade.cancelCoupon()` | 후속 outbox만 사용 | `t_coupon_issue`, `t_coupon` |
+| `POST /coupon-issues/{couponIssueId}/cancel` | 동기 상태 전이 | `CouponIssueExecutionFacade.cancelCoupon()` | 후속 outbox만 사용 | `t_coupon_issue`, `t_coupon` |
 
 ## Redis 상태 모델
 
@@ -123,20 +123,20 @@ docker compose -f docker/docker-compose.yml up --build -d mysql redis kafka kafk
 관련 파일:
 
 - [`CouponIssueService.kt`](../../coupon-domain/src/main/kotlin/com/coupon/coupon/CouponIssueService.kt)
-- [`CouponIssueRedisRepository.kt`](../../coupon-domain/src/main/kotlin/com/coupon/coupon/CouponIssueRedisRepository.kt)
+- [`CouponIssueStateRepository.kt`](../../coupon-domain/src/main/kotlin/com/coupon/coupon/CouponIssueStateRepository.kt)
 - [`CouponIssueRedisCoreRepository.kt`](../../../storage/redis/src/main/kotlin/com/coupon/redis/coupon/CouponIssueRedisCoreRepository.kt)
-- [`CouponIssueProcessingLimiter.kt`](../../coupon-domain/src/main/kotlin/com/coupon/coupon/CouponIssueProcessingLimiter.kt)
+- [`CouponIssueProcessingLimiter.kt`](../../coupon-domain/src/main/kotlin/com/coupon/coupon/execution/CouponIssueProcessingLimiter.kt)
 - [`CouponIssueProcessingLimiterCoreRepository.kt`](../../../storage/redis/src/main/kotlin/com/coupon/redis/coupon/CouponIssueProcessingLimiterCoreRepository.kt)
 
 ## 현재 Kafka 설정
 
 | 항목 | 값 | 파일 |
 | --- | --- | --- |
-| topic | `coupon.issue.v1` | [`CouponIssueKafkaProperties.kt`](../src/main/kotlin/com.coupon/config/CouponIssueKafkaProperties.kt) |
+| topic | `coupon.issue.v1` | [`CouponIssueKafkaProperties.kt`](../src/main/kotlin/com/coupon/config/CouponIssueKafkaProperties.kt) |
 | DLQ topic | `coupon.issue.v1.dlq` | 같은 파일 |
 | group id | `coupon-issue-group` | 같은 파일 |
 | DLQ group id | `coupon-issue-dlq-group` | 같은 파일 |
-| partition key | `couponId.toString()` | [`CouponIssueKafkaPublisher.kt`](../../coupon-api/src/main/kotlin/com.coupon/config/CouponIssueKafkaPublisher.kt) |
+| partition key | `couponId.toString()` | [`CouponIssueKafkaMessagePublisher.kt`](../../coupon-api/src/main/kotlin/com/coupon/coupon/messaging/CouponIssueKafkaMessagePublisher.kt) |
 | consumer concurrency | `3` | [`worker.yml`](../src/main/resources/worker.yml) |
 | processing limit | `100 permits/sec` | [`worker.yml`](../src/main/resources/worker.yml) |
 
@@ -172,7 +172,7 @@ sequenceDiagram
     participant Kafka
     participant Worker as CouponIssueKafkaListener
     participant Limit as Redis RRateLimiter
-    participant Facade as CouponIssueFacade
+    participant Facade as CouponIssueExecutionFacade
     participant DB as MySQL
     participant Redis
 
@@ -257,10 +257,11 @@ outbox 상태 규칙 요약:
 
 ## 읽기 순서
 
-1. [`CouponIssueController.kt`](../../coupon-api/src/main/kotlin/com.coupon/controller/coupon/CouponIssueController.kt)
-2. [`CouponIssueFacade.kt`](../../coupon-domain/src/main/kotlin/com/coupon/coupon/CouponIssueFacade.kt)
-3. [`CouponIssueService.kt`](../../coupon-domain/src/main/kotlin/com/coupon/coupon/CouponIssueService.kt)
-4. [`CouponIssueKafkaPublisher.kt`](../../coupon-api/src/main/kotlin/com.coupon/config/CouponIssueKafkaPublisher.kt)
-5. [`CouponIssueKafkaListener.kt`](../src/main/kotlin/com.coupon/kafka/CouponIssueKafkaListener.kt)
-6. [`CouponIssueProcessingLimiterCoreRepository.kt`](../../../storage/redis/src/main/kotlin/com/coupon/redis/coupon/CouponIssueProcessingLimiterCoreRepository.kt)
-7. [`phase-2-outbox-worker-runtime.md`](./phase-2-outbox-worker-runtime.md)
+1. [`CouponIssueController.kt`](../../coupon-api/src/main/kotlin/com/coupon/controller/coupon/CouponIssueController.kt)
+2. [`CouponIssueIntakeFacade.kt`](../../coupon-domain/src/main/kotlin/com/coupon/coupon/intake/CouponIssueIntakeFacade.kt)
+3. [`CouponIssueExecutionFacade.kt`](../../coupon-domain/src/main/kotlin/com/coupon/coupon/execution/CouponIssueExecutionFacade.kt)
+4. [`CouponIssueService.kt`](../../coupon-domain/src/main/kotlin/com/coupon/coupon/CouponIssueService.kt)
+5. [`CouponIssueKafkaMessagePublisher.kt`](../../coupon-api/src/main/kotlin/com/coupon/coupon/messaging/CouponIssueKafkaMessagePublisher.kt)
+6. [`CouponIssueKafkaListener.kt`](../src/main/kotlin/com/coupon/kafka/CouponIssueKafkaListener.kt)
+7. [`CouponIssueProcessingLimiterCoreRepository.kt`](../../../storage/redis/src/main/kotlin/com/coupon/redis/coupon/CouponIssueProcessingLimiterCoreRepository.kt)
+8. [`phase-2-outbox-worker-runtime.md`](./phase-2-outbox-worker-runtime.md)

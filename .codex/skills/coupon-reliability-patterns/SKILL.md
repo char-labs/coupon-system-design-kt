@@ -26,9 +26,9 @@ Use this skill when the main question is correctness under concurrency or failur
 
 ## Current Baseline
 
-- single database transaction via `Tx`
-- Redis-backed distributed lock via `Lock`
-- Redis-backed remote cache via `Cache`
+- service-boundary transactions via `@Transactional`, with a dedicated `REQUIRES_NEW` transaction runner reserved for explicit propagation control
+- Redis-backed distributed lock coordinated through `@WithDistributedLock`, with the low-level `Lock` component kept inside lock infrastructure only
+- Redis-backed remote cache via injected `Cache`
 - local async follow-up work via `@Async` + `@TransactionalEventListener`
 
 ## Rules

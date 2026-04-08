@@ -12,7 +12,7 @@
 - `coupon-api`
   - request validation, auth scope, response wrapper behavior, Swagger metadata
 - `coupon-domain`
-  - service orchestration, `Tx` usage, invariants, branching, ownership checks
+  - service orchestration, transaction propagation usage, invariants, branching, ownership checks
 - `storage:db-core` and `storage:redis`
   - repository contract alignment, query predicates, cache invalidation, lock semantics
 - tests

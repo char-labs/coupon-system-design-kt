@@ -20,17 +20,17 @@
 
 | 구성 요소 | 역할 | 파일 |
 | --- | --- | --- |
-| Worker entrypoint | scheduling 이 켜진 독립 Boot 앱 | [`CouponWorkerApplication.kt`](../src/main/kotlin/com.coupon/CouponWorkerApplication.kt) |
-| Worker config | batch size, fixed delay, retry 설정 | [`OutboxWorkerProperties.kt`](../src/main/kotlin/com.coupon/config/OutboxWorkerProperties.kt) |
-| Poller | processable outbox 조회와 claim 시작점 | [`OutboxPoller.kt`](../src/main/kotlin/com.coupon/outbox/OutboxPoller.kt) |
-| Dispatcher | handler 실행과 `SUCCEEDED/FAILED/DEAD` 전이 | [`OutboxDispatcher.kt`](../src/main/kotlin/com.coupon/outbox/OutboxDispatcher.kt) |
-| Handler registry | `eventType` 별 handler 연결 | [`OutboxEventHandlerRegistry.kt`](../src/main/kotlin/com.coupon/outbox/OutboxEventHandlerRegistry.kt) |
-| Coupon lifecycle handler | activity projection 처리 | [`CouponLifecycleOutboxEventHandler.kt`](../src/main/kotlin/com.coupon/outbox/CouponLifecycleOutboxEventHandler.kt) |
-| Handler support | payload parse + `coupon_activity` 저장 | [`CouponLifecycleOutboxEventHandlerSupport.kt`](../src/main/kotlin/com.coupon/outbox/CouponLifecycleOutboxEventHandlerSupport.kt) |
-| DEAD alert notifier | `DEAD` 전환 시 Slack alert orchestration | [`OutboxDeadSlackNotifier.kt`](../src/main/kotlin/com.coupon/outbox/OutboxDeadSlackNotifier.kt) |
-| Slack client | Slack SDK based webhook adapter | [`SlackWebhookClient.kt`](../src/main/kotlin/com.coupon/client/slack/SlackWebhookClient.kt) |
-| Metrics | poll, claim, retry, dead, duration 수집 | [`OutboxWorkerMetrics.kt`](../src/main/kotlin/com.coupon/outbox/OutboxWorkerMetrics.kt) |
-| Health | worker runtime 상태 노출 | [`OutboxWorkerHealthIndicator.kt`](../src/main/kotlin/com.coupon/health/OutboxWorkerHealthIndicator.kt) |
+| Worker entrypoint | scheduling 이 켜진 독립 Boot 앱 | [`CouponWorkerApplication.kt`](../src/main/kotlin/com/coupon/CouponWorkerApplication.kt) |
+| Worker config | batch size, fixed delay, retry 설정 | [`OutboxWorkerProperties.kt`](../src/main/kotlin/com/coupon/config/OutboxWorkerProperties.kt) |
+| Poller | processable outbox 조회와 claim 시작점 | [`OutboxPoller.kt`](../src/main/kotlin/com/coupon/outbox/OutboxPoller.kt) |
+| Dispatcher | handler 실행과 `SUCCEEDED/FAILED/DEAD` 전이 | [`OutboxDispatcher.kt`](../src/main/kotlin/com/coupon/outbox/OutboxDispatcher.kt) |
+| Handler registry | `eventType` 별 handler 연결 | [`OutboxEventHandlerRegistry.kt`](../src/main/kotlin/com/coupon/outbox/OutboxEventHandlerRegistry.kt) |
+| Coupon lifecycle handler | activity projection 처리 | [`CouponLifecycleOutboxEventHandler.kt`](../src/main/kotlin/com/coupon/outbox/CouponLifecycleOutboxEventHandler.kt) |
+| Handler support | payload parse + `coupon_activity` 저장 | [`CouponLifecycleOutboxEventHandlerSupport.kt`](../src/main/kotlin/com/coupon/outbox/CouponLifecycleOutboxEventHandlerSupport.kt) |
+| DEAD alert notifier | `DEAD` 전환 시 Slack alert orchestration | [`SlackOutboxDeadEventNotifier.kt`](../src/main/kotlin/com/coupon/outbox/SlackOutboxDeadEventNotifier.kt) |
+| Slack client | Spring `RestClient` based webhook adapter | [`SlackWebhookMessageSender.kt`](../src/main/kotlin/com/coupon/outbox/notification/slack/SlackWebhookMessageSender.kt) |
+| Metrics | poll, claim, retry, dead, duration 수집 | [`OutboxWorkerMetrics.kt`](../src/main/kotlin/com/coupon/outbox/OutboxWorkerMetrics.kt) |
+| Health endpoints | Boot actuator health/liveness/readiness 노출 | [`application.yml`](../src/main/resources/application.yml) |
 
 ## 처리 흐름
 
@@ -74,8 +74,8 @@ flowchart TD
 `markDead` 가 실제로 성공한 경우에만 best-effort Slack webhook 알림을 보낸다.
 
 - 상태 전이 자체는 Slack 전송 성공 여부에 의존하지 않는다
-- outbox 쪽은 `SlackClient` 인터페이스에만 의존하고, webhook transport 는 adapter 가 담당한다
-- 현재 adapter 는 Slack Java SDK 의 incoming webhook client path 를 사용한다
+- outbox 쪽은 `SlackMessageSender` 인터페이스에만 의존하고, webhook transport 는 adapter 가 담당한다
+- 현재 adapter 는 Spring `RestClient` 와 JDK `HttpClient` 로 incoming webhook POST 를 수행한다
 - webhook 호출 실패는 로그 경고로만 남기고 outbox row 는 그대로 `DEAD` 다
 - alert message 에는 event id, type, aggregate, retry count, dead 전환 시각, reason 이 포함된다
 

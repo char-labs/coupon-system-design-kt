@@ -118,7 +118,7 @@ def main() -> None:
     print("## Reminders")
     print("- Keep API files under the physical `com.coupon/...` path convention.")
     print("- Keep business orchestration in services and storage adapters thin.")
-    print("- Wrap mutable service flows with `Tx.writeable {}`.")
+    print("- Wrap mutable service boundaries with `@Transactional`; add a dedicated `REQUIRES_NEW` transaction runner only when propagation control is required.")
     print("- Decide explicitly whether the flow needs lock, cache invalidation, or extra metrics.")
     print("- Reuse nearby features before introducing new abstractions.")
 

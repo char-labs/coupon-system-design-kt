@@ -21,12 +21,12 @@
 - `<Feature>Issue` or equivalent child-flow model
 - ownership-aware controller endpoints
 - quantity or status mutation in one service transaction
-- `Lock.executeWithLock(...)` decision for oversell or duplicate issue risk
+- selective `@WithDistributedLock` decision for oversell or duplicate issue risk, and keep low-level lock execution outside business services when possible
 - cache invalidation and business metric update points
 
 ## Review Reminders
 
 - keep DTO mapping at the API edge
 - keep orchestration in services and storage adapters thin
-- wrap mutable flows with `Tx.writeable {}`
+- wrap mutable flows with `@Transactional`, and add a dedicated `REQUIRES_NEW` transaction runner only when explicit propagation control is required
 - prefer neighboring patterns over new abstractions

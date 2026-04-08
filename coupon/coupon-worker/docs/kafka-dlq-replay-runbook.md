@@ -54,7 +54,7 @@ DLQ 전에 worker 가 마지막 commit 직전까지 갔을 수는 없지만, 운
 
 관련 파일:
 
-- [`CouponIssueKafkaListener.kt`](../src/main/kotlin/com.coupon/kafka/CouponIssueKafkaListener.kt)
+- [`CouponIssueKafkaListener.kt`](../src/main/kotlin/com/coupon/kafka/CouponIssueKafkaListener.kt)
 - [`CouponIssueService.kt`](../../coupon-domain/src/main/kotlin/com/coupon/coupon/CouponIssueService.kt)
 
 ### Step 3. 재시도 방식을 결정한다

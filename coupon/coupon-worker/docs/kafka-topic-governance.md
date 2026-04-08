@@ -65,8 +65,8 @@ DLQ 규칙:
 
 관련 파일:
 
-- [`CouponIssueKafkaConfig.kt`](../src/main/kotlin/com.coupon/config/CouponIssueKafkaConfig.kt)
-- [`CouponIssueKafkaProperties.kt`](../src/main/kotlin/com.coupon/config/CouponIssueKafkaProperties.kt)
+- [`CouponIssueKafkaConfig.kt`](../src/main/kotlin/com/coupon/config/CouponIssueKafkaConfig.kt)
+- [`CouponIssueKafkaProperties.kt`](../src/main/kotlin/com/coupon/config/CouponIssueKafkaProperties.kt)
 
 장점:
 

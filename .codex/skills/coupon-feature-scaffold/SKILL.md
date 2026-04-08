@@ -22,14 +22,14 @@ Use this skill to add a new feature without drifting from the project's vertical
 6. Generate a file checklist before editing:
    `python3 .codex/skills/coupon-feature-scaffold/scripts/feature_scaffold_plan.py <feature-name> --kind <crud|stateful|auth-adjacent>`
 7. Implement the smallest consistent slice through API, domain, and storage.
-8. If the flow has concurrency or cache sensitivity, explicitly decide whether it needs `Tx`, `Lock`, `Cache`, or monitoring updates.
+8. If the flow has concurrency or cache sensitivity, explicitly decide whether it needs distributed lock handling, cache updates, a `REQUIRES_NEW` transaction runner, or monitoring updates.
 
 ## Rules
 
 - Keep controllers and DTOs in `coupon:coupon-api`.
 - Keep orchestration, models, repository interfaces, commands, criteria, and shared abstractions in `coupon:coupon-domain`.
 - Keep JPA and Redis adapters thin inside `storage:db-core` and `storage:redis`.
-- Use `Tx.writeable {}` for mutable service flows and `Tx.readable {}` only when a read path needs explicit transactional scope.
+- Use `@Transactional` on mutable service boundaries by default. Reach for a dedicated `REQUIRES_NEW` transaction runner only when propagation control is genuinely required.
 - Reuse existing enums and errors before creating new ones.
 - Do not introduce message queue or CDC dependencies as if they already exist. Record those as TODO when relevant.
 - Keep third-party SDK wiring inside infra-facing adapters or config, not feature orchestration services.
