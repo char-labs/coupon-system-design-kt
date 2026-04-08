@@ -2,9 +2,9 @@ package com.coupon.storage.rdb.user
 
 import com.coupon.enums.error.ErrorType
 import com.coupon.error.ErrorException
+import com.coupon.shared.page.OffsetPageRequest
+import com.coupon.shared.page.Page
 import com.coupon.storage.rdb.support.findByIdOrElseThrow
-import com.coupon.support.page.OffsetPageRequest
-import com.coupon.support.page.Page
 import com.coupon.user.User
 import com.coupon.user.UserCredential
 import com.coupon.user.UserProfile

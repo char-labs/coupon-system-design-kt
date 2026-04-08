@@ -13,7 +13,7 @@ class CouponActivityCoreRepository(
     override fun saveIfAbsent(criteria: CouponActivityCriteria.Create): CouponActivity =
         try {
             couponActivityJpaRepository
-                .saveAndFlush(CouponActivityEntity(criteria))
+                .save(CouponActivityEntity(criteria))
                 .toCouponActivity()
         } catch (exception: DataIntegrityViolationException) {
             if (!isDuplicateConstraintViolation(exception)) {

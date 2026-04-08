@@ -1,9 +1,9 @@
 package com.coupon.outbox
 
 import com.coupon.config.OutboxWorkerProperties
-import com.coupon.support.outbox.OutboxEvent
-import com.coupon.support.outbox.OutboxEventService
-import com.coupon.support.outbox.OutboxEventStatus
+import com.coupon.shared.outbox.OutboxEvent
+import com.coupon.shared.outbox.OutboxEventService
+import com.coupon.shared.outbox.OutboxEventStatus
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.shouldBe
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry

@@ -4,9 +4,9 @@ import com.coupon.coupon.criteria.CouponCriteria
 import com.coupon.coupon.fixture.CouponCommandFixtures
 import com.coupon.coupon.fixture.CouponFixtures
 import com.coupon.coupon.fixture.FixedCouponFixtures
-import com.coupon.coupon.support.DomainServiceTestRuntime
-import com.coupon.support.page.OffsetPageRequest
-import com.coupon.support.page.Page
+import com.coupon.shared.cache.Cache
+import com.coupon.shared.page.OffsetPageRequest
+import com.coupon.shared.page.Page
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.every
@@ -139,6 +139,7 @@ class CouponServiceTest :
         val couponIssueRepository = mockk<CouponIssueRepository>()
         val couponCodeGenerator = mockk<CouponCodeGenerator>()
         val couponValidator = mockk<CouponValidator>(relaxed = true)
+        val cache = mockk<Cache>(relaxed = true)
         val couponService =
             CouponService(
                 couponRepository = couponRepository,
@@ -147,11 +148,8 @@ class CouponServiceTest :
                 couponValidator = couponValidator,
                 couponEligibilityEvaluator = CouponEligibilityEvaluator(),
                 couponDiscountCalculator = CouponDiscountCalculator(),
+                cache = cache,
             )
-
-        init {
-            DomainServiceTestRuntime.initialize()
-        }
     }
 
     private data class CouponMutationCase(

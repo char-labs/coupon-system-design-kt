@@ -1,11 +1,11 @@
 package com.coupon.kafka
 
 import com.coupon.config.CouponIssueKafkaProperties
-import com.coupon.coupon.CouponIssueAsyncExecutionResult
-import com.coupon.coupon.CouponIssueFacade
-import com.coupon.coupon.CouponIssueMessage
-import com.coupon.coupon.CouponIssueProcessingLimiter
 import com.coupon.coupon.CouponIssueService
+import com.coupon.coupon.execution.CouponIssueExecutionFacade
+import com.coupon.coupon.execution.CouponIssueExecutionResult
+import com.coupon.coupon.execution.CouponIssueProcessingLimiter
+import com.coupon.coupon.intake.CouponIssueMessage
 import io.kotest.core.spec.style.BehaviorSpec
 import io.mockk.every
 import io.mockk.justRun
@@ -20,7 +20,7 @@ class CouponIssueKafkaListenerTest :
     BehaviorSpec({
         given("CouponIssueKafkaListener consume 처리 시") {
             `when`("rate limiter permit을 얻고 발급이 성공하면") {
-                val couponIssueFacade = mockk<CouponIssueFacade>()
+                val couponIssueExecutionFacade = mockk<CouponIssueExecutionFacade>()
                 val couponIssueService = mockk<CouponIssueService>()
                 val couponIssueProcessingLimiter = mockk<CouponIssueProcessingLimiter>()
                 val acknowledgment = mockk<Acknowledgment>()
@@ -32,7 +32,7 @@ class CouponIssueKafkaListenerTest :
                     )
                 val listener =
                     CouponIssueKafkaListener(
-                        couponIssueFacade = couponIssueFacade,
+                        couponIssueExecutionFacade = couponIssueExecutionFacade,
                         couponIssueService = couponIssueService,
                         couponIssueProcessingLimiter = couponIssueProcessingLimiter,
                         couponIssueKafkaProperties = properties,
@@ -47,7 +47,7 @@ class CouponIssueKafkaListenerTest :
                     )
 
                 justRun { couponIssueProcessingLimiter.acquire() }
-                every { couponIssueFacade.execute(message) } returns CouponIssueAsyncExecutionResult.Succeeded(1L)
+                every { couponIssueExecutionFacade.execute(message) } returns CouponIssueExecutionResult.Succeeded(1L)
                 justRun { acknowledgment.acknowledge() }
 
                 listener.consume(
@@ -58,7 +58,7 @@ class CouponIssueKafkaListenerTest :
                 then("Redis limiter를 거친 뒤 worker execute와 ack를 수행한다") {
                     verifySequence {
                         couponIssueProcessingLimiter.acquire()
-                        couponIssueFacade.execute(message)
+                        couponIssueExecutionFacade.execute(message)
                         acknowledgment.acknowledge()
                     }
                 }
@@ -67,7 +67,7 @@ class CouponIssueKafkaListenerTest :
 
         given("CouponIssueKafkaListener DLQ 처리 시") {
             `when`("retry가 소진된 메시지를 받으면") {
-                val couponIssueFacade = mockk<CouponIssueFacade>()
+                val couponIssueExecutionFacade = mockk<CouponIssueExecutionFacade>()
                 val couponIssueService = mockk<CouponIssueService>()
                 val couponIssueProcessingLimiter = mockk<CouponIssueProcessingLimiter>()
                 val acknowledgment = mockk<Acknowledgment>()
@@ -79,7 +79,7 @@ class CouponIssueKafkaListenerTest :
                     )
                 val listener =
                     CouponIssueKafkaListener(
-                        couponIssueFacade = couponIssueFacade,
+                        couponIssueExecutionFacade = couponIssueExecutionFacade,
                         couponIssueService = couponIssueService,
                         couponIssueProcessingLimiter = couponIssueProcessingLimiter,
                         couponIssueKafkaProperties = properties,

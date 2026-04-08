@@ -4,9 +4,9 @@ import com.coupon.coupon.Coupon
 import com.coupon.coupon.CouponDetail
 import com.coupon.coupon.CouponRepository
 import com.coupon.coupon.criteria.CouponCriteria
+import com.coupon.shared.page.OffsetPageRequest
+import com.coupon.shared.page.Page
 import com.coupon.storage.rdb.support.findByIdOrElseThrow
-import com.coupon.support.page.OffsetPageRequest
-import com.coupon.support.page.Page
 import org.springframework.data.domain.PageRequest
 import org.springframework.stereotype.Repository
 

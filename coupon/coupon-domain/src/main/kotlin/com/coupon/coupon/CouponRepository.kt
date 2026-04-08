@@ -1,8 +1,8 @@
 package com.coupon.coupon
 
 import com.coupon.coupon.criteria.CouponCriteria
-import com.coupon.support.page.OffsetPageRequest
-import com.coupon.support.page.Page
+import com.coupon.shared.page.OffsetPageRequest
+import com.coupon.shared.page.Page
 
 interface CouponRepository {
     fun save(criteria: CouponCriteria.Create): Coupon

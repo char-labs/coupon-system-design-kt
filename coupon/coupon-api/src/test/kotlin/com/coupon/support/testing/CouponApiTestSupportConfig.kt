@@ -1,13 +1,13 @@
 package com.coupon.support.testing
 
-import com.coupon.coupon.CouponIssueEventPublisher
-import com.coupon.coupon.CouponIssueFacade
-import com.coupon.coupon.CouponIssueMessage
-import com.coupon.coupon.CouponIssuePublishReceipt
-import com.coupon.coupon.CouponIssueRedisRepository
+import com.coupon.coupon.CouponIssueStateRepository
 import com.coupon.coupon.command.CouponIssueCommand
+import com.coupon.coupon.execution.CouponIssueExecutionFacade
+import com.coupon.coupon.intake.CouponIssueMessage
+import com.coupon.coupon.intake.CouponIssueMessagePublisher
+import com.coupon.coupon.intake.CouponIssuePublishReceipt
 import com.coupon.enums.coupon.CouponIssueResult
-import com.coupon.support.cache.CacheRepository
+import com.coupon.shared.cache.CacheRepository
 import jakarta.persistence.EntityManager
 import org.springframework.beans.factory.ObjectProvider
 import org.springframework.boot.test.context.TestConfiguration
@@ -23,7 +23,7 @@ class CouponApiTestSupportConfig {
 
     @Bean
     @Primary
-    fun couponIssueStateRepository(): CouponIssueRedisRepository = InMemoryCouponIssueRedisRepository()
+    fun couponIssueStateRepository(): CouponIssueStateRepository = InMemoryCouponIssueStateRepository()
 
     @Bean
     @Primary
@@ -31,11 +31,12 @@ class CouponApiTestSupportConfig {
 
     @Bean
     @Primary
-    fun couponIssueEventPublisher(couponIssueFacadeProvider: ObjectProvider<CouponIssueFacade>): CouponIssueEventPublisher =
-        SynchronousCouponIssueEventPublisher(couponIssueFacadeProvider)
+    fun couponIssueMessagePublisher(
+        couponIssueExecutionFacadeProvider: ObjectProvider<CouponIssueExecutionFacade>,
+    ): CouponIssueMessagePublisher = SynchronousCouponIssueMessagePublisher(couponIssueExecutionFacadeProvider)
 }
 
-private class InMemoryCouponIssueRedisRepository : CouponIssueRedisRepository {
+private class InMemoryCouponIssueStateRepository : CouponIssueStateRepository {
     private val states = ConcurrentHashMap<Long, IssueState>()
 
     override fun reserve(
@@ -125,11 +126,11 @@ private class InMemoryCacheRepository : CacheRepository {
     }
 }
 
-private class SynchronousCouponIssueEventPublisher(
-    private val couponIssueFacadeProvider: ObjectProvider<CouponIssueFacade>,
-) : CouponIssueEventPublisher {
+private class SynchronousCouponIssueMessagePublisher(
+    private val couponIssueExecutionFacadeProvider: ObjectProvider<CouponIssueExecutionFacade>,
+) : CouponIssueMessagePublisher {
     override fun publish(message: CouponIssueMessage): CouponIssuePublishReceipt {
-        couponIssueFacadeProvider.getObject().executeIssue(
+        couponIssueExecutionFacadeProvider.getObject().executeIssue(
             CouponIssueCommand.Issue(
                 couponId = message.couponId,
                 userId = message.userId,

@@ -6,13 +6,12 @@ import com.coupon.coupon.criteria.CouponIssueCriteria
 import com.coupon.enums.coupon.CouponIssueStatus
 import com.coupon.enums.error.ErrorType
 import com.coupon.error.ErrorException
+import com.coupon.shared.page.OffsetPageRequest
+import com.coupon.shared.page.Page
 import com.coupon.storage.rdb.support.findByIdOrElseThrow
-import com.coupon.support.page.OffsetPageRequest
-import com.coupon.support.page.Page
 import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.data.domain.PageRequest
 import org.springframework.stereotype.Repository
-import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDateTime
 
 @Repository
@@ -20,11 +19,10 @@ class CouponIssueCoreRepository(
     private val couponIssueJpaRepository: CouponIssueJpaRepository,
     private val couponJpaRepository: CouponJpaRepository,
 ) : CouponIssueRepository {
-    @Transactional
     override fun save(criteria: CouponIssueCriteria.Create): CouponIssue =
         try {
             couponIssueJpaRepository
-                .saveAndFlush(CouponIssueEntity(criteria))
+                .save(CouponIssueEntity(criteria))
                 .toCouponIssue()
         } catch (exception: DataIntegrityViolationException) {
             if (isDuplicateIssueConstraintViolation(exception)) {

@@ -7,9 +7,11 @@ import com.coupon.enums.coupon.RestaurantCouponStatus
 import com.coupon.enums.error.ErrorType
 import com.coupon.error.ErrorException
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDateTime
 
 @Service
+@Transactional(readOnly = true)
 class RestaurantCouponService(
     private val restaurantCouponRepository: RestaurantCouponRepository,
     private val couponRepository: CouponRepository,
@@ -18,11 +20,17 @@ class RestaurantCouponService(
         private const val MAX_BATCH_SIZE = 3
     }
 
+    @Transactional
     fun createRestaurantCoupon(command: RestaurantCouponCommand.Create): RestaurantCoupon {
         couponRepository.findById(command.couponId)
+        if (restaurantCouponRepository.existsByRestaurantIdAndCouponId(command.restaurantId, command.couponId)) {
+            throw ErrorException(ErrorType.DUPLICATED_RESTAURANT_COUPON)
+        }
+
         return restaurantCouponRepository.save(RestaurantCouponCriteria.Create.of(command))
     }
 
+    @Transactional
     fun createRestaurantCoupons(command: RestaurantCouponCommand.CreateBatch): List<RestaurantCoupon> {
         if (command.items.size !in 1..MAX_BATCH_SIZE) {
             throw ErrorException(ErrorType.INVALID_RESTAURANT_COUPON_BATCH_SIZE)
@@ -39,6 +47,7 @@ class RestaurantCouponService(
 
     fun getActiveRestaurantCoupons(): List<RestaurantCoupon> = restaurantCouponRepository.findAllActive()
 
+    @Transactional
     fun deleteRestaurantCoupon(id: Long) {
         restaurantCouponRepository.delete(id)
     }

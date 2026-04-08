@@ -1,13 +1,13 @@
 package com.coupon.kafka
 
-import com.coupon.coupon.CouponIssueAsyncExecutionResult
-import com.coupon.coupon.CouponIssueFacade
-import com.coupon.coupon.CouponIssueMessage
-import com.coupon.coupon.CouponIssueRedisRepository
 import com.coupon.coupon.CouponIssueService
+import com.coupon.coupon.CouponIssueStateRepository
 import com.coupon.coupon.CouponService
+import com.coupon.coupon.execution.CouponIssueExecutionFacade
+import com.coupon.coupon.execution.CouponIssueExecutionResult
+import com.coupon.coupon.intake.CouponIssueMessage
 import com.coupon.enums.coupon.CouponIssueResult
-import com.coupon.support.page.OffsetPageRequest
+import com.coupon.shared.page.OffsetPageRequest
 import com.coupon.support.testing.CouponWorkerFixtures
 import com.coupon.support.testing.CouponWorkerIntegrationTest
 import com.coupon.support.testing.DatabaseCleaner
@@ -24,13 +24,13 @@ class CouponIssueWorkerFlowIntegrationTest : BehaviorSpec() {
     private lateinit var couponService: CouponService
 
     @Autowired
-    private lateinit var couponIssueFacade: CouponIssueFacade
+    private lateinit var couponIssueExecutionFacade: CouponIssueExecutionFacade
 
     @Autowired
     private lateinit var couponIssueService: CouponIssueService
 
     @Autowired
-    private lateinit var couponIssueRedisRepository: CouponIssueRedisRepository
+    private lateinit var couponIssueStateRepository: CouponIssueStateRepository
 
     @Autowired
     private lateinit var userService: UserService
@@ -50,7 +50,7 @@ class CouponIssueWorkerFlowIntegrationTest : BehaviorSpec() {
                     val user = userService.createUser(CouponWorkerFixtures.userCreateCommand(index = 1))
 
                     val result =
-                        couponIssueFacade.execute(
+                        couponIssueExecutionFacade.execute(
                             CouponIssueMessage(
                                 couponId = coupon.id,
                                 userId = user.id,
@@ -59,7 +59,7 @@ class CouponIssueWorkerFlowIntegrationTest : BehaviorSpec() {
                             ),
                         )
 
-                    (result is CouponIssueAsyncExecutionResult.Succeeded) shouldBe true
+                    (result is CouponIssueExecutionResult.Succeeded) shouldBe true
                     couponService.getCoupon(coupon.id).remainingQuantity.shouldBeExactly(0L)
                     couponIssueService.getCouponIssues(coupon.id, OffsetPageRequest(0, 20)).totalCount.shouldBeExactly(1L)
                 }
@@ -70,7 +70,7 @@ class CouponIssueWorkerFlowIntegrationTest : BehaviorSpec() {
                     val coupon = couponService.createCoupon(CouponWorkerFixtures.couponCreateCommand(totalQuantity = 2L))
                     val user = userService.createUser(CouponWorkerFixtures.userCreateCommand(index = 1))
 
-                    couponIssueFacade.execute(
+                    couponIssueExecutionFacade.execute(
                         CouponIssueMessage(
                             couponId = coupon.id,
                             userId = user.id,
@@ -78,7 +78,7 @@ class CouponIssueWorkerFlowIntegrationTest : BehaviorSpec() {
                             acceptedAt = Instant.parse("2026-04-08T00:00:00Z"),
                         ),
                     )
-                    couponIssueRedisRepository.clear(coupon.id)
+                    couponIssueStateRepository.clear(coupon.id)
 
                     val result = couponIssueService.reserveIssue(couponService.getCoupon(coupon.id), user.id)
 

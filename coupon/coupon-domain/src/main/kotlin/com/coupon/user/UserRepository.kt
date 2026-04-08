@@ -1,7 +1,7 @@
 package com.coupon.user
 
-import com.coupon.support.page.OffsetPageRequest
-import com.coupon.support.page.Page
+import com.coupon.shared.page.OffsetPageRequest
+import com.coupon.shared.page.Page
 import com.coupon.user.criteria.UserCriteria
 
 interface UserRepository {

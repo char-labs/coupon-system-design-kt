@@ -1,9 +1,9 @@
 package com.coupon.storage.rdb.outbox
 
+import com.coupon.shared.outbox.OutboxEvent
+import com.coupon.shared.outbox.OutboxEventStatus
+import com.coupon.shared.outbox.criteria.OutboxEventCriteria
 import com.coupon.storage.rdb.support.BaseEntity
-import com.coupon.support.outbox.OutboxEvent
-import com.coupon.support.outbox.OutboxEventStatus
-import com.coupon.support.outbox.criteria.OutboxEventCriteria
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.EnumType

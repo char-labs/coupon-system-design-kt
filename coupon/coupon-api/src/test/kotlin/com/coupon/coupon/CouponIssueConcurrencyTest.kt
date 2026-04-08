@@ -1,10 +1,13 @@
 package com.coupon.coupon
 
 import com.coupon.coupon.command.CouponIssueCommand
+import com.coupon.coupon.execution.CouponIssueExecutionFacade
+import com.coupon.coupon.intake.CouponIssueIntakeFacade
+import com.coupon.enums.coupon.CouponIssueResult
 import com.coupon.enums.coupon.CouponIssueStatus
 import com.coupon.enums.error.ErrorType
 import com.coupon.error.ErrorException
-import com.coupon.support.page.OffsetPageRequest
+import com.coupon.shared.page.OffsetPageRequest
 import com.coupon.support.testing.CouponApiConcurrencyTest
 import com.coupon.support.testing.DatabaseCleaner
 import com.coupon.user.User
@@ -22,7 +25,8 @@ import java.util.concurrent.atomic.AtomicInteger
 @CouponApiConcurrencyTest
 open class CouponIssueConcurrencyTest(
     private val couponService: CouponService,
-    private val couponIssueFacade: CouponIssueFacade,
+    private val couponIssueIntakeFacade: CouponIssueIntakeFacade,
+    private val couponIssueExecutionFacade: CouponIssueExecutionFacade,
     private val couponIssueService: CouponIssueService,
     private val userService: UserService,
     private val databaseCleaner: DatabaseCleaner,
@@ -42,7 +46,7 @@ open class CouponIssueConcurrencyTest(
                             actions =
                                 List(10) {
                                     {
-                                        couponIssueFacade.executeIssue(
+                                        couponIssueIntakeFacade.issue(
                                             CouponIssueCommand.Issue(couponId = coupon.id, userId = user.id),
                                         )
                                     }
@@ -68,7 +72,7 @@ open class CouponIssueConcurrencyTest(
                             actions =
                                 users.map {
                                     {
-                                        couponIssueFacade.executeIssue(
+                                        couponIssueIntakeFacade.issue(
                                             CouponIssueCommand.Issue(couponId = coupon.id, userId = it.id),
                                         )
                                     }
@@ -121,7 +125,7 @@ open class CouponIssueConcurrencyTest(
                             actions =
                                 List(10) {
                                     {
-                                        couponIssueFacade.cancelCoupon(
+                                        couponIssueExecutionFacade.cancelCoupon(
                                             CouponIssueCommand.Cancel(
                                                 couponIssueId = fixture.couponIssue.id,
                                                 userId = fixture.user.id,
@@ -156,7 +160,7 @@ open class CouponIssueConcurrencyTest(
                                         )
                                     },
                                     {
-                                        couponIssueFacade.cancelCoupon(
+                                        couponIssueExecutionFacade.cancelCoupon(
                                             CouponIssueCommand.Cancel(
                                                 couponIssueId = fixture.couponIssue.id,
                                                 userId = fixture.user.id,
@@ -192,7 +196,7 @@ open class CouponIssueConcurrencyTest(
                             actions =
                                 listOf(
                                     {
-                                        couponIssueFacade.cancelCoupon(
+                                        couponIssueExecutionFacade.cancelCoupon(
                                             CouponIssueCommand.Cancel(
                                                 couponIssueId = fixture.couponIssue.id,
                                                 userId = fixture.user.id,
@@ -200,7 +204,7 @@ open class CouponIssueConcurrencyTest(
                                         )
                                     },
                                     {
-                                        couponIssueFacade.executeIssue(
+                                        couponIssueIntakeFacade.issue(
                                             CouponIssueCommand.Issue(
                                                 couponId = fixture.coupon.id,
                                                 userId = anotherUser.id,
@@ -241,7 +245,8 @@ open class CouponIssueConcurrencyTest(
     private fun createIssuedCouponFixture(): IssuedCouponFixture {
         val coupon = createCoupon(totalQuantity = 1L)
         val user = createUser(index = 1)
-        val couponIssue = couponIssueFacade.executeIssue(CouponIssueCommand.Issue(couponId = coupon.id, userId = user.id))
+        couponIssueIntakeFacade.issue(CouponIssueCommand.Issue(couponId = coupon.id, userId = user.id)) shouldBe CouponIssueResult.SUCCESS
+        val couponIssue = couponIssueService.getCouponIssues(coupon.id, OffsetPageRequest(0, 1)).content.single()
 
         return IssuedCouponFixture(
             coupon = coupon,
@@ -250,7 +255,7 @@ open class CouponIssueConcurrencyTest(
         )
     }
 
-    private fun runConcurrently(actions: List<() -> Unit>): ConcurrentExecutionResult {
+    private fun runConcurrently(actions: List<() -> Any?>): ConcurrentExecutionResult {
         val readyLatch = CountDownLatch(actions.size)
         val startLatch = CountDownLatch(1)
         val doneLatch = CountDownLatch(actions.size)
@@ -265,8 +270,17 @@ open class CouponIssueConcurrencyTest(
                     readyLatch.countDown()
                     startLatch.await()
                     try {
-                        action()
-                        successCount.incrementAndGet()
+                        when (action()) {
+                            CouponIssueResult.SUCCESS,
+                            null,
+                            -> successCount.incrementAndGet()
+
+                            CouponIssueResult.DUPLICATE -> errorTypes.add(ErrorType.ALREADY_ISSUED_COUPON)
+
+                            CouponIssueResult.SOLD_OUT -> errorTypes.add(ErrorType.COUPON_OUT_OF_STOCK)
+
+                            else -> successCount.incrementAndGet()
+                        }
                     } catch (exception: ErrorException) {
                         errorTypes.add(exception.errorType)
                     } catch (exception: Throwable) {
@@ -302,6 +316,6 @@ open class CouponIssueConcurrencyTest(
     private data class IssuedCouponFixture(
         val coupon: Coupon,
         val user: User,
-        val couponIssue: CouponIssue,
+        val couponIssue: CouponIssue.Detail,
     )
 }

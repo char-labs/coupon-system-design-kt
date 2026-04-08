@@ -1,7 +1,7 @@
 package com.coupon.coupon.event
 
-import com.coupon.support.outbox.OutboxEventService
-import com.coupon.support.outbox.command.OutboxEventCommand
+import com.coupon.shared.outbox.OutboxEventService
+import com.coupon.shared.outbox.command.OutboxEventCommand
 import org.springframework.stereotype.Component
 import org.springframework.transaction.event.TransactionPhase
 import org.springframework.transaction.event.TransactionalEventListener
@@ -31,7 +31,8 @@ class CouponLifecycleOutboxListener(
         event: CouponLifecycleDomainEvent,
         eventType: String,
     ) {
-        // Lifecycle events are written before commit so DB state change and follow-up projection event stay atomic.
+        // lifecycle 이벤트는 commit 전에 함께 기록해서
+        // DB 상태 변경과 후속 projection 이벤트가 같은 트랜잭션 경계 안에 남도록 한다.
         outboxEventService.publish(
             OutboxEventCommand.Publish(
                 eventType = eventType,

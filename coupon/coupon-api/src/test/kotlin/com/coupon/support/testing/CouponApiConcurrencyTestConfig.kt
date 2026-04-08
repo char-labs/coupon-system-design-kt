@@ -2,7 +2,7 @@ package com.coupon.support.testing
 
 import com.coupon.enums.error.ErrorType
 import com.coupon.error.ErrorException
-import com.coupon.support.lock.LockRepository
+import com.coupon.shared.lock.LockRepository
 import org.springframework.boot.test.context.TestConfiguration
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Primary

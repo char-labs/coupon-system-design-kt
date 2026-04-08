@@ -3,10 +3,10 @@ package com.coupon.auth
 import com.coupon.auth.command.AuthCommand
 import com.coupon.enums.error.ErrorType
 import com.coupon.error.ErrorException
-import com.coupon.support.tx.Tx
 import com.coupon.user.UserService
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 
 @Service
 class AuthFacade(
@@ -14,24 +14,24 @@ class AuthFacade(
     private val userService: UserService,
     private val passwordEncoder: PasswordEncoder,
 ) {
-    fun signup(command: AuthCommand.SignUp): Token =
-        Tx.writeable {
-            userService.verifyEmail(command.email)
-            val encodedPassword =
-                passwordEncoder.encode(command.password)
-                    ?: error("PasswordEncoder.encode returned null")
-            val user = userService.createUser(command.toUserCommand(encodedPassword))
-            authService.generateToken(AuthCommand.GenerateToken.toCommand(user))
+    @Transactional
+    fun signup(command: AuthCommand.SignUp): Token {
+        userService.verifyEmail(command.email)
+        val encodedPassword =
+            passwordEncoder.encode(command.password)
+                ?: error("PasswordEncoder.encode returned null")
+        val user = userService.createUser(command.toUserCommand(encodedPassword))
+        return authService.generateToken(AuthCommand.GenerateToken.toCommand(user))
+    }
+
+    @Transactional
+    fun signin(command: AuthCommand.SignIn): Token {
+        val credential = userService.getCredentialByEmail(command.email)
+
+        if (!passwordEncoder.matches(command.password, credential.password)) {
+            throw ErrorException(ErrorType.INVALID_PASSWORD)
         }
 
-    fun signin(command: AuthCommand.SignIn): Token =
-        Tx.writeable {
-            val credential = userService.getCredentialByEmail(command.email)
-
-            if (!passwordEncoder.matches(command.password, credential.password)) {
-                throw ErrorException(ErrorType.INVALID_PASSWORD)
-            }
-
-            authService.generateToken(AuthCommand.GenerateToken.toCommand(credential))
-        }
+        return authService.generateToken(AuthCommand.GenerateToken.toCommand(credential))
+    }
 }

@@ -1,8 +1,8 @@
 package com.coupon.coupon.restaurant
 
-import com.coupon.coupon.CouponIssueFacade
 import com.coupon.coupon.command.CouponIssueCommand
 import com.coupon.coupon.fixture.RestaurantCouponFixtures
+import com.coupon.coupon.intake.CouponIssueIntakeFacade
 import com.coupon.enums.coupon.CouponIssueResult
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.shouldBe
@@ -16,17 +16,17 @@ class RestaurantCouponFacadeTest :
         given("RestaurantCouponFacade로 restaurant 기준 발급을 처리하면") {
             `when`("활성 맛집 쿠폰이 존재하면") {
                 val restaurantCouponService = mockk<RestaurantCouponService>()
-                val couponIssueFacade = mockk<CouponIssueFacade>()
+                val couponIssueIntakeFacade = mockk<CouponIssueIntakeFacade>()
                 val restaurantCouponFacade =
                     RestaurantCouponFacade(
                         restaurantCouponService = restaurantCouponService,
-                        couponIssueFacade = couponIssueFacade,
+                        couponIssueIntakeFacade = couponIssueIntakeFacade,
                     )
                 val restaurantCoupon = RestaurantCouponFixtures.coupon(restaurantId = 101L, couponId = 2001L)
                 val commandSlot = slot<CouponIssueCommand.Issue>()
 
                 every { restaurantCouponService.getActiveRestaurantCoupon(restaurantCoupon.restaurantId) } returns restaurantCoupon
-                every { couponIssueFacade.issue(capture(commandSlot)) } returns CouponIssueResult.SUCCESS
+                every { couponIssueIntakeFacade.issue(capture(commandSlot)) } returns CouponIssueResult.SUCCESS
 
                 val result = restaurantCouponFacade.issueByRestaurant(restaurantCoupon.restaurantId, userId = 77L)
 
@@ -39,7 +39,7 @@ class RestaurantCouponFacadeTest :
                         )
                     verifySequence {
                         restaurantCouponService.getActiveRestaurantCoupon(restaurantCoupon.restaurantId)
-                        couponIssueFacade.issue(any())
+                        couponIssueIntakeFacade.issue(any())
                     }
                 }
             }

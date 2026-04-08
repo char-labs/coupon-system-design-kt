@@ -2,14 +2,14 @@ package com.coupon.support.testing
 
 import com.coupon.auth.AuthenticationHistoryRepository
 import com.coupon.auth.TokenRepository
-import com.coupon.client.slack.SlackClient
-import com.coupon.coupon.CouponIssueEventPublisher
-import com.coupon.coupon.CouponIssueProcessingLimiter
-import com.coupon.coupon.CouponIssueRedisRepository
+import com.coupon.coupon.CouponIssueStateRepository
+import com.coupon.coupon.execution.CouponIssueProcessingLimiter
+import com.coupon.coupon.intake.CouponIssueMessagePublisher
 import com.coupon.enums.coupon.CouponIssueResult
 import com.coupon.enums.error.ErrorType
 import com.coupon.error.ErrorException
-import com.coupon.support.lock.LockRepository
+import com.coupon.outbox.notification.slack.SlackMessageSender
+import com.coupon.shared.lock.LockRepository
 import io.mockk.mockk
 import jakarta.persistence.EntityManager
 import org.springframework.boot.test.context.TestConfiguration
@@ -41,20 +41,20 @@ class CouponWorkerTestSupportConfig {
     fun passwordEncoder(): PasswordEncoder = PasswordEncoderFactories.createDelegatingPasswordEncoder()
 
     @Bean
-    fun slackClient(): SlackClient =
-        object : SlackClient {
+    fun slackMessageSender(): SlackMessageSender =
+        object : SlackMessageSender {
             override val enabled: Boolean = false
 
-            override fun sendMessage(message: com.coupon.client.slack.SlackMessage) = Unit
+            override fun sendMessage(message: com.coupon.outbox.notification.slack.SlackMessage) = Unit
         }
 
     @Bean
     @Primary
-    fun couponIssueStateRepository(): CouponIssueRedisRepository = InMemoryCouponIssueRedisRepository()
+    fun couponIssueStateRepository(): CouponIssueStateRepository = InMemoryCouponIssueStateRepository()
 
     @Bean
     @Primary
-    fun couponIssueEventPublisher(): CouponIssueEventPublisher = mockk(relaxed = true)
+    fun couponIssueMessagePublisher(): CouponIssueMessagePublisher = mockk(relaxed = true)
 
     @Bean
     @Primary
@@ -95,7 +95,7 @@ private class InMemoryLockRepository : LockRepository {
     }
 }
 
-private class InMemoryCouponIssueRedisRepository : CouponIssueRedisRepository {
+private class InMemoryCouponIssueStateRepository : CouponIssueStateRepository {
     private val states = ConcurrentHashMap<Long, IssueState>()
 
     override fun reserve(

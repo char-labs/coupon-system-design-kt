@@ -5,6 +5,7 @@ import com.coupon.coupon.fixture.CouponAvailabilityFixtures
 import com.coupon.coupon.fixture.CouponPreviewCommandFixtures
 import com.coupon.coupon.fixture.FixedCouponFixtures
 import com.coupon.enums.coupon.CouponPreviewInapplicableReason
+import com.coupon.shared.cache.Cache
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.longs.shouldBeZero
 import io.kotest.matchers.nulls.shouldBeNull
@@ -122,6 +123,7 @@ class CouponServicePreviewTest :
     private class CouponServicePreviewTestContext {
         private val couponRepository = mockk<CouponRepository>()
         private val couponIssueRepository = mockk<CouponIssueRepository>()
+        private val cache = mockk<Cache>(relaxed = true)
         private val couponService =
             CouponService(
                 couponRepository = couponRepository,
@@ -130,6 +132,7 @@ class CouponServicePreviewTest :
                 couponValidator = mockk(relaxed = true),
                 couponEligibilityEvaluator = CouponEligibilityEvaluator(),
                 couponDiscountCalculator = CouponDiscountCalculator(),
+                cache = cache,
             )
 
         fun preview(

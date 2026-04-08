@@ -8,9 +8,9 @@ import io.mockk.mockk
 import io.mockk.verify
 import io.mockk.verifySequence
 import org.redisson.api.RRateLimiter
-import org.redisson.api.RateIntervalUnit
 import org.redisson.api.RateType
 import org.redisson.api.RedissonClient
+import java.time.Duration
 
 class CouponIssueProcessingLimiterCoreRepositoryTest :
     BehaviorSpec({
@@ -29,8 +29,7 @@ class CouponIssueProcessingLimiterCoreRepositoryTest :
                     rateLimiter.trySetRate(
                         RateType.OVERALL,
                         100,
-                        1,
-                        RateIntervalUnit.SECONDS,
+                        Duration.ofSeconds(1),
                     )
                 } returns true
                 justRun { rateLimiter.acquire(1) }
@@ -44,8 +43,7 @@ class CouponIssueProcessingLimiterCoreRepositoryTest :
                         rateLimiter.trySetRate(
                             RateType.OVERALL,
                             100,
-                            1,
-                            RateIntervalUnit.SECONDS,
+                            Duration.ofSeconds(1),
                         )
                         rateLimiter.acquire(1)
                         rateLimiter.acquire(1)

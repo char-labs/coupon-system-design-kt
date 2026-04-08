@@ -1,6 +1,6 @@
 package com.coupon.coupon
 
-import com.coupon.support.keygen.PrefixedKeyGenerator
+import com.coupon.shared.keygen.PrefixedKeyGenerator
 import org.springframework.stereotype.Component
 
 @Component

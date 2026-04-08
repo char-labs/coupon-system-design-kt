@@ -2,7 +2,7 @@ package com.coupon.redis.lock
 
 import com.coupon.enums.error.ErrorType
 import com.coupon.error.ErrorException
-import com.coupon.support.lock.LockRepository
+import com.coupon.shared.lock.LockRepository
 import org.redisson.api.RedissonClient
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.stereotype.Repository

@@ -4,15 +4,17 @@ import com.coupon.coupon.criteria.CouponIssueCriteria
 import com.coupon.coupon.event.CouponLifecycleDomainEvent
 import com.coupon.coupon.fixture.CouponIssueFixtures
 import com.coupon.coupon.fixture.FixedCouponFixtures
-import com.coupon.coupon.support.DomainServiceTestRuntime
 import com.coupon.coupon.support.LockExecution
 import com.coupon.coupon.support.RecordingLockRepository
 import com.coupon.enums.coupon.CouponIssueResult
 import com.coupon.enums.coupon.CouponIssueStatus
 import com.coupon.enums.error.ErrorType
 import com.coupon.error.ErrorException
-import com.coupon.support.page.OffsetPageRequest
-import com.coupon.support.page.Page
+import com.coupon.shared.lock.DistributedLockAspect
+import com.coupon.shared.lock.Lock
+import com.coupon.shared.page.OffsetPageRequest
+import com.coupon.shared.page.Page
+import com.coupon.shared.tx.RequiresNewTransactionExecutor
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.shouldBe
@@ -22,7 +24,9 @@ import io.mockk.mockk
 import io.mockk.slot
 import io.mockk.verify
 import io.mockk.verifySequence
+import org.springframework.aop.aspectj.annotation.AspectJProxyFactory
 import org.springframework.context.ApplicationEventPublisher
+import java.time.Clock
 
 class CouponIssueServiceTest :
     BehaviorSpec({
@@ -31,10 +35,10 @@ class CouponIssueServiceTest :
                 val context = CouponIssueServiceTestContext()
                 val coupon = FixedCouponFixtures.standard(id = 12L, totalQuantity = 10L)
 
-                every { context.couponIssueRedisRepository.hasState(coupon.id) } returnsMany listOf(false, false)
+                every { context.couponIssueStateRepository.hasState(coupon.id) } returnsMany listOf(false, false)
                 every { context.couponIssueRepository.findUserIdsByCouponId(coupon.id) } returns setOf(1L, 2L)
                 justRun {
-                    context.couponIssueRedisRepository.rebuild(
+                    context.couponIssueStateRepository.rebuild(
                         couponId = coupon.id,
                         occupiedCount = coupon.totalQuantity - coupon.remainingQuantity,
                         userIds = setOf(1L, 2L),
@@ -42,7 +46,7 @@ class CouponIssueServiceTest :
                     )
                 }
                 every {
-                    context.couponIssueRedisRepository.reserve(
+                    context.couponIssueStateRepository.reserve(
                         couponId = coupon.id,
                         userId = 120L,
                         totalQuantity = coupon.totalQuantity,
@@ -61,16 +65,16 @@ class CouponIssueServiceTest :
                             timeoutException = ErrorType.LOCK_ACQUISITION_FAILED,
                         )
                     verifySequence {
-                        context.couponIssueRedisRepository.hasState(coupon.id)
-                        context.couponIssueRedisRepository.hasState(coupon.id)
+                        context.couponIssueStateRepository.hasState(coupon.id)
+                        context.couponIssueStateRepository.hasState(coupon.id)
                         context.couponIssueRepository.findUserIdsByCouponId(coupon.id)
-                        context.couponIssueRedisRepository.rebuild(
+                        context.couponIssueStateRepository.rebuild(
                             couponId = coupon.id,
                             occupiedCount = coupon.totalQuantity - coupon.remainingQuantity,
                             userIds = setOf(1L, 2L),
                             ttl = any(),
                         )
-                        context.couponIssueRedisRepository.reserve(
+                        context.couponIssueStateRepository.reserve(
                             couponId = coupon.id,
                             userId = 120L,
                             totalQuantity = coupon.totalQuantity,
@@ -85,9 +89,9 @@ class CouponIssueServiceTest :
                 val context = CouponIssueServiceTestContext(lockRepository)
                 val coupon = FixedCouponFixtures.standard(id = 13L, totalQuantity = 10L)
 
-                every { context.couponIssueRedisRepository.hasState(coupon.id) } returnsMany listOf(false, false, true)
+                every { context.couponIssueStateRepository.hasState(coupon.id) } returnsMany listOf(false, false, true)
                 every {
-                    context.couponIssueRedisRepository.reserve(
+                    context.couponIssueStateRepository.reserve(
                         couponId = coupon.id,
                         userId = 121L,
                         totalQuantity = coupon.totalQuantity,
@@ -106,40 +110,14 @@ class CouponIssueServiceTest :
                             timeoutException = ErrorType.LOCK_ACQUISITION_FAILED,
                         )
                     verifySequence {
-                        context.couponIssueRedisRepository.hasState(coupon.id)
-                        context.couponIssueRedisRepository.hasState(coupon.id)
-                        context.couponIssueRedisRepository.hasState(coupon.id)
-                        context.couponIssueRedisRepository.reserve(
+                        context.couponIssueStateRepository.hasState(coupon.id)
+                        context.couponIssueStateRepository.hasState(coupon.id)
+                        context.couponIssueStateRepository.hasState(coupon.id)
+                        context.couponIssueStateRepository.reserve(
                             couponId = coupon.id,
                             userId = 121L,
                             totalQuantity = coupon.totalQuantity,
                             ttl = any(),
-                        )
-                    }
-                }
-            }
-        }
-
-        given("CouponIssueService로 발급 메시지를 발행하면") {
-            `when`("쿠폰과 사용자 id가 주어지면") {
-                val context = CouponIssueServiceTestContext()
-
-                every {
-                    context.couponIssueEventPublisher.publish(
-                        match {
-                            it.couponId == 10L && it.userId == 100L
-                        },
-                    )
-                } returns CouponIssuePublishReceipt(topic = "coupon.issue.v1", partition = 0, offset = 1L)
-
-                context.couponIssueService.publishIssue(CouponIssueMessage(couponId = 10L, userId = 100L))
-
-                then("발급 이벤트 퍼블리셔를 호출한다") {
-                    verify(exactly = 1) {
-                        context.couponIssueEventPublisher.publish(
-                            match {
-                                it.couponId == 10L && it.userId == 100L
-                            },
                         )
                     }
                 }
@@ -335,23 +313,30 @@ class CouponIssueServiceTest :
     ) {
         val couponIssueRepository = mockk<CouponIssueRepository>()
         val couponIssueValidator = mockk<CouponIssueValidator>()
-        val couponIssueRedisRepository = mockk<CouponIssueRedisRepository>(relaxed = true)
-        val couponIssueEventPublisher = mockk<CouponIssueEventPublisher>(relaxed = true)
+        val couponIssueStateRepository = mockk<CouponIssueStateRepository>(relaxed = true)
         val applicationEventPublisher = mockk<ApplicationEventPublisher>(relaxed = true)
-        val couponIssueService =
-            CouponIssueService(
-                couponIssueRepository = couponIssueRepository,
-                couponIssueValidator = couponIssueValidator,
-                couponIssueRedisRepository = couponIssueRedisRepository,
-                couponIssueEventPublisher = couponIssueEventPublisher,
-                applicationEventPublisher = applicationEventPublisher,
+        private val tx = RequiresNewTransactionExecutor()
+        private val lock =
+            Lock(
+                Lock
+                    .LockExecutor(lockRepository, tx),
             )
+        private val distributedLockAspect = DistributedLockAspect(lock)
+        val couponIssueService: CouponIssueService =
+            AspectJProxyFactory(
+                CouponIssueService(
+                    couponIssueRepository = couponIssueRepository,
+                    couponIssueValidator = couponIssueValidator,
+                    couponIssueStateRepository = couponIssueStateRepository,
+                    applicationEventPublisher = applicationEventPublisher,
+                    clock = Clock.systemUTC(),
+                ),
+            ).apply {
+                setExposeProxy(true)
+                addAspect(distributedLockAspect)
+            }.getProxy() as CouponIssueService
 
         val recordedLockExecutions get() = lockRepository.executions
-
-        init {
-            DomainServiceTestRuntime.initialize(lockRepository)
-        }
     }
 
     private class FailFirstLockRepository : RecordingLockRepository() {

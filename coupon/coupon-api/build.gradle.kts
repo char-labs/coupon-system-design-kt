@@ -1,7 +1,6 @@
 dependencies {
     // Spring
     implementation("org.springframework.boot:spring-boot-starter-webmvc")
-    implementation("org.springframework.boot:spring-boot-starter-actuator")
     implementation("org.springframework.kafka:spring-kafka")
     // Security
     implementation("org.springframework.boot:spring-boot-starter-security")
@@ -13,7 +12,6 @@ dependencies {
     runtimeOnly("io.jsonwebtoken:jjwt-jackson:${project.properties["jjwtVersion"]}")
 
     // Validation
-    testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.springframework.boot:spring-boot-starter-webmvc-test")
 
     implementation(project(":coupon:coupon-enum"))
@@ -29,8 +27,6 @@ dependencies {
     // Test
     testImplementation("org.springframework.boot:spring-boot-starter-data-redis")
     testImplementation("org.springframework.boot:spring-boot-starter-data-jpa")
-    testImplementation("org.testcontainers:testcontainers")
-    testImplementation("org.testcontainers:junit-jupiter")
     testRuntimeOnly("com.h2database:h2")
 }
 

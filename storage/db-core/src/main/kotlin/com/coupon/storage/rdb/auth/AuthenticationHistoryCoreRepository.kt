@@ -13,7 +13,6 @@ import org.springframework.transaction.annotation.Transactional
 class AuthenticationHistoryCoreRepository(
     private val repository: AuthenticationHistoryJpaRepository,
 ) : AuthenticationHistoryRepository {
-    @Transactional
     override fun create(authenticationHistoryCommand: AuthenticationHistoryCommand.Create): AuthenticationHistory {
         val saveHistory = repository.save(AuthenticationHistoryEntity(authenticationHistoryCommand))
         return saveHistory.toAuthenticationHistory()

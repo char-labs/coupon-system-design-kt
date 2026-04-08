@@ -4,8 +4,8 @@ import com.coupon.coupon.activity.CouponActivity
 import com.coupon.coupon.activity.CouponActivityService
 import com.coupon.coupon.activity.criteria.CouponActivityCriteria
 import com.coupon.enums.coupon.CouponActivityType
-import com.coupon.support.outbox.OutboxEvent
-import com.coupon.support.outbox.OutboxEventStatus
+import com.coupon.shared.outbox.OutboxEvent
+import com.coupon.shared.outbox.OutboxEventStatus
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.every

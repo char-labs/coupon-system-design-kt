@@ -1,8 +1,7 @@
 package com.coupon.coupon.event
 
-import com.coupon.coupon.support.DomainServiceTestRuntime
-import com.coupon.support.outbox.OutboxEventService
-import com.coupon.support.outbox.command.OutboxEventCommand
+import com.coupon.shared.outbox.OutboxEventService
+import com.coupon.shared.outbox.command.OutboxEventCommand
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.every
@@ -51,10 +50,6 @@ class CouponLifecycleOutboxListenerTest :
     })
 
 private class CouponLifecycleOutboxListenerTestContext {
-    init {
-        DomainServiceTestRuntime.initialize()
-    }
-
     val outboxEventService: OutboxEventService = mockk()
     val objectMapper = jacksonObjectMapper()
     val listener = CouponLifecycleOutboxListener(outboxEventService, objectMapper)

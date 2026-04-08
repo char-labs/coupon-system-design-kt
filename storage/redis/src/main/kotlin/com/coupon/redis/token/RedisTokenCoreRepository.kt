@@ -1,7 +1,7 @@
 package com.coupon.redis.token
 
 import com.coupon.auth.Provider
-import com.coupon.auth.RedisTokenRepository
+import com.coupon.auth.TokenStoreRepository
 import com.coupon.auth.TokenWithAuthenticationResult
 import org.springframework.data.redis.core.RedisTemplate
 import org.springframework.stereotype.Repository
@@ -12,7 +12,7 @@ import java.time.Duration
 class RedisTokenCoreRepository(
     private val redisTemplate: RedisTemplate<String, String>,
     private val objectMapper: ObjectMapper,
-) : RedisTokenRepository {
+) : TokenStoreRepository {
     override fun save(
         accessToken: String,
         refreshToken: String,

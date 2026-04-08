@@ -23,6 +23,11 @@ class RestaurantCouponCoreRepository(
             throw ErrorException(ErrorType.DUPLICATED_RESTAURANT_COUPON)
         }
 
+    override fun existsByRestaurantIdAndCouponId(
+        restaurantId: Long,
+        couponId: Long,
+    ): Boolean = restaurantCouponJpaRepository.existsByRestaurantIdAndCouponId(restaurantId, couponId)
+
     override fun findActiveByRestaurantId(restaurantId: Long): RestaurantCoupon =
         restaurantCouponJpaRepository
             .findByRestaurantIdAndStatusAndDeletedAtIsNull(restaurantId, RestaurantCouponStatus.ACTIVE)

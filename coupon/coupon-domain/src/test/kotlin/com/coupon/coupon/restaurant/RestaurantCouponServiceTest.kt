@@ -3,7 +3,6 @@ package com.coupon.coupon.restaurant
 import com.coupon.coupon.CouponRepository
 import com.coupon.coupon.fixture.CouponFixtures
 import com.coupon.coupon.fixture.RestaurantCouponFixtures
-import com.coupon.coupon.support.DomainServiceTestRuntime
 import com.coupon.enums.coupon.RestaurantCouponStatus
 import com.coupon.enums.error.ErrorType
 import com.coupon.error.ErrorException
@@ -26,6 +25,8 @@ class RestaurantCouponServiceTest :
                 val savedCoupon = RestaurantCouponFixtures.coupon(restaurantId = command.restaurantId, couponId = command.couponId)
 
                 every { context.couponRepository.findById(command.couponId) } returns CouponFixtures.standard(id = command.couponId)
+                every { context.restaurantCouponRepository.existsByRestaurantIdAndCouponId(command.restaurantId, command.couponId) } returns
+                    false
                 every { context.restaurantCouponRepository.save(any()) } returns savedCoupon
 
                 val result = context.restaurantCouponService.createRestaurantCoupon(command)
@@ -34,6 +35,7 @@ class RestaurantCouponServiceTest :
                     result shouldBe savedCoupon
                     verifySequence {
                         context.couponRepository.findById(command.couponId)
+                        context.restaurantCouponRepository.existsByRestaurantIdAndCouponId(command.restaurantId, command.couponId)
                         context.restaurantCouponRepository.save(any())
                     }
                 }
@@ -48,6 +50,10 @@ class RestaurantCouponServiceTest :
                 val batch = RestaurantCouponFixtures.createBatch(first, second)
 
                 every { context.couponRepository.findById(any()) } answers { CouponFixtures.standard(id = firstArg()) }
+                every { context.restaurantCouponRepository.existsByRestaurantIdAndCouponId(first.restaurantId, first.couponId) } returns
+                    false
+                every { context.restaurantCouponRepository.existsByRestaurantIdAndCouponId(second.restaurantId, second.couponId) } returns
+                    false
                 every { context.restaurantCouponRepository.save(any()) } returnsMany
                     listOf(
                         RestaurantCouponFixtures.coupon(id = 1L, restaurantId = first.restaurantId, couponId = first.couponId),
@@ -60,8 +66,10 @@ class RestaurantCouponServiceTest :
                     result.size shouldBe 2
                     verifySequence {
                         context.couponRepository.findById(first.couponId)
+                        context.restaurantCouponRepository.existsByRestaurantIdAndCouponId(first.restaurantId, first.couponId)
                         context.restaurantCouponRepository.save(any())
                         context.couponRepository.findById(second.couponId)
+                        context.restaurantCouponRepository.existsByRestaurantIdAndCouponId(second.restaurantId, second.couponId)
                         context.restaurantCouponRepository.save(any())
                     }
                 }
@@ -155,9 +163,5 @@ class RestaurantCouponServiceTest :
                 restaurantCouponRepository = restaurantCouponRepository,
                 couponRepository = couponRepository,
             )
-
-        init {
-            DomainServiceTestRuntime.initialize()
-        }
     }
 }

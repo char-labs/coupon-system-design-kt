@@ -1,10 +1,10 @@
 package com.coupon.storage.rdb.outbox
 
+import com.coupon.shared.outbox.OutboxEvent
+import com.coupon.shared.outbox.OutboxEventRepository
+import com.coupon.shared.outbox.OutboxEventStatus
+import com.coupon.shared.outbox.criteria.OutboxEventCriteria
 import com.coupon.storage.rdb.support.findByIdOrElseThrow
-import com.coupon.support.outbox.OutboxEvent
-import com.coupon.support.outbox.OutboxEventRepository
-import com.coupon.support.outbox.OutboxEventStatus
-import com.coupon.support.outbox.criteria.OutboxEventCriteria
 import org.springframework.data.domain.PageRequest
 import org.springframework.stereotype.Repository
 import java.time.LocalDateTime

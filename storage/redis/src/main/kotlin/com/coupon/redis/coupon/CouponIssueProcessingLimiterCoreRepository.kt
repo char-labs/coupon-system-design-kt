@@ -1,12 +1,12 @@
 package com.coupon.redis.coupon
 
-import com.coupon.coupon.CouponIssueProcessingLimiter
+import com.coupon.coupon.execution.CouponIssueProcessingLimiter
 import com.coupon.redis.config.CouponIssueProcessingLimitProperties
-import org.redisson.api.RateIntervalUnit
 import org.redisson.api.RateType
 import org.redisson.api.RedissonClient
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.stereotype.Repository
+import java.time.Duration
 
 @Repository
 class CouponIssueProcessingLimiterCoreRepository(
@@ -18,8 +18,7 @@ class CouponIssueProcessingLimiterCoreRepository(
             trySetRate(
                 RateType.OVERALL,
                 properties.permitsPerSecond,
-                1,
-                RateIntervalUnit.SECONDS,
+                Duration.ofSeconds(1),
             )
         }
     }

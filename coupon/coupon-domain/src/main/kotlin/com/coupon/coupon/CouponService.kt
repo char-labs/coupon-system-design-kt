@@ -3,14 +3,15 @@ package com.coupon.coupon
 import com.coupon.coupon.command.CouponCommand
 import com.coupon.coupon.command.CouponPreviewCommand
 import com.coupon.coupon.criteria.CouponCriteria
-import com.coupon.support.cache.Cache
-import com.coupon.support.page.OffsetPageRequest
-import com.coupon.support.page.Page
-import com.coupon.support.tx.Tx
+import com.coupon.shared.cache.Cache
+import com.coupon.shared.page.OffsetPageRequest
+import com.coupon.shared.page.Page
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 import tools.jackson.core.type.TypeReference
 
 @Service
+@Transactional(readOnly = true)
 class CouponService(
     private val couponRepository: CouponRepository,
     private val couponIssueRepository: CouponIssueRepository,
@@ -18,11 +19,13 @@ class CouponService(
     private val couponValidator: CouponValidator,
     private val couponEligibilityEvaluator: CouponEligibilityEvaluator,
     private val couponDiscountCalculator: CouponDiscountCalculator,
+    private val cache: Cache,
 ) {
     /**
-     * Admin write path for coupon master data.
-     * This API is fully synchronous and commits directly to the coupon table.
+     * 쿠폰 마스터 데이터 생성은 관리자용 동기 write 경로다.
+     * 요청이 끝나기 전에 coupon 테이블에 바로 반영된다.
      */
+    @Transactional
     fun createCoupon(command: CouponCommand.Create): Coupon {
         val couponCode = couponCodeGenerator.generate()
         return couponRepository.save(
@@ -44,8 +47,10 @@ class CouponService(
         couponValidator.validateAvailability(getCouponDetailForIssue(couponId))
     }
 
+    @Transactional
     fun decreaseQuantityIfAvailable(couponId: Long): Boolean = couponRepository.decreaseQuantityIfAvailable(couponId)
 
+    @Transactional
     fun increaseQuantity(couponId: Long) {
         couponRepository.increaseQuantity(couponId)
     }
@@ -78,46 +83,41 @@ class CouponService(
         )
     }
 
+    @Transactional
     fun modifyCoupon(
         couponId: Long,
         command: CouponCommand.Update,
     ): CouponDetail =
-        Tx.writeable {
-            couponRepository.update(couponId, CouponCriteria.Update.of(command)).also {
-                clearIssueCouponDetailCache(couponId)
-            }
+        couponRepository.update(couponId, CouponCriteria.Update.of(command)).also {
+            cache.evict(issueCouponDetailCacheKey(couponId))
         }
 
-    fun activateCoupon(couponId: Long) =
-        Tx.writeable {
-            couponRepository.activate(couponId)
-            clearIssueCouponDetailCache(couponId)
-        }
+    @Transactional
+    fun activateCoupon(couponId: Long) {
+        couponRepository.activate(couponId)
+        cache.evict(issueCouponDetailCacheKey(couponId))
+    }
 
-    fun deactivateCoupon(couponId: Long) =
-        Tx.writeable {
-            couponRepository.deactivate(couponId)
-            clearIssueCouponDetailCache(couponId)
-        }
+    @Transactional
+    fun deactivateCoupon(couponId: Long) {
+        couponRepository.deactivate(couponId)
+        cache.evict(issueCouponDetailCacheKey(couponId))
+    }
 
-    fun deleteCoupon(couponId: Long) =
-        Tx.writeable {
-            couponRepository.delete(couponId)
-            clearIssueCouponDetailCache(couponId)
-        }
+    @Transactional
+    fun deleteCoupon(couponId: Long) {
+        couponRepository.delete(couponId)
+        cache.evict(issueCouponDetailCacheKey(couponId))
+    }
 
     private fun getCouponDetailForIssue(couponId: Long): CouponDetail =
-        Cache.cache(
+        cache.getOrLoad(
             ttl = ISSUE_COUPON_DETAIL_CACHE_TTL_MINUTES,
             key = issueCouponDetailCacheKey(couponId),
             typeReference = object : TypeReference<CouponDetail>() {},
         ) {
             couponRepository.findDetailById(couponId)
         }
-
-    private fun clearIssueCouponDetailCache(couponId: Long) {
-        Cache.delete(issueCouponDetailCacheKey(couponId))
-    }
 
     private fun issueCouponDetailCacheKey(couponId: Long): String = "coupon:issue:detail:$couponId"
 

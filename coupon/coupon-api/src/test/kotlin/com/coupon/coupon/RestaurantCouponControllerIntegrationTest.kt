@@ -5,7 +5,7 @@ import com.coupon.coupon.restaurant.RestaurantCouponService
 import com.coupon.coupon.restaurant.command.RestaurantCouponCommand
 import com.coupon.enums.auth.AuthorityType
 import com.coupon.enums.error.ErrorType
-import com.coupon.support.page.OffsetPageRequest
+import com.coupon.shared.page.OffsetPageRequest
 import com.coupon.support.testing.CouponApiWebIntegrationTest
 import com.coupon.support.testing.DatabaseCleaner
 import com.coupon.user.User

@@ -1,10 +1,6 @@
 dependencies {
     implementation("org.springframework.boot:spring-boot-starter-webmvc")
-    implementation("org.springframework.boot:spring-boot-starter-actuator")
-    implementation("org.springframework.boot:spring-boot-health")
     implementation("org.springframework.kafka:spring-kafka")
-    implementation("io.micrometer:micrometer-registry-prometheus")
-    implementation("com.slack.api:slack-api-client:${project.properties["slackVersion"]}")
 
     implementation(project(":coupon:coupon-enum"))
     implementation(project(":coupon:coupon-domain"))

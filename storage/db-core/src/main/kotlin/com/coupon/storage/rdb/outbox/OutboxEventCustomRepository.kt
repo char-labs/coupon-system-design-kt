@@ -1,7 +1,7 @@
 package com.coupon.storage.rdb.outbox
 
+import com.coupon.shared.outbox.OutboxEventStatus
 import com.coupon.storage.rdb.support.JDSLExtensions
-import com.coupon.support.outbox.OutboxEventStatus
 import com.linecorp.kotlinjdsl.dsl.jpql.jpql
 import com.linecorp.kotlinjdsl.render.RenderContext
 import com.linecorp.kotlinjdsl.support.spring.data.jpa.extension.createQuery

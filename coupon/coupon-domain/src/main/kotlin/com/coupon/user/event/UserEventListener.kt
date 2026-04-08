@@ -1,6 +1,6 @@
 package com.coupon.user.event
 
-import com.coupon.support.logging.logger
+import com.coupon.shared.logging.logger
 import org.springframework.scheduling.annotation.Async
 import org.springframework.stereotype.Component
 import org.springframework.transaction.event.TransactionalEventListener
