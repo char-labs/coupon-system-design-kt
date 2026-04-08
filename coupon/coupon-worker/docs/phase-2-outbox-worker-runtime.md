@@ -27,6 +27,8 @@
 | Handler registry | `eventType` 별 handler 연결 | [`OutboxEventHandlerRegistry.kt`](../src/main/kotlin/com.coupon/outbox/OutboxEventHandlerRegistry.kt) |
 | Coupon lifecycle handler | activity projection 처리 | [`CouponLifecycleOutboxEventHandler.kt`](../src/main/kotlin/com.coupon/outbox/CouponLifecycleOutboxEventHandler.kt) |
 | Handler support | payload parse + `coupon_activity` 저장 | [`CouponLifecycleOutboxEventHandlerSupport.kt`](../src/main/kotlin/com.coupon/outbox/CouponLifecycleOutboxEventHandlerSupport.kt) |
+| DEAD alert notifier | `DEAD` 전환 시 Slack alert orchestration | [`OutboxDeadSlackNotifier.kt`](../src/main/kotlin/com.coupon/outbox/OutboxDeadSlackNotifier.kt) |
+| Slack client | Slack SDK based webhook adapter | [`SlackWebhookClient.kt`](../src/main/kotlin/com.coupon/client/slack/SlackWebhookClient.kt) |
 | Metrics | poll, claim, retry, dead, duration 수집 | [`OutboxWorkerMetrics.kt`](../src/main/kotlin/com.coupon/outbox/OutboxWorkerMetrics.kt) |
 | Health | worker runtime 상태 노출 | [`OutboxWorkerHealthIndicator.kt`](../src/main/kotlin/com.coupon/health/OutboxWorkerHealthIndicator.kt) |
 
@@ -52,6 +54,33 @@ flowchart TD
 - [`CouponOutboxEventType.kt`](../../coupon-domain/src/main/kotlin/com/coupon/coupon/event/CouponOutboxEventType.kt)
 - [`CouponActivityService.kt`](../../coupon-domain/src/main/kotlin/com/coupon/coupon/activity/CouponActivityService.kt)
 
+## 상태별 재처리 규칙
+
+| 상태 | poll 대상 여부 | 다음 상태 | `SUCCEEDED` 가능 여부 | 의미 |
+| --- | --- | --- | --- | --- |
+| `PENDING` | 예 | `PROCESSING -> SUCCEEDED/FAILED/DEAD` | 가능 | 신규 outbox event |
+| `FAILED` | 예 | `PROCESSING -> SUCCEEDED/FAILED/DEAD` | 가능 | retry 대상 |
+| `PROCESSING` | 아니오 | timeout recovery 후 `FAILED` | 간접적으로 가능 | worker 가 claim 했지만 종료 전 전이 완료를 못 한 상태 |
+| `DEAD` | 아니오 | 없음 | 불가 | terminal failure |
+
+현재 구현 기준으로 worker 가 직접 다시 집는 상태는 `PENDING`, `FAILED` 두 가지다.
+
+- `PROCESSING` 은 `worker.outbox.processing-timeout` 을 넘기면 stale event 로 판단한다
+- stale `PROCESSING` 은 recovery query 로 `FAILED` 로 되돌린 뒤 다음 poll 에서 다시 처리한다
+- `DEAD` 는 수동 조치 전까지 다시 `SUCCEEDED` 로 올리지 않는다
+
+## DEAD Slack 알림
+
+`markDead` 가 실제로 성공한 경우에만 best-effort Slack webhook 알림을 보낸다.
+
+- 상태 전이 자체는 Slack 전송 성공 여부에 의존하지 않는다
+- outbox 쪽은 `SlackClient` 인터페이스에만 의존하고, webhook transport 는 adapter 가 담당한다
+- 현재 adapter 는 Slack Java SDK 의 incoming webhook client path 를 사용한다
+- webhook 호출 실패는 로그 경고로만 남기고 outbox row 는 그대로 `DEAD` 다
+- alert message 에는 event id, type, aggregate, retry count, dead 전환 시각, reason 이 포함된다
+
+설정 예시:
+
 ## 설정
 
 `worker.yml`
@@ -68,13 +97,22 @@ worker:
       initial-delay: 1s
       max-delay: 5m
       multiplier: 2.0
+    dead-alert:
+      slack:
+        enabled: false
+        webhook-url: ${WORKER_OUTBOX_DEAD_SLACK_WEBHOOK_URL:}
+        timeout: 3s
 ```
+
+로컬 실행에서는 저장소 루트 `[.env](/Users/yunbeom/ybcha/coupon-system-design-kt/.env)`에 `WORKER_OUTBOX_DEAD_SLACK_ENABLED`, `WORKER_OUTBOX_DEAD_SLACK_WEBHOOK_URL`를 두는 방식을 권장한다. 예시는 `[.env.example](/Users/yunbeom/ybcha/coupon-system-design-kt/.env.example)`를 본다.
 
 ## 운영 포인트
 
 - outbox backlog 는 lifecycle projection 지연을 의미한다
 - outbox backlog 가 쌓여도 공개 issue intake 자체는 direct Kafka 경로라 바로 막히는 구조는 아니다
 - 다만 `coupon_activity` projection 이 늦어질 수 있으므로 운영 관점에서는 계속 모니터링한다
+- `coupon.outbox.worker.event.dead` 증가와 Slack DEAD alert 발생은 수동 확인이 필요한 terminal signal 로 본다
+- `coupon.outbox.worker.event.recovered` 증가는 worker 가 `PROCESSING` 에서 복구한 건수이므로 timeout, shutdown, state transition failure 흔적과 같이 본다
 
 ## 검증
 

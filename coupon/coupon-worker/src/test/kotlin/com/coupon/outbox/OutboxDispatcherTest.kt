@@ -44,6 +44,7 @@ class OutboxDispatcherTest :
                     }
                     verify(exactly = 0) { context.outboxEventService.reschedule(any(), any(), any(), any()) }
                     verify(exactly = 0) { context.outboxEventService.markDead(any(), any(), any()) }
+                    verify(exactly = 0) { context.outboxDeadEventNotifier.notifyMarkedDead(any(), any(), any(), any()) }
                 }
             }
 
@@ -64,6 +65,14 @@ class OutboxDispatcherTest :
                 then("즉시 DEAD로 마킹한다") {
                     deadReason.captured shouldBe "No handler registered for outbox event type USER_DELETION_EMAIL_REQUESTED"
                     verify(exactly = 0) { context.outboxEventService.reschedule(any(), any(), any(), any()) }
+                    verify(exactly = 1) {
+                        context.outboxDeadEventNotifier.notifyMarkedDead(
+                            event = context.event,
+                            reason = deadReason.captured,
+                            processedAt = context.now,
+                            attemptedRetryCount = context.event.retryCount,
+                        )
+                    }
                 }
             }
 
@@ -94,6 +103,7 @@ class OutboxDispatcherTest :
                         )
                     }
                     verify(exactly = 0) { context.outboxEventService.markDead(any(), any(), any()) }
+                    verify(exactly = 0) { context.outboxDeadEventNotifier.notifyMarkedDead(any(), any(), any(), any()) }
                 }
             }
 
@@ -127,6 +137,14 @@ class OutboxDispatcherTest :
                         )
                     }
                     verify(exactly = 0) { context.outboxEventService.reschedule(any(), any(), any(), any()) }
+                    verify(exactly = 1) {
+                        context.outboxDeadEventNotifier.notifyMarkedDead(
+                            event = context.event,
+                            reason = deadReason.captured,
+                            processedAt = context.now,
+                            attemptedRetryCount = 2,
+                        )
+                    }
                 }
             }
         }
@@ -145,6 +163,7 @@ private class OutboxDispatcherTestContext(
 
     val now: LocalDateTime = LocalDateTime.ofInstant(clock.instant(), clock.zone)
     val outboxEventService: OutboxEventService = mockk()
+    val outboxDeadEventNotifier: OutboxDeadEventNotifier = mockk(relaxed = true)
     private val outboxEventHandlerRegistry = OutboxEventHandlerRegistry(handlers)
     private val outboxWorkerMetrics = OutboxWorkerMetrics(SimpleMeterRegistry(), outboxEventHandlerRegistry)
     private val outboxRetryPolicy =
@@ -167,6 +186,7 @@ private class OutboxDispatcherTestContext(
             outboxEventHandlerRegistry = outboxEventHandlerRegistry,
             outboxRetryPolicy = outboxRetryPolicy,
             outboxWorkerMetrics = outboxWorkerMetrics,
+            outboxDeadEventNotifier = outboxDeadEventNotifier,
             clock = clock,
         )
 }

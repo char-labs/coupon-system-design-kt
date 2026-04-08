@@ -14,6 +14,7 @@ class OutboxDispatcher(
     private val outboxEventHandlerRegistry: OutboxEventHandlerRegistry,
     private val outboxRetryPolicy: OutboxRetryPolicy,
     private val outboxWorkerMetrics: OutboxWorkerMetrics,
+    private val outboxDeadEventNotifier: OutboxDeadEventNotifier,
     private val clock: Clock,
 ) {
     private val log by logger()
@@ -83,7 +84,11 @@ class OutboxDispatcher(
         val nextRetryCount = event.retryCount + 1
 
         if (outboxRetryPolicy.shouldMarkDead(nextRetryCount)) {
-            markDead(event, reason)
+            markDead(
+                event = event,
+                reason = reason,
+                attemptedRetryCount = nextRetryCount,
+            )
             return DispatchOutcome.DEAD
         }
 
@@ -110,17 +115,29 @@ class OutboxDispatcher(
     private fun markDead(
         event: OutboxEvent,
         reason: String,
+        attemptedRetryCount: Int = event.retryCount,
     ) {
+        val processedAt = now()
         val marked =
             outboxEventService.markDead(
                 eventId = event.id,
                 lastError = reason,
-                processedAt = now(),
+                processedAt = processedAt,
             )
 
         if (marked) {
             outboxWorkerMetrics.recordDead(event.eventType)
             log.error { "Marked outbox event ${event.id} as DEAD: $reason" }
+            runCatching {
+                outboxDeadEventNotifier.notifyMarkedDead(
+                    event = event,
+                    reason = reason,
+                    processedAt = processedAt,
+                    attemptedRetryCount = attemptedRetryCount,
+                )
+            }.onFailure { throwable ->
+                log.warn(throwable) { "Failed to send DEAD alert for outbox event ${event.id}" }
+            }
         } else {
             log.warn { "Failed to mark outbox event ${event.id} as DEAD because state transition was rejected" }
         }

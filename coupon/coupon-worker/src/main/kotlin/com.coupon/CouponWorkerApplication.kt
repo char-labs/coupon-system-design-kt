@@ -28,6 +28,7 @@ import org.springframework.scheduling.annotation.EnableScheduling
         "com.coupon.outbox",
         "com.coupon.kafka",
         "com.coupon.health",
+        "com.coupon.client",
     ],
 )
 class CouponWorkerApplication

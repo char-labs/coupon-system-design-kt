@@ -201,6 +201,13 @@ sequenceDiagram
     Worker->>Outbox: SUCCEEDED
 ```
 
+outbox 상태 규칙 요약:
+
+- `PENDING`, `FAILED` 만 poll 대상이다
+- `PROCESSING` 은 timeout 뒤 `FAILED` 로 복구되면 다시 처리된다
+- `DEAD` 는 terminal 상태이며 자동으로 `SUCCEEDED` 로 복귀하지 않는다
+- `DEAD` 전환 성공 시 Slack webhook alert 를 best-effort 로 보낼 수 있다
+
 ## 운영 체크리스트
 
 ### 발급이 느리거나 누락된 것처럼 보일 때
@@ -218,6 +225,16 @@ sequenceDiagram
 3. 같은 `couponId/userId` 의 `t_coupon_issue` row 존재 여부 확인
 4. Redis release 가 수행됐는지 확인
 5. 필요하면 [kafka-dlq-replay-runbook.md](./kafka-dlq-replay-runbook.md) 순서로 대응
+
+### outbox DEAD가 발생할 때
+
+로컬 Slack 설정은 저장소 루트 `[.env](/Users/yunbeom/ybcha/coupon-system-design-kt/.env)` 기준으로 관리한다. 예시는 `[.env.example](/Users/yunbeom/ybcha/coupon-system-design-kt/.env.example)`를 사용한다.
+
+1. Slack alert 의 `eventId`, `eventType`, `aggregate` 를 먼저 확인한다
+2. `t_outbox_event` 에서 해당 row 의 `status`, `retry_count`, `last_error`, `processed_at` 을 본다
+3. malformed payload 인지, handler 미등록인지, retry 소진인지 reason 을 분류한다
+4. `coupon_activity` row 존재 여부를 함께 확인해 side effect 중복 가능성을 본다
+5. 재처리가 필요하면 수동 replay 전략을 정하고, 단순 `DEAD -> PENDING` 변경은 원인 제거 후에만 한다
 
 ### Redis flush 이후
 

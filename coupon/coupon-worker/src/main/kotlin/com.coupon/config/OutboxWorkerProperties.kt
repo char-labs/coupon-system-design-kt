@@ -12,6 +12,7 @@ data class OutboxWorkerProperties(
     val processingTimeout: Duration = Duration.ofMinutes(5),
     val maxRetries: Int = 10,
     val retry: Retry = Retry(),
+    val deadAlert: DeadAlert = DeadAlert(),
 ) {
     init {
         require(batchSize > 0) { "worker.outbox.batch-size must be greater than 0" }
@@ -31,6 +32,28 @@ data class OutboxWorkerProperties(
             require(!maxDelay.isNegative) { "worker.outbox.retry.max-delay must not be negative" }
             require(maxDelay >= initialDelay) { "worker.outbox.retry.max-delay must be greater than or equal to initial-delay" }
             require(multiplier >= 1.0) { "worker.outbox.retry.multiplier must be at least 1.0" }
+        }
+    }
+
+    data class DeadAlert(
+        val slack: Slack = Slack(),
+    ) {
+        data class Slack(
+            val enabled: Boolean = false,
+            val webhookUrl: String = "",
+            val timeout: Duration = Duration.ofSeconds(3),
+        ) {
+            init {
+                require(!timeout.isNegative && !timeout.isZero) {
+                    "worker.outbox.dead-alert.slack.timeout must be greater than 0"
+                }
+
+                if (enabled) {
+                    require(webhookUrl.isNotBlank()) {
+                        "worker.outbox.dead-alert.slack.webhook-url must not be blank when enabled"
+                    }
+                }
+            }
         }
     }
 }

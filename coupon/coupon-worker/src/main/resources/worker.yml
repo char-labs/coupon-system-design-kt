@@ -9,6 +9,11 @@ worker:
       initial-delay: 1s
       max-delay: 5m
       multiplier: 2.0
+    dead-alert:
+      slack:
+        enabled: ${WORKER_OUTBOX_DEAD_SLACK_ENABLED:false}
+        webhook-url: ${WORKER_OUTBOX_DEAD_SLACK_WEBHOOK_URL:}
+        timeout: ${WORKER_OUTBOX_DEAD_SLACK_TIMEOUT:3s}
   kafka:
     coupon-issue:
       enabled: true

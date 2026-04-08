@@ -39,6 +39,10 @@ out/
 ### Kotlin ###
 .kotlin
 
+.env
+.env.local
+!.env.example
+
 .DS_Store
 
 ### serena ###
