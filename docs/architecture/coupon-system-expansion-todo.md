@@ -4,6 +4,7 @@
 
 - 발급 경로의 공식 계약은 `Redis reserve + direct Kafka publish + worker persist` 이다.
 - 관측성은 `기본 Micrometer + 구조화 로그 + Grafana/Loki 조회` 기준으로 유지한다.
+- Loki collector 기본값은 Promtail이 아니라 Alloy다.
 
 ## 우선 TODO
 

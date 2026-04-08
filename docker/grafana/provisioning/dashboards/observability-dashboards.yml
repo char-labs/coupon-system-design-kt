@@ -1,13 +1,12 @@
 apiVersion: 1
 
 providers:
-  - name: coupon-issuance-runtime
+  - name: observability-dashboards
     orgId: 1
-    folder: coupon-runtime
-    folderUid: coupon-runtime
     type: file
     disableDeletion: false
     editable: false
     updateIntervalSeconds: 30
     options:
-      path: /etc/grafana/dashboards/coupon-runtime
+      path: /etc/grafana/dashboards
+      foldersFromFilesStructure: true

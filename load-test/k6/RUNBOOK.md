@@ -2,6 +2,7 @@
 
 이 문서는 `springboot-coupon-system`과 유사한 `Redis reserve -> Kafka -> consumer issue` 쿠폰 발급 계약 기준으로 `k6 -> InfluxDB -> Grafana` 실행 절차를 정리합니다.
 런타임 계약과 로그 기반 관측 규칙은 [docs/architecture/coupon-issuance-runtime.md](/Users/yunbeom/ybcha/coupon-system-design-kt/docs/architecture/coupon-issuance-runtime.md)를 기준으로 봅니다.
+Promtail 대신 Alloy를 기본 collector로 두는 이유는 [loki-log-collector-choice.md](/Users/yunbeom/ybcha/coupon-system-design-kt/docs/architecture/loki-log-collector-choice.md)를 참고합니다.
 
 현재 발급의 기준 공개 계약은 아래입니다.
 
@@ -65,6 +66,9 @@ curl http://localhost:3000/api/health
 4. `k6 Overview`
 5. `coupon-runtime -> Coupon Issuance Runtime`
 6. ad-hoc 탐색은 `Explore -> Loki` 에서 확인
+
+대시보드 provisioning은 Grafana `foldersFromFilesStructure`를 사용한다.
+즉, `docker/grafana/dashboards/k6` 는 `k6` 폴더로, `docker/grafana/dashboards/coupon-runtime` 는 `coupon-runtime` 폴더로 그대로 매핑된다.
 
 권장 설정:
 

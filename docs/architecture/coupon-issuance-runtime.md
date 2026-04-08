@@ -76,6 +76,7 @@
 로컬 docker observability는 `Promtail` 대신 `Grafana Alloy`를 사용한다.
 이 선택은 Grafana 문서 기준으로 Promtail이 2026-03-02에 EOL에 도달했기 때문이다.
 docker profile에서는 Logback JSON stdout을 사용하고, Alloy가 Docker logs를 읽어 Loki로 전달한다.
+collector 선택 배경은 [loki-log-collector-choice.md](/Users/yunbeom/ybcha/coupon-system-design-kt/docs/architecture/loki-log-collector-choice.md)에 정리한다.
 
 ## 기본 엔드포인트
 
@@ -128,9 +129,14 @@ docker profile에서는 Logback JSON stdout을 사용하고, Alloy가 Docker log
 {service_name="coupon-worker"} | json | message =~ ".*event=coupon.issue.*phase=worker.limit.*"
 ```
 
+```logql
+{service_name=~"coupon-app|coupon-worker"} | json | traceId="f6fd23fa270283ee1880ce39e0c97293"
+```
+
 `durationMs`가 포함된 `intake.publish`와 `worker.consume` 로그는 Grafana에서 지연 분포 패널의 입력으로 사용할 수 있다.
 
 로컬 Grafana provisioning에는 `coupon-runtime/Coupon Issuance Runtime` 대시보드를 포함한다.
+대시보드 폴더는 provider를 여러 개로 쪼개지 않고, Grafana `foldersFromFilesStructure`로 파일 시스템 구조를 그대로 매핑한다.
 이 대시보드는 아래 구성을 기본으로 가진다.
 
 - `Accepted Requests`, `Publish Failures`, `Worker Success`, `DLQ Count`
@@ -139,6 +145,7 @@ docker profile에서는 Logback JSON stdout을 사용하고, Alloy가 Docker log
 - `Coupon Issue Logs`, `Failures And Retries`
 
 추적이 필요한 경우 `RequestId regex` 변수에 특정 request id를 넣어 한 요청의 intake/worker 흐름만 좁혀서 본다.
+trace 상관관계가 필요한 경우 Loki에서 `traceId` 필드로 app/worker 로그를 함께 조회한다.
 
 ## 운영 해석 순서
 
