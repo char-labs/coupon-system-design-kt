@@ -1,0 +1,61 @@
+services:
+  # 공개 HTTP 요청을 받고 발급 접수와 동기 조회 API를 담당하는 런타임입니다.
+  coupon-app:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: coupon-app
+    ports:
+      - "${APP_HOST_PORT:-18080}:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker,load-test
+      LOGGING_CONFIG: classpath:logback/logback-docker.xml
+      DATASOURCE_DB_CORE_JDBC_URL: jdbc:mysql://mysql:3306/coupon-db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Seoul&characterEncoding=UTF-8
+      DATASOURCE_DB_CORE_USERNAME: coupon-admin
+      DATASOURCE_DB_CORE_PASSWORD: coupon!@#
+      DATASOURCE_DB_CORE_MAXIMUM_POOL_SIZE: 100
+      DATASOURCE_DB_CORE_MINIMUM_IDLE: 20
+      DATASOURCE_DB_CORE_CONNECTION_TIMEOUT_MS: 5000
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      ADMIN_NAME: Load Test Admin
+      ADMIN_EMAIL: loadtest-admin@coupon.local
+      ADMIN_PASSWORD: admin1234!
+      ACCESS_TOKEN_EXPIRATION_SECONDS: 2880
+      REFRESH_TOKEN_EXPIRATION_SECONDS: 43200
+      JWT_SECRET_KEY: couponJwtSecretKeyForAuthenticationSecuritySystem2024!@#
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      kafka:
+        condition: service_started
+
+  # 워커는 outbox polling, Kafka consume, retry, DLQ를 담당합니다.
+  coupon-worker:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+      args:
+        APP_MODULE: :coupon:coupon-worker
+        APP_JAR_DIR: coupon/coupon-worker
+    container_name: coupon-worker
+    ports:
+      - "${WORKER_HOST_PORT:-18081}:8081"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      DATASOURCE_DB_CORE_JDBC_URL: jdbc:mysql://mysql:3306/coupon-db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Seoul&characterEncoding=UTF-8
+      DATASOURCE_DB_CORE_USERNAME: coupon-admin
+      DATASOURCE_DB_CORE_PASSWORD: coupon!@#
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      kafka:
+        condition: service_started

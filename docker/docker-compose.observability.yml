@@ -1,0 +1,51 @@
+services:
+  grafana:
+    image: grafana/grafana:12.4.0
+    container_name: coupon-k6-grafana
+    restart: unless-stopped
+    depends_on:
+      - loki
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    ports:
+      - "3000:3000"
+    volumes:
+      - k6_grafana_data:/var/lib/grafana
+      - ./grafana/provisioning/datasources:/etc/grafana/provisioning/datasources:ro
+      - ./grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ./grafana/dashboards:/etc/grafana/dashboards:ro
+
+  loki:
+    image: grafana/loki:3.5.8
+    container_name: coupon-k6-loki
+    restart: unless-stopped
+    ports:
+      - "3100:3100"
+    volumes:
+      - loki_data:/loki
+
+  # Alloy는 docker stdout 로그를 수집해 Loki로 전달합니다.
+  alloy:
+    image: grafana/alloy:latest
+    container_name: coupon-k6-alloy
+    restart: unless-stopped
+    depends_on:
+      - loki
+    command:
+      - run
+      - --server.http.listen-addr=0.0.0.0:12345
+      - --storage.path=/var/lib/alloy
+      - /etc/alloy/config.alloy
+    ports:
+      - "12345:12345"
+    volumes:
+      - ./alloy/config.alloy:/etc/alloy/config.alloy:ro
+      - /var/run/docker.sock:/var/run/docker.sock
+      - alloy_data:/var/lib/alloy
+
+volumes:
+  k6_grafana_data:
+  loki_data:
+  alloy_data:

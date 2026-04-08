@@ -1,62 +1,27 @@
 services:
+  # 부하 테스트와 로그 관측을 함께 띄우는 호환용 진입점입니다.
   influxdb:
-    image: influxdb:1.12.2
-    container_name: coupon-k6-influxdb
-    restart: unless-stopped
-    environment:
-      INFLUXDB_DB: myk6db
-      INFLUXDB_HTTP_AUTH_ENABLED: "false"
-      INFLUXDB_REPORTING_DISABLED: "true"
-    ports:
-      - "8086:8086"
-    volumes:
-      - k6_influxdb_data:/var/lib/influxdb
+    extends:
+      file: docker-compose.load-test.yml
+      service: influxdb
 
   grafana:
-    image: grafana/grafana:12.4.0
-    container_name: coupon-k6-grafana
-    restart: unless-stopped
+    extends:
+      file: docker-compose.observability.yml
+      service: grafana
     depends_on:
       - influxdb
       - loki
-    environment:
-      GF_SECURITY_ADMIN_USER: admin
-      GF_SECURITY_ADMIN_PASSWORD: admin
-      GF_USERS_ALLOW_SIGN_UP: "false"
-    ports:
-      - "3000:3000"
-    volumes:
-      - k6_grafana_data:/var/lib/grafana
-      - ./grafana/provisioning/datasources:/etc/grafana/provisioning/datasources:ro
-      - ./grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards:ro
-      - ./grafana/dashboards:/etc/grafana/dashboards:ro
 
   loki:
-    image: grafana/loki:3.5.8
-    container_name: coupon-k6-loki
-    restart: unless-stopped
-    ports:
-      - "3100:3100"
-    volumes:
-      - loki_data:/loki
+    extends:
+      file: docker-compose.observability.yml
+      service: loki
 
   alloy:
-    image: grafana/alloy:latest
-    container_name: coupon-k6-alloy
-    restart: unless-stopped
-    depends_on:
-      - loki
-    command:
-      - run
-      - --server.http.listen-addr=0.0.0.0:12345
-      - --storage.path=/var/lib/alloy
-      - /etc/alloy/config.alloy
-    ports:
-      - "12345:12345"
-    volumes:
-      - ./alloy/config.alloy:/etc/alloy/config.alloy:ro
-      - /var/run/docker.sock:/var/run/docker.sock
-      - alloy_data:/var/lib/alloy
+    extends:
+      file: docker-compose.observability.yml
+      service: alloy
 
 volumes:
   k6_influxdb_data:

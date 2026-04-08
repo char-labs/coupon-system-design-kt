@@ -42,8 +42,10 @@ POLL_TIMEOUT_SECONDS="${POLL_TIMEOUT_SECONDS:-30}"
 POLL_INTERVAL_MS="${POLL_INTERVAL_MS:-500}"
 
 COMPOSE_FILES=(
-  "-f" "${ROOT_DIR}/docker/docker-compose.yml"
-  "-f" "${ROOT_DIR}/docker/docker-compose.k6-observability.yml"
+  "-f" "${ROOT_DIR}/docker/docker-compose.infrastructure.yml"
+  "-f" "${ROOT_DIR}/docker/docker-compose.runtime.yml"
+  "-f" "${ROOT_DIR}/docker/docker-compose.observability.yml"
+  "-f" "${ROOT_DIR}/docker/docker-compose.load-test.yml"
 )
 
 run_burst_case() {

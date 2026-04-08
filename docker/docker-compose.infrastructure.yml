@@ -1,0 +1,73 @@
+services:
+  # 쿠폰, 발급, 활동, 아웃박스의 기준 데이터를 보관하는 원본 저장소입니다.
+  mysql:
+    image: mysql:8.0
+    container_name: coupon-system-mysql
+    restart: always
+    environment:
+      MYSQL_DATABASE: coupon-db
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_USER: coupon-admin
+      MYSQL_PASSWORD: coupon!@#
+      TZ: Asia/Seoul
+    command: ["mysqld", "--character-set-server=utf8mb4", "--collation-server=utf8mb4_general_ci", "--max-connections=200"]
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-proot", "--silent"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 10s
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+  # Redis는 캐시와 분산락 용도로만 사용합니다.
+  redis:
+    image: redis:7-alpine
+    container_name: coupon-system-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+  # Kafka는 발급 요청과 워커 처리 사이의 비동기 전달 채널입니다.
+  kafka:
+    image: apache/kafka:3.9.1
+    container_name: coupon-system-kafka
+    ports:
+      - "9092:9092"
+    environment:
+      CLUSTER_ID: 4L6g3nShT-eMCtK--X86sw
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+    volumes:
+      - kafka_data:/var/lib/kafka/data
+
+  # 로컬에서 토픽과 컨슈머 상태를 눈으로 확인하기 위한 UI입니다.
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: coupon-system-kafka-ui
+    ports:
+      - "${KAFKA_UI_HOST_PORT:-18085}:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: coupon-local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
+    depends_on:
+      kafka:
+        condition: service_started
+
+volumes:
+  mysql_data:
+  redis_data:
+  kafka_data:

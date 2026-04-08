@@ -47,8 +47,10 @@ ADMIN_EMAIL="${ADMIN_EMAIL:-loadtest-admin@coupon.local}"
 ADMIN_PASSWORD="${ADMIN_PASSWORD:-admin1234!}"
 
 COMPOSE_FILES=(
-  "-f" "${ROOT_DIR}/docker/docker-compose.yml"
-  "-f" "${ROOT_DIR}/docker/docker-compose.k6-observability.yml"
+  "-f" "${ROOT_DIR}/docker/docker-compose.infrastructure.yml"
+  "-f" "${ROOT_DIR}/docker/docker-compose.runtime.yml"
+  "-f" "${ROOT_DIR}/docker/docker-compose.observability.yml"
+  "-f" "${ROOT_DIR}/docker/docker-compose.load-test.yml"
 )
 
 run_scenario() {

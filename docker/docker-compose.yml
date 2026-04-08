@@ -1,133 +1,34 @@
 services:
-  # Source of truth database for coupon, coupon_issue, coupon_activity, and outbox rows.
+  # 기본 로컬 실행용 진입점입니다.
   mysql:
-    image: mysql:8.0
-    container_name: coupon-system-mysql
-    restart: always
-    environment:
-      MYSQL_DATABASE: coupon-db
-      MYSQL_ROOT_PASSWORD: root
-      MYSQL_USER: coupon-admin
-      MYSQL_PASSWORD: coupon!@#
-      TZ: Asia/Seoul
-    command: [ "mysqld", "--character-set-server=utf8mb4", "--collation-server=utf8mb4_general_ci", "--max-connections=200" ]
-    healthcheck:
-      test: [ "CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-proot", "--silent" ]
-      interval: 5s
-      timeout: 3s
-      retries: 20
-      start_period: 10s
-    ports:
-      - "3306:3306"
-    volumes:
-      - mysql_data:/var/lib/mysql
+    extends:
+      file: docker-compose.infrastructure.yml
+      service: mysql
 
-  # Redis is still used for lock and cache concerns. It is not the source of truth for coupon issuance.
   redis:
-    image: redis:7-alpine
-    container_name: coupon-system-redis
-    ports:
-      - "6379:6379"
-    volumes:
-      - redis_data:/data
+    extends:
+      file: docker-compose.infrastructure.yml
+      service: redis
 
-  # Kafka works as the command bus between outbox relay and coupon issue consumer.
-  # This local compose intentionally uses KRaft mode to avoid a separate ZooKeeper container.
   kafka:
-    image: apache/kafka:3.9.1
-    container_name: coupon-system-kafka
-    ports:
-      - "9092:9092"
-    environment:
-      CLUSTER_ID: 4L6g3nShT-eMCtK--X86sw
-      KAFKA_NODE_ID: 1
-      KAFKA_PROCESS_ROLES: broker,controller
-      KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
-      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
-      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
-      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
-      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
-      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
-      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
-    volumes:
-      - kafka_data:/var/lib/kafka/data
+    extends:
+      file: docker-compose.infrastructure.yml
+      service: kafka
 
-  # Kafka UI helps juniors confirm whether the relay published the request message.
   kafka-ui:
-    image: provectuslabs/kafka-ui:latest
-    container_name: coupon-system-kafka-ui
-    ports:
-      - "${KAFKA_UI_HOST_PORT:-18085}:8080"
-    environment:
-      KAFKA_CLUSTERS_0_NAME: coupon-local
-      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
-    depends_on:
-      kafka:
-        condition: service_started
+    extends:
+      file: docker-compose.infrastructure.yml
+      service: kafka-ui
 
-  # Public API runtime. Handles HTTP request acceptance and synchronous coupon APIs.
   coupon-app:
-    build:
-      context: ..
-      dockerfile: docker/Dockerfile
-    container_name: coupon-app
-    ports:
-      - "${APP_HOST_PORT:-18080}:8080"
-    environment:
-      SPRING_PROFILES_ACTIVE: docker,load-test
-      LOGGING_CONFIG: classpath:logback/logback-docker.xml
-      DATASOURCE_DB_CORE_JDBC_URL: jdbc:mysql://mysql:3306/coupon-db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Seoul&characterEncoding=UTF-8
-      DATASOURCE_DB_CORE_USERNAME: coupon-admin
-      DATASOURCE_DB_CORE_PASSWORD: coupon!@#
-      DATASOURCE_DB_CORE_MAXIMUM_POOL_SIZE: 100
-      DATASOURCE_DB_CORE_MINIMUM_IDLE: 20
-      DATASOURCE_DB_CORE_CONNECTION_TIMEOUT_MS: 5000
-      REDIS_HOST: redis
-      REDIS_PORT: 6379
-      ADMIN_NAME: Load Test Admin
-      ADMIN_EMAIL: loadtest-admin@coupon.local
-      ADMIN_PASSWORD: admin1234!
-      ACCESS_TOKEN_EXPIRATION_SECONDS: 2880
-      REFRESH_TOKEN_EXPIRATION_SECONDS: 43200
-      JWT_SECRET_KEY: couponJwtSecretKeyForAuthenticationSecuritySystem2024!@#
-      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
-    depends_on:
-      mysql:
-        condition: service_healthy
-      redis:
-        condition: service_started
-      kafka:
-        condition: service_started
+    extends:
+      file: docker-compose.runtime.yml
+      service: coupon-app
 
-  # Worker runtime. Owns outbox polling, Kafka relay/consume, retry, DLQ, and reconciliation.
   coupon-worker:
-    build:
-      context: ..
-      dockerfile: docker/Dockerfile
-      args:
-        APP_MODULE: :coupon:coupon-worker
-        APP_JAR_DIR: coupon/coupon-worker
-    container_name: coupon-worker
-    ports:
-      - "${WORKER_HOST_PORT:-18081}:8081"
-    environment:
-      SPRING_PROFILES_ACTIVE: docker
-      DATASOURCE_DB_CORE_JDBC_URL: jdbc:mysql://mysql:3306/coupon-db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Seoul&characterEncoding=UTF-8
-      DATASOURCE_DB_CORE_USERNAME: coupon-admin
-      DATASOURCE_DB_CORE_PASSWORD: coupon!@#
-      REDIS_HOST: redis
-      REDIS_PORT: 6379
-      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
-    depends_on:
-      mysql:
-        condition: service_healthy
-      redis:
-        condition: service_started
-      kafka:
-        condition: service_started
+    extends:
+      file: docker-compose.runtime.yml
+      service: coupon-worker
 
 volumes:
   mysql_data:
