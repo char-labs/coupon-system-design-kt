@@ -11,7 +11,8 @@ import { fileURLToPath } from 'node:url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const dotEnvPath = path.resolve(__dirname, '.env');
+const rootDotEnvPath = path.resolve(__dirname, '..', '..', '.env');
+const legacyDotEnvPath = path.resolve(__dirname, '.env');
 const SLOW_REQUEST_SAMPLE_MARKER = '__K6_SLOW_REQUEST_SAMPLE__';
 
 const scenarioDefaults = {
@@ -101,31 +102,34 @@ function usage() {
 }
 
 async function loadDotEnv() {
-  try {
-    const raw = await readFile(dotEnvPath, 'utf8');
-    const env = {};
+  const env = {};
 
-    for (const line of raw.split(/\r?\n/)) {
-      const trimmed = line.trim();
+  for (const envPath of [legacyDotEnvPath, rootDotEnvPath]) {
+    try {
+      const raw = await readFile(envPath, 'utf8');
 
-      if (!trimmed || trimmed.startsWith('#')) {
-        continue;
+      for (const line of raw.split(/\r?\n/)) {
+        const trimmed = line.trim();
+
+        if (!trimmed || trimmed.startsWith('#')) {
+          continue;
+        }
+
+        const separatorIndex = trimmed.indexOf('=');
+        if (separatorIndex <= 0) {
+          continue;
+        }
+
+        const key = trimmed.slice(0, separatorIndex).trim();
+        const value = trimmed.slice(separatorIndex + 1).trim().replace(/^['"]|['"]$/g, '');
+        env[key] = value;
       }
-
-      const separatorIndex = trimmed.indexOf('=');
-      if (separatorIndex <= 0) {
-        continue;
-      }
-
-      const key = trimmed.slice(0, separatorIndex).trim();
-      const value = trimmed.slice(separatorIndex + 1).trim().replace(/^['"]|['"]$/g, '');
-      env[key] = value;
+    } catch (error) {
+      // Missing local env files are optional.
     }
-
-    return env;
-  } catch (error) {
-    return {};
   }
+
+  return env;
 }
 
 function parseArgs(argv, envSource) {

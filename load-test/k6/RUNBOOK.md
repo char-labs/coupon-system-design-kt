@@ -274,7 +274,7 @@ burst, overload, ramp 계열 시나리오는 측정 구간 전에 실제 API로 
 
 ## 7. Slack 보고
 
-`run-with-slack.mjs`는 아래 값을 `.env`에서 읽습니다.
+`run-with-slack.mjs`는 저장소 루트 `.env`를 우선으로 읽고, 없으면 `load-test/k6/.env`를 fallback 으로 읽습니다.
 
 ```dotenv
 LOAD_TEST_SLACK_WEBHOOK=
@@ -289,3 +289,5 @@ LOAD_TEST_SLACK_NOTIFY_ON=always
 - `never`
 
 webhook이 비어 있으면 `load-test/k6/results/`에 preview 텍스트만 남깁니다.
+
+권장 시작점은 루트 `[.env.example](/Users/yunbeom/ybcha/coupon-system-design-kt/.env.example)` 입니다.

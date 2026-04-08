@@ -155,7 +155,7 @@ node load-test/k6/run-with-slack.mjs issue-ramp --profile local -- \
 
 ## Slack 보고
 
-[run-with-slack.mjs](/Users/yunbeom/ybcha/coupon-system-design-kt/load-test/k6/run-with-slack.mjs)는 [load-test/k6/.env](/Users/yunbeom/ybcha/coupon-system-design-kt/load-test/k6/.env)를 자동으로 읽고 Slack webhook으로 결과를 보낼 수 있습니다.
+[run-with-slack.mjs](/Users/yunbeom/ybcha/coupon-system-design-kt/load-test/k6/run-with-slack.mjs)는 저장소 루트의 [.env](/Users/yunbeom/ybcha/coupon-system-design-kt/.env)를 우선으로 읽고 Slack webhook으로 결과를 보낼 수 있습니다. 기존 [load-test/k6/.env](/Users/yunbeom/ybcha/coupon-system-design-kt/load-test/k6/.env)는 fallback 으로만 유지됩니다.
 
 예시:
 
@@ -164,6 +164,8 @@ LOAD_TEST_SLACK_WEBHOOK=
 LOAD_TEST_PROFILE=local
 LOAD_TEST_SLACK_NOTIFY_ON=always
 ```
+
+`[.env.example](/Users/yunbeom/ybcha/coupon-system-design-kt/.env.example)`를 복사해 루트 `.env`를 만들면 됩니다.
 
 webhook이 비어 있으면 전송 대신 `load-test/k6/results/` 아래 preview 파일만 남깁니다.
 
