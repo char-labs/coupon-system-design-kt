@@ -86,7 +86,7 @@ const scenarioLabels = {
   smoke: '기본 기능 확인',
   baseline: '일반 사용량 기준 부하',
   'issue-burst': '대량 동시 발급 정합성 확인',
-  'restaurant-issue-burst': '레스토랑 쿠폰 동시 발급 정합성 확인',
+  'restaurant-issue-burst': '맛집 쿠폰 동시 발급 정합성 확인',
   contention: '동시 발급 경합 확인',
   'issue-overload': '쿠폰 발급 진입 과부하',
   'issue-ramp': 'prepared-user immediate issue 성능 확인',
@@ -531,7 +531,7 @@ function buildLoadSummary(scenario, parsedEnv, envSource) {
     case 'issue-burst':
       return `${resolveValue('ISSUE_BURST_VUS')}명이 같은 쿠폰에 동시에 1회 발급 요청`;
     case 'restaurant-issue-burst':
-      return `${resolveValue('ISSUE_BURST_VUS')}명이 같은 식당에 동시에 1회 발급 요청`;
+      return `${resolveValue('ISSUE_BURST_VUS')}명이 같은 식당 쿠폰에 동시에 1회 발급 요청`;
     case 'contention':
       return `${resolveValue('CONTENTION_VUS')}명이 같은 쿠폰에 동시에 발급 요청`;
     case 'issue-overload':
@@ -559,7 +559,7 @@ function formatThresholdFailure(threshold) {
   }
 
   if (threshold.startsWith('restaurant_issue_burst_integrity_ok')) {
-    return '레스토랑 쿠폰 재고 정합성 검증 실패';
+    return '맛집 쿠폰 재고 정합성 검증 실패';
   }
 
   if (threshold.startsWith('issue_burst_expected_result_ok')) {
@@ -567,7 +567,7 @@ function formatThresholdFailure(threshold) {
   }
 
   if (threshold.startsWith('restaurant_issue_burst_expected_result_ok')) {
-    return '레스토랑 쿠폰 예상 발급 수량 검증 실패';
+    return '맛집 쿠폰 예상 발급 수량 검증 실패';
   }
 
   if (threshold.startsWith('issue_burst_server_error_count')) {
@@ -575,7 +575,7 @@ function formatThresholdFailure(threshold) {
   }
 
   if (threshold.startsWith('restaurant_issue_burst_server_error_count')) {
-    return '레스토랑 쿠폰 서버 오류 발생';
+    return '맛집 쿠폰 서버 오류 발생';
   }
 
   if (threshold.startsWith('issue_burst_unexpected_client_error_count')) {
@@ -583,7 +583,7 @@ function formatThresholdFailure(threshold) {
   }
 
   if (threshold.startsWith('restaurant_issue_burst_unexpected_client_error_count')) {
-    return '레스토랑 쿠폰 예상하지 못한 클라이언트 오류 발생';
+    return '맛집 쿠폰 예상하지 못한 클라이언트 오류 발생';
   }
 
   return threshold;
@@ -659,7 +659,7 @@ function explainFailure({ failureReason, scenario, parsedEnv, envSource, thresho
 
   if (thresholdFailures.includes('restaurant_issue_burst_integrity_ok rate==1')) {
     return {
-      summary: '레스토랑 쿠폰 부하 테스트 후 재고 정합성 검증이 맞지 않았습니다.',
+      summary: '맛집 쿠폰 부하 테스트 후 재고 정합성 검증이 맞지 않았습니다.',
       cause: '최종 발급 건수와 남은 재고 합계가 초기 재고와 일치하지 않았습니다.',
       action: 'restaurantId에 연결된 couponId와 최종 발급 건수, 남은 재고를 함께 확인해 주세요.',
     };
@@ -667,7 +667,7 @@ function explainFailure({ failureReason, scenario, parsedEnv, envSource, thresho
 
   if (thresholdFailures.includes('restaurant_issue_burst_expected_result_ok rate==1')) {
     return {
-      summary: '예상한 레스토랑 쿠폰 발급 수량과 실제 최종 상태가 다르게 나왔습니다.',
+      summary: '예상한 맛집 쿠폰 발급 수량과 실제 최종 상태가 다르게 나왔습니다.',
       cause: '성공 발급 건수 또는 잔여 수량이 설정한 재고 기준과 맞지 않았습니다.',
       action: 'ISSUE_BURST_STOCK, 성공 발급 건수, 남은 재고 수치를 같이 비교해 주세요.',
     };
@@ -710,7 +710,7 @@ function explainSuccess({ scenario }) {
       };
     case 'restaurant-issue-burst':
       return {
-        summary: '레스토랑 쿠폰 동시 발급 요청을 끝까지 처리했고 재고 정합성 검증도 통과했습니다.',
+        summary: '맛집 쿠폰 동시 발급 요청을 끝까지 처리했고 재고 정합성 검증도 통과했습니다.',
         detail: '같은 restaurantId로 몰린 요청을 처리한 뒤 최종 발급 건수와 잔여 재고가 초기 수량과 일치했습니다.',
         action: '다음에는 ISSUE_BURST_STOCK 을 낮춰 oversubscription 상황에서도 같은 정합성이 유지되는지 확인해 보세요.',
       };

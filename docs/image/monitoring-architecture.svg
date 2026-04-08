@@ -1,0 +1,187 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 550" font-family="'Segoe UI', Arial, sans-serif">
+  <defs>
+    <linearGradient id="bg3" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0f172a"/><stop offset="100%" style="stop-color:#1e293b"/>
+    </linearGradient>
+    <filter id="s3"><feDropShadow dx="0" dy="2" stdDeviation="4" flood-color="#000" flood-opacity="0.35"/></filter>
+    <marker id="m1" viewBox="0 0 10 7" refX="10" refY="3.5" markerWidth="8" markerHeight="6" orient="auto-start-auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#60a5fa"/>
+    </marker>
+    <marker id="m2" viewBox="0 0 10 7" refX="10" refY="3.5" markerWidth="8" markerHeight="6" orient="auto-start-auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#fbbf24"/>
+    </marker>
+    <marker id="m3" viewBox="0 0 10 7" refX="10" refY="3.5" markerWidth="8" markerHeight="6" orient="auto-start-auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#f87171"/>
+    </marker>
+    <marker id="m4" viewBox="0 0 10 7" refX="10" refY="3.5" markerWidth="8" markerHeight="6" orient="auto-start-auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#34d399"/>
+    </marker>
+    <marker id="m5" viewBox="0 0 10 7" refX="10" refY="3.5" markerWidth="8" markerHeight="6" orient="auto-start-auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#c084fc"/>
+    </marker>
+  </defs>
+
+  <rect width="1000" height="550" rx="16" fill="url(#bg3)"/>
+
+  <!-- Title -->
+  <text x="500" y="40" text-anchor="middle" fill="#f8fafc" font-size="22" font-weight="700">📊 Monitoring &amp; Observability Architecture</text>
+  <line x1="310" y1="52" x2="690" y2="52" stroke="#3b82f6" stroke-width="2" opacity="0.4"/>
+
+  <!-- ===== Application Layer ===== -->
+  <rect x="30" y="70" width="450" height="200" rx="14" fill="none" stroke="#6366f1" stroke-width="1" stroke-dasharray="8,4" opacity="0.5"/>
+  <text x="50" y="92" fill="#a5b4fc" font-size="13" font-weight="700">APPLICATION LAYER</text>
+
+  <!-- API Server -->
+  <g filter="s3">
+    <rect x="50" y="106" width="190" height="70" rx="10" fill="#312e81" stroke="#818cf8" stroke-width="1.5"/>
+    <text x="145" y="132" text-anchor="middle" fill="#e0e7ff" font-size="12" font-weight="600">coupon-api (8080)</text>
+    <text x="145" y="150" text-anchor="middle" fill="#a5b4fc" font-size="9">Spring Actuator</text>
+    <text x="145" y="164" text-anchor="middle" fill="#a5b4fc" font-size="9">/actuator/prometheus</text>
+  </g>
+
+  <!-- Worker Server -->
+  <g filter="s3">
+    <rect x="270" y="106" width="190" height="70" rx="10" fill="#7c2d12" stroke="#fb923c" stroke-width="1.5"/>
+    <text x="365" y="132" text-anchor="middle" fill="#fed7aa" font-size="12" font-weight="600">coupon-worker (8081)</text>
+    <text x="365" y="150" text-anchor="middle" fill="#fdba74" font-size="9">Spring Actuator</text>
+    <text x="365" y="164" text-anchor="middle" fill="#fdba74" font-size="9">/actuator/prometheus</text>
+  </g>
+
+  <!-- Micrometer -->
+  <g filter="s3">
+    <rect x="50" y="194" width="190" height="56" rx="10" fill="#064e3b" stroke="#34d399" stroke-width="1.5"/>
+    <text x="145" y="219" text-anchor="middle" fill="#d1fae5" font-size="11" font-weight="600">Micrometer</text>
+    <text x="145" y="237" text-anchor="middle" fill="#6ee7b7" font-size="9">JVM / HTTP / Kafka / Redis Metrics</text>
+  </g>
+
+  <!-- Sentry SDK -->
+  <g filter="s3">
+    <rect x="270" y="194" width="190" height="56" rx="10" fill="#3b1111" stroke="#ef4444" stroke-width="1.5"/>
+    <text x="365" y="219" text-anchor="middle" fill="#fecaca" font-size="11" font-weight="600">Sentry SDK</text>
+    <text x="365" y="237" text-anchor="middle" fill="#f87171" font-size="9">Error Tracking &amp; Alerting</text>
+  </g>
+
+  <!-- Arrows: App → Micrometer/Sentry -->
+  <line x1="145" y1="176" x2="145" y2="189" stroke="#34d399" stroke-width="1.5" marker-end="url(#m4)"/>
+  <line x1="365" y1="176" x2="365" y2="189" stroke="#f87171" stroke-width="1.5" marker-end="url(#m3)"/>
+
+  <!-- ===== Metrics Pipeline ===== -->
+  <rect x="520" y="70" width="450" height="200" rx="14" fill="none" stroke="#f59e0b" stroke-width="1" stroke-dasharray="8,4" opacity="0.5"/>
+  <text x="540" y="92" fill="#fbbf24" font-size="13" font-weight="700">METRICS &amp; ALERTING PIPELINE</text>
+
+  <!-- Prometheus -->
+  <g filter="s3">
+    <rect x="540" y="106" width="190" height="70" rx="10" fill="#451a03" stroke="#f59e0b" stroke-width="1.5"/>
+    <text x="635" y="132" text-anchor="middle" fill="#fde68a" font-size="12" font-weight="600">📈 Prometheus</text>
+    <text x="635" y="150" text-anchor="middle" fill="#fbbf24" font-size="9">Metrics Scraping</text>
+    <text x="635" y="164" text-anchor="middle" fill="#fbbf24" font-size="9">Time Series Storage</text>
+  </g>
+
+  <!-- Grafana -->
+  <g filter="s3">
+    <rect x="760" y="106" width="190" height="70" rx="10" fill="#064e3b" stroke="#34d399" stroke-width="1.5"/>
+    <text x="855" y="132" text-anchor="middle" fill="#d1fae5" font-size="12" font-weight="600">📊 Grafana</text>
+    <text x="855" y="150" text-anchor="middle" fill="#6ee7b7" font-size="9">Dashboard</text>
+    <text x="855" y="164" text-anchor="middle" fill="#6ee7b7" font-size="9">Visualization</text>
+  </g>
+
+  <!-- Arrow: Micrometer → Prometheus -->
+  <line x1="240" y1="222" x2="460" y2="141" stroke="#fbbf24" stroke-width="1.5" marker-end="url(#m2)"/>
+  <text x="370" y="170" fill="#fbbf24" font-size="8">scrape</text>
+
+  <!-- Arrow: Prometheus → Grafana -->
+  <line x1="730" y1="141" x2="755" y2="141" stroke="#34d399" stroke-width="1.5" marker-end="url(#m4)"/>
+
+  <!-- Sentry Cloud -->
+  <g filter="s3">
+    <rect x="540" y="194" width="190" height="56" rx="10" fill="#3b1111" stroke="#ef4444" stroke-width="1.5"/>
+    <text x="635" y="219" text-anchor="middle" fill="#fecaca" font-size="12" font-weight="600">🔴 Sentry Cloud</text>
+    <text x="635" y="237" text-anchor="middle" fill="#f87171" font-size="9">Error Dashboard &amp; Alerts</text>
+  </g>
+
+  <!-- Arrow: Sentry SDK → Sentry Cloud -->
+  <line x1="460" y1="222" x2="535" y2="222" stroke="#f87171" stroke-width="1.5" marker-end="url(#m3)"/>
+
+  <!-- Alert Channels -->
+  <g filter="s3">
+    <rect x="760" y="194" width="190" height="56" rx="10" fill="#312e81" stroke="#818cf8" stroke-width="1.5"/>
+    <text x="855" y="219" text-anchor="middle" fill="#e0e7ff" font-size="12" font-weight="600">🔔 Alert Channels</text>
+    <text x="855" y="237" text-anchor="middle" fill="#a5b4fc" font-size="9">Slack / Email Notification</text>
+  </g>
+
+  <!-- Arrow: Sentry → Alert -->
+  <line x1="730" y1="222" x2="755" y2="222" stroke="#c084fc" stroke-width="1.5" marker-end="url(#m5)"/>
+  <!-- Arrow: Grafana → Alert -->
+  <line x1="855" y1="176" x2="855" y2="189" stroke="#c084fc" stroke-width="1.5" marker-end="url(#m5)"/>
+
+  <!-- ===== Logging Layer ===== -->
+  <rect x="30" y="300" width="940" height="110" rx="14" fill="none" stroke="#94a3b8" stroke-width="1" stroke-dasharray="8,4" opacity="0.4"/>
+  <text x="50" y="322" fill="#cbd5e1" font-size="13" font-weight="700">LOGGING LAYER</text>
+
+  <!-- Logback -->
+  <g filter="s3">
+    <rect x="50" y="336" width="170" height="52" rx="10" fill="#1e293b" stroke="#94a3b8" stroke-width="1.5"/>
+    <text x="135" y="359" text-anchor="middle" fill="#e2e8f0" font-size="11" font-weight="600">📝 Logback</text>
+    <text x="135" y="377" text-anchor="middle" fill="#94a3b8" font-size="9">Structured JSON Logging</text>
+  </g>
+
+  <!-- MDC / Tracing -->
+  <g filter="s3">
+    <rect x="250" y="336" width="170" height="52" rx="10" fill="#1e293b" stroke="#94a3b8" stroke-width="1.5"/>
+    <text x="335" y="359" text-anchor="middle" fill="#e2e8f0" font-size="11" font-weight="600">🔗 MDC Tracing</text>
+    <text x="335" y="377" text-anchor="middle" fill="#94a3b8" font-size="9">Request ID / Trace ID</text>
+  </g>
+
+  <!-- Support:logging module -->
+  <g filter="s3">
+    <rect x="450" y="336" width="170" height="52" rx="10" fill="#1e293b" stroke="#94a3b8" stroke-width="1.5"/>
+    <text x="535" y="359" text-anchor="middle" fill="#e2e8f0" font-size="11" font-weight="600">📦 support:logging</text>
+    <text x="535" y="377" text-anchor="middle" fill="#94a3b8" font-size="9">Logback + Sentry Bridge</text>
+  </g>
+
+  <!-- Support:monitoring module -->
+  <g filter="s3">
+    <rect x="650" y="336" width="170" height="52" rx="10" fill="#1e293b" stroke="#94a3b8" stroke-width="1.5"/>
+    <text x="735" y="359" text-anchor="middle" fill="#e2e8f0" font-size="11" font-weight="600">📦 support:monitoring</text>
+    <text x="735" y="377" text-anchor="middle" fill="#94a3b8" font-size="9">Actuator + Prometheus</text>
+  </g>
+
+  <!-- Arrows between logging components -->
+  <line x1="220" y1="362" x2="245" y2="362" stroke="#64748b" stroke-width="1.5" marker-end="url(#m1)"/>
+  <line x1="420" y1="362" x2="445" y2="362" stroke="#64748b" stroke-width="1.5" marker-end="url(#m1)"/>
+  <line x1="620" y1="362" x2="645" y2="362" stroke="#64748b" stroke-width="1.5" marker-end="url(#m1)"/>
+
+  <!-- ===== Key Metrics ===== -->
+  <rect x="30" y="430" width="940" height="100" rx="14" fill="none" stroke="#3b82f6" stroke-width="1" stroke-dasharray="8,4" opacity="0.4"/>
+  <text x="50" y="452" fill="#93c5fd" font-size="13" font-weight="700">KEY METRICS TRACKED</text>
+
+  <g filter="s3">
+    <rect x="50" y="464" width="170" height="50" rx="8" fill="#1e3a5f" stroke="#3b82f6" stroke-width="1"/>
+    <text x="135" y="486" text-anchor="middle" fill="#bfdbfe" font-size="10" font-weight="600">HTTP Requests</text>
+    <text x="135" y="502" text-anchor="middle" fill="#60a5fa" font-size="8">Rate / Latency / Errors</text>
+  </g>
+
+  <g filter="s3">
+    <rect x="240" y="464" width="170" height="50" rx="8" fill="#1e3a5f" stroke="#3b82f6" stroke-width="1"/>
+    <text x="325" y="486" text-anchor="middle" fill="#bfdbfe" font-size="10" font-weight="600">JVM Metrics</text>
+    <text x="325" y="502" text-anchor="middle" fill="#60a5fa" font-size="8">Memory / GC / Threads</text>
+  </g>
+
+  <g filter="s3">
+    <rect x="430" y="464" width="170" height="50" rx="8" fill="#451a03" stroke="#f59e0b" stroke-width="1"/>
+    <text x="515" y="486" text-anchor="middle" fill="#fde68a" font-size="10" font-weight="600">Kafka Consumer</text>
+    <text x="515" y="502" text-anchor="middle" fill="#fbbf24" font-size="8">Lag / Throughput / DLQ</text>
+  </g>
+
+  <g filter="s3">
+    <rect x="620" y="464" width="170" height="50" rx="8" fill="#3b1111" stroke="#ef4444" stroke-width="1"/>
+    <text x="705" y="486" text-anchor="middle" fill="#fca5a5" font-size="10" font-weight="600">Redis Ops</text>
+    <text x="705" y="502" text-anchor="middle" fill="#f87171" font-size="8">Latency / Hit Rate / Lock</text>
+  </g>
+
+  <g filter="s3">
+    <rect x="810" y="464" width="150" height="50" rx="8" fill="#064e3b" stroke="#34d399" stroke-width="1"/>
+    <text x="885" y="486" text-anchor="middle" fill="#d1fae5" font-size="10" font-weight="600">Coupon Business</text>
+    <text x="885" y="502" text-anchor="middle" fill="#6ee7b7" font-size="8">Issue Rate / Stock / Errors</text>
+  </g>
+</svg>

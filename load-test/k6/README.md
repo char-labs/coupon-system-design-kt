@@ -1,6 +1,10 @@
 # k6 Load Test Guide
 
 이 디렉터리는 `springboot-coupon-system`과 유사한 `Redis reserve -> Kafka -> consumer issue` 계약을 검증하는 `k6` 시나리오를 담고 있습니다.
+기준 런타임 계약과 관측성 규칙은 [docs/architecture/coupon-issuance-runtime.md](/Users/yunbeom/ybcha/coupon-system-design-kt/docs/architecture/coupon-issuance-runtime.md)를 따릅니다.
+
+로컬 observability compose는 `InfluxDB + Grafana` 외에 `Loki + Alloy`도 함께 띄웁니다.
+`coupon-app`, `coupon-worker` 의 docker stdout 로그는 JSON 형식으로 출력되고 Alloy가 Loki로 전달합니다.
 
 현재 공개 발급 계약은 아래 경로가 기준입니다.
 
@@ -41,7 +45,7 @@
   - 사용자 다수가 같은 쿠폰에 동시에 발급을 요청합니다.
   - 즉시 응답 분포와 최종 발급 건수, 잔여 재고, 정합성을 함께 검증합니다.
 - `restaurant-issue-burst.js`
-  - 사용자 다수가 같은 `restaurantId`에 동시에 레스토랑 쿠폰 발급을 요청합니다.
+  - 사용자 다수가 같은 `restaurantId`에 동시에 맛집 쿠폰 발급을 요청합니다.
   - setup에서 restaurant mapping 1건을 만들고, 최종 발급 건수와 잔여 재고 정합성을 함께 검증합니다.
 - `contention.js`
   - 실제 회원가입으로 세션을 미리 준비한 뒤 같은 쿠폰으로 경합 상황을 재현합니다.

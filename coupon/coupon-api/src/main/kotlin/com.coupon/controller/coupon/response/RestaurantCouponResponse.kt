@@ -5,13 +5,13 @@ import com.coupon.enums.coupon.RestaurantCouponStatus
 import io.swagger.v3.oas.annotations.media.Schema
 import java.time.LocalDateTime
 
-@Schema(description = "레스토랑 쿠폰 응답")
+@Schema(description = "맛집 쿠폰 응답")
 sealed class RestaurantCouponResponse {
-    @Schema(description = "레스토랑 쿠폰 상세 응답")
+    @Schema(description = "맛집 쿠폰 상세 응답")
     data class Detail(
-        @param:Schema(description = "레스토랑 쿠폰 ID", example = "1")
+        @param:Schema(description = "맛집 쿠폰 ID", example = "1")
         val id: Long,
-        @param:Schema(description = "레스토랑 ID", example = "1")
+        @param:Schema(description = "맛집 ID", example = "1")
         val restaurantId: Long,
         @param:Schema(description = "쿠폰 ID", example = "1")
         val couponId: Long,

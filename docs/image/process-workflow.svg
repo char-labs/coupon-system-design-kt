@@ -1,0 +1,239 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 820" font-family="'Segoe UI', Arial, sans-serif">
+  <defs>
+    <linearGradient id="bg2" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0f172a"/><stop offset="100%" style="stop-color:#1e293b"/>
+    </linearGradient>
+    <filter id="sh"><feDropShadow dx="0" dy="2" stdDeviation="4" flood-color="#000" flood-opacity="0.35"/></filter>
+    <marker id="a1" viewBox="0 0 10 7" refX="10" refY="3.5" markerWidth="8" markerHeight="6" orient="auto-start-auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#60a5fa"/>
+    </marker>
+    <marker id="a2" viewBox="0 0 10 7" refX="10" refY="3.5" markerWidth="8" markerHeight="6" orient="auto-start-auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#fbbf24"/>
+    </marker>
+    <marker id="a3" viewBox="0 0 10 7" refX="10" refY="3.5" markerWidth="8" markerHeight="6" orient="auto-start-auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#f87171"/>
+    </marker>
+    <marker id="a4" viewBox="0 0 10 7" refX="10" refY="3.5" markerWidth="8" markerHeight="6" orient="auto-start-auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#34d399"/>
+    </marker>
+    <marker id="a5" viewBox="0 0 10 7" refX="10" refY="3.5" markerWidth="8" markerHeight="6" orient="auto-start-auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#c084fc"/>
+    </marker>
+  </defs>
+
+  <rect width="1200" height="820" rx="16" fill="url(#bg2)"/>
+
+  <!-- Title -->
+  <text x="600" y="40" text-anchor="middle" fill="#f8fafc" font-size="22" font-weight="700">🎫 선착순 쿠폰 발급 Flow (FCFS Coupon Issuance)</text>
+  <line x1="330" y1="52" x2="870" y2="52" stroke="#3b82f6" stroke-width="2" opacity="0.4"/>
+
+  <!-- ===== PHASE 1: API (Fast Path) ===== -->
+  <rect x="30" y="68" width="560" height="340" rx="14" fill="none" stroke="#6366f1" stroke-width="1" stroke-dasharray="8,4" opacity="0.5"/>
+  <text x="50" y="90" fill="#a5b4fc" font-size="14" font-weight="700">PHASE 1 — API Server (Fast Path)</text>
+  <text x="50" y="108" fill="#64748b" font-size="10">HTTP 202 Accepted / 200 Rejected · 밀리초 단위 응답</text>
+
+  <!-- Step 1: Client Request -->
+  <g filter="sh">
+    <rect x="50" y="124" width="180" height="52" rx="10" fill="#312e81" stroke="#818cf8" stroke-width="1.5"/>
+    <text x="140" y="147" text-anchor="middle" fill="#e0e7ff" font-size="11" font-weight="600">① POST /coupon-issues</text>
+    <text x="140" y="163" text-anchor="middle" fill="#a5b4fc" font-size="9">{couponId, userId}</text>
+  </g>
+
+  <!-- Step 2: Cache Lookup -->
+  <g filter="sh">
+    <rect x="50" y="196" width="180" height="52" rx="10" fill="#064e3b" stroke="#34d399" stroke-width="1.5"/>
+    <text x="140" y="219" text-anchor="middle" fill="#d1fae5" font-size="11" font-weight="600">② 쿠폰 상세 캐시 조회</text>
+    <text x="140" y="235" text-anchor="middle" fill="#6ee7b7" font-size="9">Redis Cache (TTL 60min)</text>
+  </g>
+
+  <!-- Arrow 1→2 -->
+  <line x1="140" y1="176" x2="140" y2="191" stroke="#60a5fa" stroke-width="1.5" marker-end="url(#a1)"/>
+
+  <!-- Step 3: Redis Reserve -->
+  <g filter="sh">
+    <rect x="50" y="268" width="180" height="70" rx="10" fill="#3b1111" stroke="#f87171" stroke-width="1.5"/>
+    <text x="140" y="291" text-anchor="middle" fill="#fecaca" font-size="11" font-weight="600">③ Redis 선착순 예약</text>
+    <text x="140" y="306" text-anchor="middle" fill="#f87171" font-size="9">Lua Script (Atomic)</text>
+    <text x="140" y="320" text-anchor="middle" fill="#fca5a5" font-size="8">SISMEMBER → GET → INCR → SADD</text>
+  </g>
+
+  <!-- Arrow 2→3 -->
+  <line x1="140" y1="248" x2="140" y2="263" stroke="#60a5fa" stroke-width="1.5" marker-end="url(#a1)"/>
+
+  <!-- Decision Diamond -->
+  <polygon points="350,268 430,304 350,340 270,304" fill="#1e293b" stroke="#fbbf24" stroke-width="1.5"/>
+  <text x="350" y="301" text-anchor="middle" fill="#fbbf24" font-size="10" font-weight="600">Reserve</text>
+  <text x="350" y="315" text-anchor="middle" fill="#fbbf24" font-size="10" font-weight="600">Result?</text>
+
+  <!-- Arrow 3→Diamond -->
+  <line x1="230" y1="303" x2="265" y2="303" stroke="#f87171" stroke-width="1.5" marker-end="url(#a3)"/>
+
+  <!-- DUPLICATE path -->
+  <g filter="sh">
+    <rect x="290" y="356" width="120" height="40" rx="8" fill="#451a03" stroke="#f59e0b" stroke-width="1"/>
+    <text x="350" y="380" text-anchor="middle" fill="#fde68a" font-size="10" font-weight="600">DUPLICATE</text>
+  </g>
+  <line x1="350" y1="340" x2="350" y2="351" stroke="#fbbf24" stroke-width="1.5" marker-end="url(#a2)"/>
+  <text x="365" y="350" fill="#fbbf24" font-size="8">중복</text>
+
+  <!-- SOLD_OUT path -->
+  <g filter="sh">
+    <rect x="160" y="356" width="110" height="40" rx="8" fill="#3b1111" stroke="#ef4444" stroke-width="1"/>
+    <text x="215" y="380" text-anchor="middle" fill="#fca5a5" font-size="10" font-weight="600">SOLD_OUT</text>
+  </g>
+  <line x1="270" y1="304" x2="215" y2="304" stroke="#64748b" stroke-width="0.5"/>
+  <line x1="215" y1="304" x2="215" y2="351" stroke="#f87171" stroke-width="1.5" marker-end="url(#a3)"/>
+  <text x="205" y="350" fill="#f87171" font-size="8">소진</text>
+
+  <!-- SUCCESS path → Kafka Publish -->
+  <g filter="sh">
+    <rect x="448" y="280" width="130" height="48" rx="10" fill="#451a03" stroke="#f59e0b" stroke-width="1.5"/>
+    <text x="513" y="301" text-anchor="middle" fill="#fde68a" font-size="11" font-weight="600">④ Kafka Publish</text>
+    <text x="513" y="317" text-anchor="middle" fill="#fbbf24" font-size="9">coupon.issue.v1</text>
+  </g>
+  <line x1="430" y1="304" x2="443" y2="304" stroke="#34d399" stroke-width="1.5" marker-end="url(#a4)"/>
+  <text x="438" y="296" fill="#34d399" font-size="8">SUCCESS</text>
+
+  <!-- ===== PHASE 2: Worker (Reliable Path) ===== -->
+  <rect x="610" y="68" width="560" height="340" rx="14" fill="none" stroke="#f97316" stroke-width="1" stroke-dasharray="8,4" opacity="0.5"/>
+  <text x="630" y="90" fill="#fdba74" font-size="14" font-weight="700">PHASE 2 — Worker (Reliable Execution)</text>
+  <text x="630" y="108" fill="#64748b" font-size="10">Kafka Consumer → Lock-protected DB write · 정합성 보장</text>
+
+  <!-- Step 5: Kafka Consume -->
+  <g filter="sh">
+    <rect x="630" y="124" width="200" height="52" rx="10" fill="#451a03" stroke="#f59e0b" stroke-width="1.5"/>
+    <text x="730" y="147" text-anchor="middle" fill="#fde68a" font-size="11" font-weight="600">⑤ Kafka Consume</text>
+    <text x="730" y="163" text-anchor="middle" fill="#fbbf24" font-size="9">CouponIssueKafkaListener</text>
+  </g>
+
+  <!-- Arrow: API Kafka → Phase2 -->
+  <path d="M513,328 L513,360 Q513,370 523,370 L620,370 Q630,370 630,360 L630,120 Q630,110 640,110 L730,110" fill="none" stroke="#f59e0b" stroke-width="1.5" stroke-dasharray="6,3" opacity="0.4"/>
+  <line x1="730" y1="110" x2="730" y2="119" stroke="#fbbf24" stroke-width="1.5" marker-end="url(#a2)"/>
+
+  <!-- Step 6: Distributed Lock -->
+  <g filter="sh">
+    <rect x="630" y="196" width="200" height="52" rx="10" fill="#3b1111" stroke="#f87171" stroke-width="1.5"/>
+    <text x="730" y="219" text-anchor="middle" fill="#fecaca" font-size="11" font-weight="600">⑥ 분산 락 획득</text>
+    <text x="730" y="235" text-anchor="middle" fill="#f87171" font-size="9">Redisson Lock (timeout 5s)</text>
+  </g>
+  <line x1="730" y1="176" x2="730" y2="191" stroke="#60a5fa" stroke-width="1.5" marker-end="url(#a1)"/>
+
+  <!-- Step 7: DB Validate & Decrease -->
+  <g filter="sh">
+    <rect x="630" y="268" width="200" height="52" rx="10" fill="#1e3a5f" stroke="#3b82f6" stroke-width="1.5"/>
+    <text x="730" y="291" text-anchor="middle" fill="#bfdbfe" font-size="11" font-weight="600">⑦ DB 수량 차감 &amp; 검증</text>
+    <text x="730" y="307" text-anchor="middle" fill="#60a5fa" font-size="9">remaining_quantity - 1</text>
+  </g>
+  <line x1="730" y1="248" x2="730" y2="263" stroke="#60a5fa" stroke-width="1.5" marker-end="url(#a1)"/>
+
+  <!-- Step 8: Insert CouponIssue -->
+  <g filter="sh">
+    <rect x="630" y="340" width="200" height="52" rx="10" fill="#1e3a5f" stroke="#3b82f6" stroke-width="1.5"/>
+    <text x="730" y="363" text-anchor="middle" fill="#bfdbfe" font-size="11" font-weight="600">⑧ 쿠폰 발급 INSERT</text>
+    <text x="730" y="379" text-anchor="middle" fill="#60a5fa" font-size="9">t_coupon_issue (UK: user+coupon)</text>
+  </g>
+  <line x1="730" y1="320" x2="730" y2="335" stroke="#60a5fa" stroke-width="1.5" marker-end="url(#a1)"/>
+
+  <!-- Step 9: Domain Event + Outbox -->
+  <g filter="sh">
+    <rect x="860" y="196" width="200" height="52" rx="10" fill="#312e81" stroke="#818cf8" stroke-width="1.5"/>
+    <text x="960" y="219" text-anchor="middle" fill="#e0e7ff" font-size="11" font-weight="600">⑨ Domain Event 발행</text>
+    <text x="960" y="235" text-anchor="middle" fill="#a5b4fc" font-size="9">CouponLifecycleEvent.Issued</text>
+  </g>
+
+  <g filter="sh">
+    <rect x="860" y="268" width="200" height="52" rx="10" fill="#312e81" stroke="#818cf8" stroke-width="1.5"/>
+    <text x="960" y="291" text-anchor="middle" fill="#e0e7ff" font-size="11" font-weight="600">⑩ Outbox 저장</text>
+    <text x="960" y="307" text-anchor="middle" fill="#a5b4fc" font-size="9">t_outbox_event (같은 트랜잭션)</text>
+  </g>
+
+  <line x1="830" y1="360" x2="860" y2="360" stroke="#64748b" stroke-width="0.5"/>
+  <line x1="860" y1="360" x2="860" y2="252" stroke="#c084fc" stroke-width="1.5"/>
+  <line x1="860" y1="252" x2="855" y2="222" stroke="#c084fc" stroke-width="1.5" marker-end="url(#a5)"/>
+  <line x1="960" y1="248" x2="960" y2="263" stroke="#c084fc" stroke-width="1.5" marker-end="url(#a5)"/>
+
+  <!-- ===== PHASE 3: Error Handling ===== -->
+  <rect x="30" y="430" width="1140" height="160" rx="14" fill="none" stroke="#dc2626" stroke-width="1" stroke-dasharray="8,4" opacity="0.4"/>
+  <text x="50" y="455" fill="#fca5a5" font-size="14" font-weight="700">ERROR HANDLING &amp; COMPENSATION</text>
+
+  <g filter="sh">
+    <rect x="50" y="470" width="200" height="52" rx="10" fill="#3b1111" stroke="#ef4444" stroke-width="1.5"/>
+    <text x="150" y="493" text-anchor="middle" fill="#fecaca" font-size="11" font-weight="600">Lock 획득 실패</text>
+    <text x="150" y="509" text-anchor="middle" fill="#f87171" font-size="9">→ Exponential Backoff Retry</text>
+  </g>
+
+  <g filter="sh">
+    <rect x="280" y="470" width="200" height="52" rx="10" fill="#451a03" stroke="#f59e0b" stroke-width="1.5"/>
+    <text x="380" y="493" text-anchor="middle" fill="#fde68a" font-size="11" font-weight="600">중복 발급 감지</text>
+    <text x="380" y="509" text-anchor="middle" fill="#fbbf24" font-size="9">→ Idempotent Accept (무시)</text>
+  </g>
+
+  <g filter="sh">
+    <rect x="510" y="470" width="200" height="52" rx="10" fill="#3b1111" stroke="#ef4444" stroke-width="1.5"/>
+    <text x="610" y="493" text-anchor="middle" fill="#fecaca" font-size="11" font-weight="600">수량 소진 / 만료</text>
+    <text x="610" y="509" text-anchor="middle" fill="#f87171" font-size="9">→ Redis State Release</text>
+  </g>
+
+  <g filter="sh">
+    <rect x="740" y="470" width="200" height="52" rx="10" fill="#1e1b4b" stroke="#dc2626" stroke-width="1.5"/>
+    <text x="840" y="493" text-anchor="middle" fill="#fca5a5" font-size="11" font-weight="600">Max Retry 초과</text>
+    <text x="840" y="509" text-anchor="middle" fill="#ef4444" font-size="9">→ DLQ + Slack 알림</text>
+  </g>
+
+  <g filter="sh">
+    <rect x="970" y="470" width="185" height="52" rx="10" fill="#064e3b" stroke="#34d399" stroke-width="1.5"/>
+    <text x="1062" y="493" text-anchor="middle" fill="#d1fae5" font-size="11" font-weight="600">DLQ 처리 후</text>
+    <text x="1062" y="509" text-anchor="middle" fill="#6ee7b7" font-size="9">→ Redis releaseStockSlot</text>
+  </g>
+
+  <!-- Arrows between error steps -->
+  <line x1="940" y1="496" x2="965" y2="496" stroke="#34d399" stroke-width="1" marker-end="url(#a4)"/>
+
+  <!-- ===== PHASE 4: Outbox Delivery ===== -->
+  <rect x="30" y="610" width="1140" height="120" rx="14" fill="none" stroke="#818cf8" stroke-width="1" stroke-dasharray="8,4" opacity="0.4"/>
+  <text x="50" y="635" fill="#c4b5fd" font-size="14" font-weight="700">OUTBOX PATTERN — Eventual Consistency</text>
+
+  <g filter="sh">
+    <rect x="50" y="650" width="180" height="52" rx="10" fill="#312e81" stroke="#818cf8" stroke-width="1.5"/>
+    <text x="140" y="673" text-anchor="middle" fill="#e0e7ff" font-size="11" font-weight="600">Outbox Poller</text>
+    <text x="140" y="689" text-anchor="middle" fill="#a5b4fc" font-size="9">주기적 polling (Worker)</text>
+  </g>
+
+  <g filter="sh">
+    <rect x="280" y="650" width="180" height="52" rx="10" fill="#312e81" stroke="#818cf8" stroke-width="1.5"/>
+    <text x="370" y="673" text-anchor="middle" fill="#e0e7ff" font-size="11" font-weight="600">Event Dispatcher</text>
+    <text x="370" y="689" text-anchor="middle" fill="#a5b4fc" font-size="9">Handler Registry 기반</text>
+  </g>
+
+  <g filter="sh">
+    <rect x="510" y="650" width="180" height="52" rx="10" fill="#064e3b" stroke="#34d399" stroke-width="1.5"/>
+    <text x="600" y="673" text-anchor="middle" fill="#d1fae5" font-size="11" font-weight="600">성공 → SUCCEEDED</text>
+    <text x="600" y="689" text-anchor="middle" fill="#6ee7b7" font-size="9">이벤트 처리 완료</text>
+  </g>
+
+  <g filter="sh">
+    <rect x="740" y="650" width="180" height="52" rx="10" fill="#451a03" stroke="#f59e0b" stroke-width="1.5"/>
+    <text x="830" y="673" text-anchor="middle" fill="#fde68a" font-size="11" font-weight="600">실패 → Reschedule</text>
+    <text x="830" y="689" text-anchor="middle" fill="#fbbf24" font-size="9">Backoff 후 재시도</text>
+  </g>
+
+  <g filter="sh">
+    <rect x="970" y="650" width="185" height="52" rx="10" fill="#3b1111" stroke="#ef4444" stroke-width="1.5"/>
+    <text x="1062" y="673" text-anchor="middle" fill="#fecaca" font-size="11" font-weight="600">치명 오류 → DEAD</text>
+    <text x="1062" y="689" text-anchor="middle" fill="#f87171" font-size="9">Slack 알림 + 수동 처리</text>
+  </g>
+
+  <!-- Arrows in Outbox -->
+  <line x1="230" y1="676" x2="275" y2="676" stroke="#c084fc" stroke-width="1.5" marker-end="url(#a5)"/>
+  <line x1="460" y1="676" x2="505" y2="676" stroke="#34d399" stroke-width="1.5" marker-end="url(#a4)"/>
+  <line x1="690" y1="676" x2="735" y2="676" stroke="#fbbf24" stroke-width="1.5" marker-end="url(#a2)"/>
+  <line x1="920" y1="676" x2="965" y2="676" stroke="#f87171" stroke-width="1.5" marker-end="url(#a3)"/>
+
+  <!-- Footer: Concurrency Layers -->
+  <rect x="30" y="752" width="1140" height="50" rx="10" fill="#1e293b" stroke="#475569" stroke-width="1"/>
+  <text x="600" y="773" text-anchor="middle" fill="#94a3b8" font-size="11" font-weight="600">동시성 제어 4-Layer</text>
+  <text x="170" y="790" text-anchor="middle" fill="#f87171" font-size="10">L1: Redis Lua (Optimistic)</text>
+  <text x="420" y="790" text-anchor="middle" fill="#fbbf24" font-size="10">L2: Redisson Lock (Pessimistic)</text>
+  <text x="700" y="790" text-anchor="middle" fill="#60a5fa" font-size="10">L3: DB Unique + Row Lock</text>
+  <text x="990" y="790" text-anchor="middle" fill="#34d399" font-size="10">L4: Kafka Partition Order</text>
+</svg>

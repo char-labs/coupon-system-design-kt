@@ -140,4 +140,5 @@
 - Clearly separate locally verified facts from externally sourced guidance when explaining adoption direction.
 - Distinguish static review signals from measured production evidence.
 - Do not claim Kafka, CDC, DB replication, Redis Cluster sharding, or autoscaling behavior as already implemented.
+- Read [docs/architecture/coupon-issuance-runtime.md](docs/architecture/coupon-issuance-runtime.md) for the current issuance contract and observability rules.
 - Read [docs/architecture/coupon-system-expansion-todo.md](docs/architecture/coupon-system-expansion-todo.md) for the current gap list and expansion TODO.

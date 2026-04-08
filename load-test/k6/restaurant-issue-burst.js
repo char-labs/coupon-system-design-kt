@@ -41,6 +41,7 @@ export const options = {
     },
   },
   setupTimeout: config.issueBurstSetupTimeout,
+  teardownTimeout: `${config.issueSettlementTimeoutSeconds + 30}s`,
   thresholds: {
     checks: ['rate>0.99'],
     http_req_failed: ['rate<0.01'],
@@ -54,7 +55,9 @@ export const options = {
 export function setup() {
   const adminToken = waitForAdminSignin(config.adminEmail, config.adminPassword);
   const runId = Date.now();
-  const restaurantId = 101;
+  // Use a run-scoped restaurantId so repeated local runs do not accumulate
+  // multiple active mappings on the same synthetic restaurant.
+  const restaurantId = runId;
   const coupon = createCoupon(
     adminToken.accessToken,
     buildCouponPayload({

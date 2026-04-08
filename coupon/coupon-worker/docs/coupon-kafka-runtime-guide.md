@@ -3,11 +3,13 @@
 ## 목적
 
 이 문서는 현재 저장소의 쿠폰 발급 런타임을 운영 관점에서 빠르게 이해하기 위한 최신 가이드다.
+공식 기준 계약은 [docs/architecture/coupon-issuance-runtime.md](/Users/yunbeom/ybcha/coupon-system-design-kt/docs/architecture/coupon-issuance-runtime.md) 문서를 우선한다.
 
-현재 구조의 핵심은 아래 두 줄이다.
+현재 구조의 핵심은 아래 세 줄이다.
 
-- 공개 발급은 `Redis reserve -> direct Kafka publish -> worker consume -> coupon_issue persist`
+- 공개 발급은 `Redis reserve -> direct Kafka publish -> worker consume -> Redis processing limit -> coupon_issue persist`
 - outbox worker는 발급 intake가 아니라 `issued/used/canceled` 후속 activity projection 을 처리한다
+- 로컬 observability는 docker JSON stdout -> Grafana Alloy -> Loki -> Grafana 순서로 본다
 
 학습용 배경은 [kafka-learning-guide.md](./kafka-learning-guide.md), DLQ 대응은
 [kafka-dlq-replay-runbook.md](./kafka-dlq-replay-runbook.md), topic 운영 원칙은
@@ -22,6 +24,7 @@ flowchart LR
     Redis["Redis"]
     Kafka["coupon.issue.v1"]
     Worker["coupon-worker"]
+    Limit["Redis rate limiter"]
     Mysql["MySQL"]
     Outbox["t_outbox_event"]
     Activity["coupon_activity"]
@@ -30,6 +33,7 @@ flowchart LR
     Api --> Redis
     Api --> Kafka
     Kafka --> Worker
+    Worker --> Limit
     Worker --> Mysql
     Mysql --> Outbox
     Outbox --> Worker
@@ -41,6 +45,9 @@ flowchart LR
 - Redis는 발급 admission control 이다.
   - duplicate check
   - stock slot reserve
+- Redis는 worker cluster-wide processing limit 이기도 하다.
+  - Redisson `RRateLimiter`
+  - `RateType.OVERALL`
 - Kafka는 accepted issue command bus 이다.
   - topic: `coupon.issue.v1`
   - DLQ: `coupon.issue.v1.dlq`
@@ -118,6 +125,8 @@ docker compose -f docker/docker-compose.yml up --build -d mysql redis kafka kafk
 - [`CouponIssueService.kt`](../../coupon-domain/src/main/kotlin/com/coupon/coupon/CouponIssueService.kt)
 - [`CouponIssueRedisRepository.kt`](../../coupon-domain/src/main/kotlin/com/coupon/coupon/CouponIssueRedisRepository.kt)
 - [`CouponIssueRedisCoreRepository.kt`](../../../storage/redis/src/main/kotlin/com/coupon/redis/coupon/CouponIssueRedisCoreRepository.kt)
+- [`CouponIssueProcessingLimiter.kt`](../../coupon-domain/src/main/kotlin/com/coupon/coupon/CouponIssueProcessingLimiter.kt)
+- [`CouponIssueProcessingLimiterCoreRepository.kt`](../../../storage/redis/src/main/kotlin/com/coupon/redis/coupon/CouponIssueProcessingLimiterCoreRepository.kt)
 
 ## 현재 Kafka 설정
 
@@ -129,6 +138,7 @@ docker compose -f docker/docker-compose.yml up --build -d mysql redis kafka kafk
 | DLQ group id | `coupon-issue-dlq-group` | 같은 파일 |
 | partition key | `couponId.toString()` | [`CouponIssueKafkaPublisher.kt`](../../coupon-api/src/main/kotlin/com.coupon/config/CouponIssueKafkaPublisher.kt) |
 | consumer concurrency | `3` | [`worker.yml`](../src/main/resources/worker.yml) |
+| processing limit | `100 permits/sec` | [`worker.yml`](../src/main/resources/worker.yml) |
 
 ## 흐름도
 
@@ -161,11 +171,13 @@ sequenceDiagram
 sequenceDiagram
     participant Kafka
     participant Worker as CouponIssueKafkaListener
+    participant Limit as Redis RRateLimiter
     participant Facade as CouponIssueFacade
     participant DB as MySQL
     participant Redis
 
     Kafka->>Worker: CouponIssueMessage
+    Worker->>Limit: acquire(1)
     Worker->>Facade: execute(message)
     Facade->>DB: coupon availability 재검증
     Facade->>DB: remaining_quantity 감소
@@ -215,8 +227,9 @@ outbox 상태 규칙 요약:
 1. `POST /coupon-issues` 응답의 `data.result` 를 먼저 본다
 2. `SUCCESS` 였다면 Kafka UI 에서 `coupon.issue.v1` lag 를 본다
 3. `coupon-worker` 로그에서 retry 또는 DLQ 이동 여부를 본다
-4. `t_coupon_issue` 생성 여부와 `t_coupon.remaining_quantity` 를 확인한다
-5. Redis state 가 남아 있는데 DB 발급이 없으면 DLQ 또는 publish failure 보상 경로를 확인한다
+4. `worker.limit` 로그와 processing limit TPS 설정을 본다
+5. `t_coupon_issue` 생성 여부와 `t_coupon.remaining_quantity` 를 확인한다
+6. Redis state 가 남아 있는데 DB 발급이 없으면 DLQ 또는 publish failure 보상 경로를 확인한다
 
 ### DLQ가 늘 때
 
@@ -249,4 +262,5 @@ outbox 상태 규칙 요약:
 3. [`CouponIssueService.kt`](../../coupon-domain/src/main/kotlin/com/coupon/coupon/CouponIssueService.kt)
 4. [`CouponIssueKafkaPublisher.kt`](../../coupon-api/src/main/kotlin/com.coupon/config/CouponIssueKafkaPublisher.kt)
 5. [`CouponIssueKafkaListener.kt`](../src/main/kotlin/com.coupon/kafka/CouponIssueKafkaListener.kt)
-6. [`phase-2-outbox-worker-runtime.md`](./phase-2-outbox-worker-runtime.md)
+6. [`CouponIssueProcessingLimiterCoreRepository.kt`](../../../storage/redis/src/main/kotlin/com/coupon/redis/coupon/CouponIssueProcessingLimiterCoreRepository.kt)
+7. [`phase-2-outbox-worker-runtime.md`](./phase-2-outbox-worker-runtime.md)

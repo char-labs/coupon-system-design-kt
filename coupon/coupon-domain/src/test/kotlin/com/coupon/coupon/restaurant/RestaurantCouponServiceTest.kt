@@ -19,7 +19,7 @@ import java.time.LocalDateTime
 
 class RestaurantCouponServiceTest :
     BehaviorSpec({
-        given("RestaurantCouponService로 레스토랑 쿠폰을 생성하면") {
+        given("RestaurantCouponService로 맛집 쿠폰을 생성하면") {
             `when`("쿠폰이 존재하고 저장이 성공하면") {
                 val context = RestaurantCouponServiceTestContext()
                 val command = RestaurantCouponFixtures.createCommand(restaurantId = 101L, couponId = 2001L)
@@ -40,7 +40,7 @@ class RestaurantCouponServiceTest :
             }
         }
 
-        given("RestaurantCouponService로 레스토랑 쿠폰 배치를 생성하면") {
+        given("RestaurantCouponService로 맛집 쿠폰 배치를 생성하면") {
             `when`("1~3건 요청이면") {
                 val context = RestaurantCouponServiceTestContext()
                 val first = RestaurantCouponFixtures.createCommand(restaurantId = 101L, couponId = 2001L)
@@ -90,7 +90,7 @@ class RestaurantCouponServiceTest :
             }
         }
 
-        given("RestaurantCouponService로 활성 레스토랑 쿠폰을 조회하면") {
+        given("RestaurantCouponService로 활성 맛집 쿠폰을 조회하면") {
             `when`("상태가 ACTIVE가 아니면") {
                 val context = RestaurantCouponServiceTestContext()
                 val restaurantCoupon =
@@ -134,7 +134,7 @@ class RestaurantCouponServiceTest :
             }
         }
 
-        given("RestaurantCouponService로 레스토랑 쿠폰을 삭제하면") {
+        given("RestaurantCouponService로 맛집 쿠폰을 삭제하면") {
             `when`("쿠폰 id가 주어지면") {
                 val context = RestaurantCouponServiceTestContext()
                 justRun { context.restaurantCouponRepository.delete(any()) }

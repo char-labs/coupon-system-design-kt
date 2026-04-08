@@ -35,6 +35,7 @@ export const options = {
     },
   },
   setupTimeout: config.issueBurstSetupTimeout,
+  teardownTimeout: `${config.issueSettlementTimeoutSeconds + 30}s`,
   thresholds: {
     checks: ['rate>0.99'],
     http_req_failed: ['rate<0.01'],

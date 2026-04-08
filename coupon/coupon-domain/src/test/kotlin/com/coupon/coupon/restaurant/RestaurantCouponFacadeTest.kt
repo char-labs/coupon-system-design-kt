@@ -14,7 +14,7 @@ import io.mockk.verifySequence
 class RestaurantCouponFacadeTest :
     BehaviorSpec({
         given("RestaurantCouponFacade로 restaurant 기준 발급을 처리하면") {
-            `when`("활성 레스토랑 쿠폰이 존재하면") {
+            `when`("활성 맛집 쿠폰이 존재하면") {
                 val restaurantCouponService = mockk<RestaurantCouponService>()
                 val couponIssueFacade = mockk<CouponIssueFacade>()
                 val restaurantCouponFacade =

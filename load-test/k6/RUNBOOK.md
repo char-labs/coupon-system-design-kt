@@ -1,6 +1,7 @@
 # k6 Dashboard Runbook
 
 이 문서는 `springboot-coupon-system`과 유사한 `Redis reserve -> Kafka -> consumer issue` 쿠폰 발급 계약 기준으로 `k6 -> InfluxDB -> Grafana` 실행 절차를 정리합니다.
+런타임 계약과 로그 기반 관측 규칙은 [docs/architecture/coupon-issuance-runtime.md](/Users/yunbeom/ybcha/coupon-system-design-kt/docs/architecture/coupon-issuance-runtime.md)를 기준으로 봅니다.
 
 현재 발급의 기준 공개 계약은 아래입니다.
 
@@ -52,6 +53,8 @@ curl http://localhost:3000/api/health
 - worker actuator: `http://127.0.0.1:18081/actuator/health`
 - InfluxDB: `http://localhost:8086`
 - Grafana: `http://localhost:3000`
+- Loki: `http://localhost:3100`
+- Alloy: `http://localhost:12345`
 - Kafka UI: `http://localhost:18085`
 
 ## 2. Grafana 열기
@@ -60,11 +63,32 @@ curl http://localhost:3000/api/health
 2. `admin / admin`
 3. `Dashboards`
 4. `k6 Overview`
+5. `coupon-runtime -> Coupon Issuance Runtime`
+6. ad-hoc 탐색은 `Explore -> Loki` 에서 확인
 
 권장 설정:
 
 - time range: `Last 15 minutes`
 - refresh: `5s` 또는 `10s`
+
+로그 예시:
+
+```logql
+{service_name="coupon-app"} | json | message =~ ".*event=coupon.issue.*phase=intake.publish.*"
+```
+
+```logql
+{service_name="coupon-worker"} | json | message =~ ".*event=coupon.issue.*phase=worker.dlq.*"
+```
+
+`Coupon Issuance Runtime` 대시보드는 아래 패널을 기본 제공합니다.
+
+- `Accepted Requests`, `Publish Failures`, `Worker Success`, `DLQ Count`
+- `Immediate Result Breakdown`, `Publish Outcome`, `Worker Outcome`
+- `Worker Processing Limit`, `Publish Duration p95`, `Accepted To Persist p95`
+- `Coupon Issue Logs`, `Failures And Retries`
+
+특정 발급 요청만 추적할 때는 `RequestId regex` 변수에 request id를 넣으면 됩니다.
 
 ## 3. 대표 실행
 

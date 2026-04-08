@@ -24,7 +24,7 @@
 #   - 지금 기본 검증 대상은 이 시나리오입니다.
 # - restaurant-burst
 #   - 한 종류의 식당 쿠폰 매핑에 대해 동시에 몰리는 선착순 상황을 검증합니다.
-#   - setup에서 쿠폰 생성/활성화 후 restaurantId 매핑 1건을 만들고, measured phase에서 동시에 레스토랑 쿠폰 발급을 호출합니다.
+#   - setup에서 쿠폰 생성/활성화 후 restaurantId 매핑 1건을 만들고, measured phase에서 동시에 맛집 쿠폰 발급을 호출합니다.
 # - overload
 #   - 일정 시간 동안 HOT_FCFS_ASYNC 발급 요청이 지속적으로 들어오는 상황을 검증합니다.
 #   - 기본값은 50 VU가 10분 동안 200개 쿠폰 풀을 대상으로 요청하고, 쿠폰당 재고는 100,000개입니다.
@@ -97,6 +97,8 @@ check_stack() {
   wait_for_http "coupon-worker health" "http://127.0.0.1:18081/actuator/health"
   wait_for_http "influxdb" "http://127.0.0.1:8086/ping"
   wait_for_http "grafana" "http://127.0.0.1:3000/api/health"
+  wait_for_http "loki" "http://127.0.0.1:3100/ready"
+  wait_for_http "alloy" "http://127.0.0.1:12345"
   wait_for_http "kafka-ui" "http://127.0.0.1:18085"
 }
 
@@ -122,7 +124,7 @@ Environment overrides:
 
 Behavior:
   up        Start docker stack only
-  check     Verify app, worker, Grafana, InfluxDB, Kafka UI
+  check     Verify app, worker, Grafana, Loki, Alloy, InfluxDB, Kafka UI
   smoke     Run Redis reserve + async execution smoke test
   ramp      Run prepared-user immediate-issue ramp test (optional)
   real-ramp Run real-user immediate-issue ramp test

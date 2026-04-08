@@ -40,7 +40,7 @@ open class RestaurantCouponControllerIntegrationTest(
             databaseCleaner.clean()
         }
 
-        given("레스토랑 쿠폰 배치 생성 API") {
+        given("맛집 쿠폰 배치 생성 API") {
             `when`("관리자가 3건을 생성하면") {
                 then("201과 생성 목록을 반환한다") {
                     val admin = createUser(index = 1, role = AuthorityType.ADMIN)
@@ -139,7 +139,7 @@ open class RestaurantCouponControllerIntegrationTest(
             }
         }
 
-        given("레스토랑 쿠폰 발급 API") {
+        given("맛집 쿠폰 발급 API") {
             `when`("활성 매핑이 있으면") {
                 then("202 SUCCESS와 실제 발급 결과를 남긴다") {
                     val user = createUser(index = 11)

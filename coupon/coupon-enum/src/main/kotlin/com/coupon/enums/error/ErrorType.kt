@@ -76,9 +76,9 @@ enum class ErrorType(
     COUPON_REQUIRES_ASYNC_ISSUE(409, ErrorKind.CLIENT_ERROR, "해당 쿠폰은 선착순 비동기 발급 경로만 사용할 수 있습니다.", ErrorLevel.WARN),
 
     /** Restaurant Coupon */
-    NOT_FOUND_RESTAURANT_COUPON(404, ErrorKind.NOT_FOUND, "레스토랑 쿠폰을 찾을 수 없습니다.", ErrorLevel.WARN),
-    RESTAURANT_COUPON_NOT_ACTIVE(400, ErrorKind.CLIENT_ERROR, "활성화되지 않은 레스토랑 쿠폰입니다.", ErrorLevel.WARN),
-    RESTAURANT_COUPON_EXPIRED(400, ErrorKind.CLIENT_ERROR, "만료된 레스토랑 쿠폰입니다.", ErrorLevel.WARN),
-    DUPLICATED_RESTAURANT_COUPON(409, ErrorKind.CLIENT_ERROR, "이미 등록된 레스토랑 쿠폰입니다.", ErrorLevel.WARN),
-    INVALID_RESTAURANT_COUPON_BATCH_SIZE(400, ErrorKind.CLIENT_ERROR, "레스토랑 쿠폰 배치 생성은 1~3건만 가능합니다.", ErrorLevel.WARN),
+    NOT_FOUND_RESTAURANT_COUPON(404, ErrorKind.NOT_FOUND, "맛집 쿠폰을 찾을 수 없습니다.", ErrorLevel.WARN),
+    RESTAURANT_COUPON_NOT_ACTIVE(400, ErrorKind.CLIENT_ERROR, "활성화되지 않은 맛집 쿠폰입니다.", ErrorLevel.WARN),
+    RESTAURANT_COUPON_EXPIRED(400, ErrorKind.CLIENT_ERROR, "만료된 맛집 쿠폰입니다.", ErrorLevel.WARN),
+    DUPLICATED_RESTAURANT_COUPON(409, ErrorKind.CLIENT_ERROR, "이미 등록된 맛집 쿠폰입니다.", ErrorLevel.WARN),
+    INVALID_RESTAURANT_COUPON_BATCH_SIZE(400, ErrorKind.CLIENT_ERROR, "맛집 쿠폰 배치 생성은 1~3건만 가능합니다.", ErrorLevel.WARN),
 }

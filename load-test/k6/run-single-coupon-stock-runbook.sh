@@ -94,6 +94,8 @@ check_stack() {
   wait_for_http "coupon-worker health" "http://127.0.0.1:18081/actuator/health"
   wait_for_http "influxdb" "http://127.0.0.1:8086/ping"
   wait_for_http "grafana" "http://127.0.0.1:3000/api/health"
+  wait_for_http "loki" "http://127.0.0.1:3100/ready"
+  wait_for_http "alloy" "http://127.0.0.1:12345"
   wait_for_http "kafka-ui" "http://127.0.0.1:18085"
 }
 
@@ -124,7 +126,7 @@ Environment overrides:
 
 Behavior:
   up              Start docker stack only
-  check           Verify app, worker, Grafana, InfluxDB, Kafka UI
+  check           Verify app, worker, Grafana, Loki, Alloy, InfluxDB, Kafka UI
   exact           1,000 users / 1 coupon / stock 1,000
   oversubscribed  1,000 users / 1 coupon / stock 900
   scarce          1,000 users / 1 coupon / stock 100
