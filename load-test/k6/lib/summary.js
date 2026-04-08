@@ -31,6 +31,17 @@ function buildExtraLines(name, data) {
         `issue_burst integrity ok rate: ${metricValue(data, 'issue_burst_integrity_ok', 'rate')}`,
         `issue_burst expected result ok rate: ${metricValue(data, 'issue_burst_expected_result_ok', 'rate')}`,
       ];
+    case 'restaurant-issue-burst':
+      return [
+        `restaurant_issue_burst success count: ${metricOrZero('restaurant_issue_burst_success_count', 'count')}`,
+        `restaurant_issue_burst out_of_stock count: ${metricOrZero('restaurant_issue_burst_out_of_stock_count', 'count')}`,
+        `restaurant_issue_burst unexpected client error count: ${metricOrZero('restaurant_issue_burst_unexpected_client_error_count', 'count')}`,
+        `restaurant_issue_burst server error count: ${metricOrZero('restaurant_issue_burst_server_error_count', 'count')}`,
+        `restaurant_issue_burst final issued count: ${metricValue(data, 'restaurant_issue_burst_final_issued_count')}`,
+        `restaurant_issue_burst final remaining quantity: ${metricValue(data, 'restaurant_issue_burst_final_remaining_quantity')}`,
+        `restaurant_issue_burst integrity ok rate: ${metricValue(data, 'restaurant_issue_burst_integrity_ok', 'rate')}`,
+        `restaurant_issue_burst expected result ok rate: ${metricValue(data, 'restaurant_issue_burst_expected_result_ok', 'rate')}`,
+      ];
     case 'issue-overload':
       return [
         `issue_overload success count: ${metricOrZero('issue_overload_success_count', 'count')}`,

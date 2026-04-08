@@ -5,6 +5,7 @@
 현재 발급의 기준 공개 계약은 아래입니다.
 
 - `POST /coupon-issues`
+- `POST /restaurant-coupons/issue`
 - `GET /coupon-issues/my`
 - `GET /coupon-issues/coupons/{couponId}`
 
@@ -95,6 +96,23 @@ node load-test/k6/run-with-slack.mjs issue-burst --profile local -- \
   -e ISSUE_POLL_TIMEOUT_SECONDS=30 \
   -e ISSUE_POLL_INTERVAL_MS=500
 ```
+
+### Restaurant Burst
+
+```bash
+node load-test/k6/run-with-slack.mjs restaurant-issue-burst --profile local -- \
+  --out influxdb=http://localhost:8086/myk6db \
+  -e BASE_URL=http://127.0.0.1:18080 \
+  -e ISSUE_BURST_VUS=1000 \
+  -e ISSUE_BURST_STOCK=1000
+```
+
+목적:
+
+- 동일 restaurantId 동시 발급
+- immediate `SUCCESS / SOLD_OUT / DUPLICATE` 분포 확인
+- 최종 발급 건수 / 잔여 재고 검증
+- `issued + remaining == initial stock` 확인
 
 목적:
 

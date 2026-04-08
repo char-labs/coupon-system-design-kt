@@ -28,6 +28,11 @@ const scenarioDefaults = {
     ISSUE_BURST_STOCK: '1000',
     ISSUE_BURST_MAX_DURATION: '5m',
   },
+  'restaurant-issue-burst': {
+    ISSUE_BURST_VUS: '1000',
+    ISSUE_BURST_STOCK: '1000',
+    ISSUE_BURST_MAX_DURATION: '5m',
+  },
   contention: {
     CONTENTION_VUS: '100',
     CONTENTION_MAX_DURATION: '2m',
@@ -81,6 +86,7 @@ const scenarioLabels = {
   smoke: '기본 기능 확인',
   baseline: '일반 사용량 기준 부하',
   'issue-burst': '대량 동시 발급 정합성 확인',
+  'restaurant-issue-burst': '레스토랑 쿠폰 동시 발급 정합성 확인',
   contention: '동시 발급 경합 확인',
   'issue-overload': '쿠폰 발급 진입 과부하',
   'issue-ramp': 'prepared-user immediate issue 성능 확인',
@@ -477,6 +483,7 @@ function buildLoadDescription(scenario, parsedEnv, envSource) {
     case 'baseline':
       return `BASELINE_VUS=${resolveValue('BASELINE_VUS')}, BASELINE_DURATION=${resolveValue('BASELINE_DURATION')}`;
     case 'issue-burst':
+    case 'restaurant-issue-burst':
       return [
         `ISSUE_BURST_VUS=${resolveValue('ISSUE_BURST_VUS')}`,
         `ISSUE_BURST_STOCK=${resolveValue('ISSUE_BURST_STOCK')}`,
@@ -523,6 +530,8 @@ function buildLoadSummary(scenario, parsedEnv, envSource) {
       return `${resolveValue('BASELINE_VUS')}명이 ${resolveValue('BASELINE_DURATION')} 동안 일반 사용 패턴으로 실행`;
     case 'issue-burst':
       return `${resolveValue('ISSUE_BURST_VUS')}명이 같은 쿠폰에 동시에 1회 발급 요청`;
+    case 'restaurant-issue-burst':
+      return `${resolveValue('ISSUE_BURST_VUS')}명이 같은 식당에 동시에 1회 발급 요청`;
     case 'contention':
       return `${resolveValue('CONTENTION_VUS')}명이 같은 쿠폰에 동시에 발급 요청`;
     case 'issue-overload':
@@ -549,16 +558,32 @@ function formatThresholdFailure(threshold) {
     return '재고 정합성 검증 실패';
   }
 
+  if (threshold.startsWith('restaurant_issue_burst_integrity_ok')) {
+    return '레스토랑 쿠폰 재고 정합성 검증 실패';
+  }
+
   if (threshold.startsWith('issue_burst_expected_result_ok')) {
     return '예상 발급 수량 검증 실패';
+  }
+
+  if (threshold.startsWith('restaurant_issue_burst_expected_result_ok')) {
+    return '레스토랑 쿠폰 예상 발급 수량 검증 실패';
   }
 
   if (threshold.startsWith('issue_burst_server_error_count')) {
     return '서버 오류 발생';
   }
 
+  if (threshold.startsWith('restaurant_issue_burst_server_error_count')) {
+    return '레스토랑 쿠폰 서버 오류 발생';
+  }
+
   if (threshold.startsWith('issue_burst_unexpected_client_error_count')) {
     return '예상하지 못한 클라이언트 오류 발생';
+  }
+
+  if (threshold.startsWith('restaurant_issue_burst_unexpected_client_error_count')) {
+    return '레스토랑 쿠폰 예상하지 못한 클라이언트 오류 발생';
   }
 
   return threshold;
@@ -632,6 +657,22 @@ function explainFailure({ failureReason, scenario, parsedEnv, envSource, thresho
     };
   }
 
+  if (thresholdFailures.includes('restaurant_issue_burst_integrity_ok rate==1')) {
+    return {
+      summary: '레스토랑 쿠폰 부하 테스트 후 재고 정합성 검증이 맞지 않았습니다.',
+      cause: '최종 발급 건수와 남은 재고 합계가 초기 재고와 일치하지 않았습니다.',
+      action: 'restaurantId에 연결된 couponId와 최종 발급 건수, 남은 재고를 함께 확인해 주세요.',
+    };
+  }
+
+  if (thresholdFailures.includes('restaurant_issue_burst_expected_result_ok rate==1')) {
+    return {
+      summary: '예상한 레스토랑 쿠폰 발급 수량과 실제 최종 상태가 다르게 나왔습니다.',
+      cause: '성공 발급 건수 또는 잔여 수량이 설정한 재고 기준과 맞지 않았습니다.',
+      action: 'ISSUE_BURST_STOCK, 성공 발급 건수, 남은 재고 수치를 같이 비교해 주세요.',
+    };
+  }
+
   if (thresholdFailures.length > 0) {
     return {
       summary: '테스트는 실행됐지만, 미리 정한 성능 기준을 만족하지 못했습니다.',
@@ -665,6 +706,12 @@ function explainSuccess({ scenario }) {
       return {
         summary: '대량 동시 발급 요청을 끝까지 처리했고 재고 정합성 검증도 통과했습니다.',
         detail: '동시 발급 후 최종 발급 건수와 잔여 재고가 초기 재고 수량과 일치했고, 서버 오류 없이 시나리오를 마쳤습니다.',
+        action: '다음에는 ISSUE_BURST_STOCK 을 낮춰 oversubscription 상황에서도 같은 정합성이 유지되는지 확인해 보세요.',
+      };
+    case 'restaurant-issue-burst':
+      return {
+        summary: '레스토랑 쿠폰 동시 발급 요청을 끝까지 처리했고 재고 정합성 검증도 통과했습니다.',
+        detail: '같은 restaurantId로 몰린 요청을 처리한 뒤 최종 발급 건수와 잔여 재고가 초기 수량과 일치했습니다.',
         action: '다음에는 ISSUE_BURST_STOCK 을 낮춰 oversubscription 상황에서도 같은 정합성이 유지되는지 확인해 보세요.',
       };
     case 'contention':
@@ -703,7 +750,14 @@ async function readSummary(summaryPath, startedAtMs) {
 }
 
 function buildScenarioExtraMetrics(scenario, summary) {
-  if (scenario !== 'issue-burst') {
+  const metricPrefix =
+    scenario === 'issue-burst'
+      ? 'issue_burst'
+      : scenario === 'restaurant-issue-burst'
+        ? 'restaurant_issue_burst'
+        : null;
+
+  if (metricPrefix == null) {
     return {
       textLines: [],
       blockFields: [],
@@ -717,47 +771,47 @@ function buildScenarioExtraMetrics(scenario, summary) {
 
   return {
     textLines: [
-      `• *성공 발급 건수:* ${metricOrZero('issue_burst_success_count', 'count')}`,
-      `• *재고 부족 건수:* ${metricOrZero('issue_burst_out_of_stock_count', 'count')}`,
-      `• *예상 밖 클라이언트 오류 건수:* ${metricOrZero('issue_burst_unexpected_client_error_count', 'count')}`,
-      `• *서버 오류 건수:* ${metricOrZero('issue_burst_server_error_count', 'count')}`,
-      `• *최종 발급 건수:* ${metricValue(summary, 'issue_burst_final_issued_count')}`,
-      `• *최종 잔여 재고:* ${metricValue(summary, 'issue_burst_final_remaining_quantity')}`,
-      `• *재고 정합성 검증:* ${formatRate(metricValue(summary, 'issue_burst_integrity_ok', 'rate'))}`,
-      `• *예상 결과 검증:* ${formatRate(metricValue(summary, 'issue_burst_expected_result_ok', 'rate'))}`,
+      `• *성공 발급 건수:* ${metricOrZero(`${metricPrefix}_success_count`, 'count')}`,
+      `• *재고 부족 건수:* ${metricOrZero(`${metricPrefix}_out_of_stock_count`, 'count')}`,
+      `• *예상 밖 클라이언트 오류 건수:* ${metricOrZero(`${metricPrefix}_unexpected_client_error_count`, 'count')}`,
+      `• *서버 오류 건수:* ${metricOrZero(`${metricPrefix}_server_error_count`, 'count')}`,
+      `• *최종 발급 건수:* ${metricValue(summary, `${metricPrefix}_final_issued_count`)}`,
+      `• *최종 잔여 재고:* ${metricValue(summary, `${metricPrefix}_final_remaining_quantity`)}`,
+      `• *재고 정합성 검증:* ${formatRate(metricValue(summary, `${metricPrefix}_integrity_ok`, 'rate'))}`,
+      `• *예상 결과 검증:* ${formatRate(metricValue(summary, `${metricPrefix}_expected_result_ok`, 'rate'))}`,
     ],
     blockFields: [
       {
         type: 'mrkdwn',
-        text: `*성공 발급 건수*\n${metricOrZero('issue_burst_success_count', 'count')}`,
+        text: `*성공 발급 건수*\n${metricOrZero(`${metricPrefix}_success_count`, 'count')}`,
       },
       {
         type: 'mrkdwn',
-        text: `*재고 부족 건수*\n${metricOrZero('issue_burst_out_of_stock_count', 'count')}`,
+        text: `*재고 부족 건수*\n${metricOrZero(`${metricPrefix}_out_of_stock_count`, 'count')}`,
       },
       {
         type: 'mrkdwn',
-        text: `*예상 밖 클라이언트 오류 건수*\n${metricOrZero('issue_burst_unexpected_client_error_count', 'count')}`,
+        text: `*예상 밖 클라이언트 오류 건수*\n${metricOrZero(`${metricPrefix}_unexpected_client_error_count`, 'count')}`,
       },
       {
         type: 'mrkdwn',
-        text: `*서버 오류 건수*\n${metricOrZero('issue_burst_server_error_count', 'count')}`,
+        text: `*서버 오류 건수*\n${metricOrZero(`${metricPrefix}_server_error_count`, 'count')}`,
       },
       {
         type: 'mrkdwn',
-        text: `*최종 발급 건수*\n${metricValue(summary, 'issue_burst_final_issued_count')}`,
+        text: `*최종 발급 건수*\n${metricValue(summary, `${metricPrefix}_final_issued_count`)}`,
       },
       {
         type: 'mrkdwn',
-        text: `*최종 잔여 재고*\n${metricValue(summary, 'issue_burst_final_remaining_quantity')}`,
+        text: `*최종 잔여 재고*\n${metricValue(summary, `${metricPrefix}_final_remaining_quantity`)}`,
       },
       {
         type: 'mrkdwn',
-        text: `*재고 정합성 검증*\n${formatRate(metricValue(summary, 'issue_burst_integrity_ok', 'rate'))}`,
+        text: `*재고 정합성 검증*\n${formatRate(metricValue(summary, `${metricPrefix}_integrity_ok`, 'rate'))}`,
       },
       {
         type: 'mrkdwn',
-        text: `*예상 결과 검증*\n${formatRate(metricValue(summary, 'issue_burst_expected_result_ok', 'rate'))}`,
+        text: `*예상 결과 검증*\n${formatRate(metricValue(summary, `${metricPrefix}_expected_result_ok`, 'rate'))}`,
       },
     ],
   };

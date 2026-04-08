@@ -40,6 +40,9 @@
 - `issue-burst.js`
   - 사용자 다수가 같은 쿠폰에 동시에 발급을 요청합니다.
   - 즉시 응답 분포와 최종 발급 건수, 잔여 재고, 정합성을 함께 검증합니다.
+- `restaurant-issue-burst.js`
+  - 사용자 다수가 같은 `restaurantId`에 동시에 레스토랑 쿠폰 발급을 요청합니다.
+  - setup에서 restaurant mapping 1건을 만들고, 최종 발급 건수와 잔여 재고 정합성을 함께 검증합니다.
 - `contention.js`
   - 실제 회원가입으로 세션을 미리 준비한 뒤 같은 쿠폰으로 경합 상황을 재현합니다.
 - `issue-overload.js`
@@ -79,6 +82,7 @@ curl -X POST http://127.0.0.1:18080/signin \
 ./load-test/k6/run-local-kafka-runbook.sh check
 ./load-test/k6/run-local-kafka-runbook.sh smoke
 ./load-test/k6/run-local-kafka-runbook.sh burst
+./load-test/k6/run-local-kafka-runbook.sh restaurant-burst
 ```
 
 쿠폰 1개에 대해 재고만 바꿔 보고 싶으면 아래 런북을 사용합니다.
@@ -109,6 +113,16 @@ node load-test/k6/run-with-slack.mjs issue-burst --profile local -- \
   -e ISSUE_BURST_STOCK=1000 \
   -e ISSUE_POLL_TIMEOUT_SECONDS=30 \
   -e ISSUE_POLL_INTERVAL_MS=500
+```
+
+### Restaurant Burst
+
+```bash
+node load-test/k6/run-with-slack.mjs restaurant-issue-burst --profile local -- \
+  --out influxdb=http://localhost:8086/myk6db \
+  -e BASE_URL=http://127.0.0.1:18080 \
+  -e ISSUE_BURST_VUS=1000 \
+  -e ISSUE_BURST_STOCK=1000
 ```
 
 ### Overload
@@ -172,6 +186,12 @@ webhook이 비어 있으면 전송 대신 `load-test/k6/results/` 아래 preview
 ## 해석 포인트
 
 - `issue-burst`
+  - `success + out_of_stock` 분포
+  - `final issued count`
+  - `final remaining quantity`
+  - `integrity ok rate`
+  - `expected result ok rate`
+- `restaurant-issue-burst`
   - `success + out_of_stock` 분포
   - `final issued count`
   - `final remaining quantity`

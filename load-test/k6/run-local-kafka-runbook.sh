@@ -22,6 +22,9 @@
 #   - 기본값은 "사용자 1,000명 동시 발급 시도 / 쿠폰 수량 1,000개"입니다.
 #   - setup에서 사용자 1,000명의 실제 세션을 먼저 준비한 뒤, measured phase에서 동시에 쿠폰 발급을 호출합니다.
 #   - 지금 기본 검증 대상은 이 시나리오입니다.
+# - restaurant-burst
+#   - 한 종류의 식당 쿠폰 매핑에 대해 동시에 몰리는 선착순 상황을 검증합니다.
+#   - setup에서 쿠폰 생성/활성화 후 restaurantId 매핑 1건을 만들고, measured phase에서 동시에 레스토랑 쿠폰 발급을 호출합니다.
 # - overload
 #   - 일정 시간 동안 HOT_FCFS_ASYNC 발급 요청이 지속적으로 들어오는 상황을 검증합니다.
 #   - 기본값은 50 VU가 10분 동안 200개 쿠폰 풀을 대상으로 요청하고, 쿠폰당 재고는 100,000개입니다.
@@ -106,6 +109,7 @@ Usage:
   ./load-test/k6/run-local-kafka-runbook.sh ramp
   ./load-test/k6/run-local-kafka-runbook.sh real-ramp
   ./load-test/k6/run-local-kafka-runbook.sh burst
+  ./load-test/k6/run-local-kafka-runbook.sh restaurant-burst
   ./load-test/k6/run-local-kafka-runbook.sh overload
   ./load-test/k6/run-local-kafka-runbook.sh full
 
@@ -123,6 +127,7 @@ Behavior:
   ramp      Run prepared-user immediate-issue ramp test (optional)
   real-ramp Run real-user immediate-issue ramp test
   burst     Run standard burst integrity test
+  restaurant-burst Run restaurant coupon burst integrity test
   overload  Run HOT_FCFS_ASYNC sustained overload test
   full      up -> check -> smoke -> burst
 
@@ -157,6 +162,9 @@ main() {
       ;;
     burst)
       run_scenario issue-burst
+      ;;
+    restaurant-burst)
+      run_scenario restaurant-issue-burst
       ;;
     overload)
       run_scenario issue-overload

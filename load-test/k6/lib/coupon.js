@@ -50,6 +50,36 @@ export function createCoupon(accessToken, payload) {
   );
 }
 
+export function buildRestaurantCouponPayload({
+  restaurantId,
+  couponId,
+  availableAt = new Date(Date.now() - 24 * 60 * 60 * 1000),
+  endAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+}) {
+  return {
+    restaurantId,
+    couponId,
+    availableAt: formatLocalDateTime(availableAt),
+    endAt: formatLocalDateTime(endAt),
+  };
+}
+
+export function createRestaurantCoupons(accessToken, items) {
+  return post(
+    '/restaurant-coupons',
+    { items },
+    {
+      headers: authHeaders(accessToken),
+      tags: {
+        request_group: 'setup',
+        request_name: 'create_restaurant_coupons',
+      },
+    },
+    201,
+    'create_restaurant_coupons',
+  );
+}
+
 export function acceptIssueCoupon(accessToken, couponId) {
   const response = postDataWithStatuses(
     '/coupon-issues',
@@ -67,6 +97,32 @@ export function acceptIssueCoupon(accessToken, couponId) {
     },
     [200, 202],
     'issue_coupon',
+  );
+
+  return {
+    result: response.data?.result,
+    message: response.data?.message,
+    status: response.status,
+  };
+}
+
+export function acceptIssueRestaurantCoupon(accessToken, restaurantId) {
+  const response = postDataWithStatuses(
+    '/restaurant-coupons/issue',
+    { restaurantId },
+    {
+      headers: authHeaders(accessToken),
+      tags: {
+        request_group: 'business',
+        request_name: 'issue_restaurant_coupon',
+      },
+      slowRequestSample: {
+        requestGroup: 'business',
+        requestName: 'issue_restaurant_coupon',
+      },
+    },
+    [200, 202],
+    'issue_restaurant_coupon',
   );
 
   return {
@@ -102,6 +158,58 @@ export function tryIssueCoupon(
   } = {},
 ) {
   const issueResult = acceptIssueCoupon(accessToken, couponId);
+
+  if (issueResult.result === 'SUCCESS') {
+    return {
+      outcome: 'SUCCESS',
+      status: issueResult.status,
+    };
+  }
+
+  if (issueResult.result === 'SOLD_OUT') {
+    return {
+      outcome: allowOutOfStock ? 'OUT_OF_STOCK' : 'UNEXPECTED_ERROR',
+      status: issueResult.status,
+      errorClassName: 'SOLD_OUT',
+      message: issueResult.message || 'SOLD_OUT',
+    };
+  }
+
+  if (issueResult.result === 'DUPLICATE') {
+    return {
+      outcome: 'UNEXPECTED_ERROR',
+      status: issueResult.status,
+      errorClassName: 'DUPLICATE',
+      message: issueResult.message || 'DUPLICATE',
+    };
+  }
+
+  if (allowRetryableLockFailure) {
+    return {
+      outcome: 'UNEXPECTED_ERROR',
+      status: 500,
+      errorClassName: issueResult.result || 'UNKNOWN_ERROR',
+      message: issueResult.message || issueResult.result || '<empty>',
+    };
+  }
+
+  return {
+    outcome: 'UNEXPECTED_ERROR',
+    status: 500,
+    errorClassName: issueResult.result || 'UNKNOWN_ERROR',
+    message: issueResult.message || issueResult.result || '<empty>',
+  };
+}
+
+export function tryIssueRestaurantCoupon(
+  accessToken,
+  restaurantId,
+  {
+    allowOutOfStock = false,
+    allowRetryableLockFailure = false,
+  } = {},
+) {
+  const issueResult = acceptIssueRestaurantCoupon(accessToken, restaurantId);
 
   if (issueResult.result === 'SUCCESS') {
     return {
