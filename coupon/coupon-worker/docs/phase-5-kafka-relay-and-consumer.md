@@ -21,10 +21,11 @@
 | 역할 | 파일 |
 | --- | --- |
 | API acceptance/publish orchestration | [`CouponIssueIntakeFacade.kt`](../../coupon-domain/src/main/kotlin/com/coupon/coupon/intake/CouponIssueIntakeFacade.kt) |
-| direct Kafka publish | [`CouponIssueKafkaMessagePublisher.kt`](../../coupon-api/src/main/kotlin/com/coupon/coupon/messaging/CouponIssueKafkaMessagePublisher.kt) |
+| direct Kafka publish | [`CouponIssueKafkaMessagePublisher.kt`](../../coupon-api/src/main/kotlin/com/coupon/coupon/intake/messaging/CouponIssueKafkaMessagePublisher.kt) |
 | topic / consumer / DLQ config | [`CouponIssueKafkaConfig.kt`](../src/main/kotlin/com/coupon/config/CouponIssueKafkaConfig.kt) |
 | Kafka consumer | [`CouponIssueKafkaListener.kt`](../src/main/kotlin/com/coupon/kafka/CouponIssueKafkaListener.kt) |
 | worker execution orchestration | [`CouponIssueExecutionFacade.kt`](../../coupon-domain/src/main/kotlin/com/coupon/coupon/execution/CouponIssueExecutionFacade.kt) |
+| distributed lock write executor | [`CouponIssueLockingExecutor.kt`](../../coupon-domain/src/main/kotlin/com/coupon/coupon/execution/CouponIssueLockingExecutor.kt) |
 | 발급 domain service | [`CouponIssueService.kt`](../../coupon-domain/src/main/kotlin/com/coupon/coupon/CouponIssueService.kt) |
 
 ## 현재 시퀀스

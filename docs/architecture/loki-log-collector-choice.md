@@ -42,6 +42,7 @@ Promtail을 기본 collector로 채택하지 않는 이유는 아래와 같다.
 - collector: Alloy
 - storage/query: Loki
 - UI: Grafana
+- compose: `docker-compose.observability.yml`
 
 즉, 현재 기본 경로는 `docker logs -> Alloy -> Loki -> Grafana`다.
 

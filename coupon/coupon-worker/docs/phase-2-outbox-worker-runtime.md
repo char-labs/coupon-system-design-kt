@@ -16,6 +16,9 @@
 
 즉, 공개 `POST /coupon-issues` intake 는 direct Kafka 이고, outbox worker 는 그 뒤에 붙는 activity projection runtime 이다.
 
+현재 기준으로 domain 쪽에서 outbox row를 만드는 진입점은
+[`CouponLifecycleOutboxListener.kt`](../../coupon-domain/src/main/kotlin/com/coupon/coupon/event/CouponLifecycleOutboxListener.kt) 이다.
+
 ## 구성 요소
 
 | 구성 요소 | 역할 | 파일 |

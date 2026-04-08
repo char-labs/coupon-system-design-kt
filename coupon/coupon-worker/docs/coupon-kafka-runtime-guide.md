@@ -7,7 +7,7 @@
 
 현재 구조의 핵심은 아래 세 줄이다.
 
-- 공개 발급은 `Redis reserve -> direct Kafka publish -> worker consume -> Redis processing limit -> coupon_issue persist`
+- 공개 발급은 `Redis reserve -> Kafka publish -> worker consume -> distributed lock -> coupon_issue persist`
 - outbox worker는 발급 intake가 아니라 `issued/used/canceled` 후속 activity projection 을 처리한다
 - 로컬 observability는 docker JSON stdout -> Grafana Alloy -> Loki -> Grafana 순서로 본다
 
@@ -45,9 +45,13 @@ flowchart LR
 - Redis는 발급 admission control 이다.
   - duplicate check
   - stock slot reserve
+  - 구현은 Lua script 기반 다중 키 원자 연산이다
 - Redis는 worker cluster-wide processing limit 이기도 하다.
   - Redisson `RRateLimiter`
   - `RateType.OVERALL`
+- Redis 분산락은 reserve와 별도로 Redisson lock을 사용한다.
+  - reserve는 짧은 상태 전이
+  - lock은 메서드 실행 구간 보호
 - Kafka는 accepted issue command bus 이다.
   - topic: `coupon.issue.v1`
   - DLQ: `coupon.issue.v1.dlq`
@@ -63,7 +67,10 @@ flowchart LR
 ## 로컬 실행
 
 ```bash
-docker compose -f docker/docker-compose.yml up --build -d mysql redis kafka kafka-ui coupon-app coupon-worker
+docker compose \
+  -f docker/docker-compose.infrastructure.yml \
+  -f docker/docker-compose.runtime.yml \
+  up --build -d
 ```
 
 기본 확인 포인트:
@@ -125,8 +132,11 @@ docker compose -f docker/docker-compose.yml up --build -d mysql redis kafka kafk
 - [`CouponIssueService.kt`](../../coupon-domain/src/main/kotlin/com/coupon/coupon/CouponIssueService.kt)
 - [`CouponIssueStateRepository.kt`](../../coupon-domain/src/main/kotlin/com/coupon/coupon/CouponIssueStateRepository.kt)
 - [`CouponIssueRedisCoreRepository.kt`](../../../storage/redis/src/main/kotlin/com/coupon/redis/coupon/CouponIssueRedisCoreRepository.kt)
+- [`LockCoreRepository.kt`](../../../storage/redis/src/main/kotlin/com/coupon/redis/lock/LockCoreRepository.kt)
 - [`CouponIssueProcessingLimiter.kt`](../../coupon-domain/src/main/kotlin/com/coupon/coupon/execution/CouponIssueProcessingLimiter.kt)
 - [`CouponIssueProcessingLimiterCoreRepository.kt`](../../../storage/redis/src/main/kotlin/com/coupon/redis/coupon/CouponIssueProcessingLimiterCoreRepository.kt)
+
+현재 선택 기준은 [redis-coordination-choice.md](../../../docs/architecture/redis-coordination-choice.md)에 정리한다.
 
 ## 현재 Kafka 설정
 
@@ -136,7 +146,7 @@ docker compose -f docker/docker-compose.yml up --build -d mysql redis kafka kafk
 | DLQ topic | `coupon.issue.v1.dlq` | 같은 파일 |
 | group id | `coupon-issue-group` | 같은 파일 |
 | DLQ group id | `coupon-issue-dlq-group` | 같은 파일 |
-| partition key | `couponId.toString()` | [`CouponIssueKafkaMessagePublisher.kt`](../../coupon-api/src/main/kotlin/com/coupon/coupon/messaging/CouponIssueKafkaMessagePublisher.kt) |
+| partition key | `couponId.toString()` | [`CouponIssueKafkaMessagePublisher.kt`](../../coupon-api/src/main/kotlin/com/coupon/coupon/intake/messaging/CouponIssueKafkaMessagePublisher.kt) |
 | consumer concurrency | `3` | [`worker.yml`](../src/main/resources/worker.yml) |
 | processing limit | `100 permits/sec` | [`worker.yml`](../src/main/resources/worker.yml) |
 
@@ -261,7 +271,7 @@ outbox 상태 규칙 요약:
 2. [`CouponIssueIntakeFacade.kt`](../../coupon-domain/src/main/kotlin/com/coupon/coupon/intake/CouponIssueIntakeFacade.kt)
 3. [`CouponIssueExecutionFacade.kt`](../../coupon-domain/src/main/kotlin/com/coupon/coupon/execution/CouponIssueExecutionFacade.kt)
 4. [`CouponIssueService.kt`](../../coupon-domain/src/main/kotlin/com/coupon/coupon/CouponIssueService.kt)
-5. [`CouponIssueKafkaMessagePublisher.kt`](../../coupon-api/src/main/kotlin/com/coupon/coupon/messaging/CouponIssueKafkaMessagePublisher.kt)
+5. [`CouponIssueKafkaMessagePublisher.kt`](../../coupon-api/src/main/kotlin/com/coupon/coupon/intake/messaging/CouponIssueKafkaMessagePublisher.kt)
 6. [`CouponIssueKafkaListener.kt`](../src/main/kotlin/com/coupon/kafka/CouponIssueKafkaListener.kt)
 7. [`CouponIssueProcessingLimiterCoreRepository.kt`](../../../storage/redis/src/main/kotlin/com/coupon/redis/coupon/CouponIssueProcessingLimiterCoreRepository.kt)
 8. [`phase-2-outbox-worker-runtime.md`](./phase-2-outbox-worker-runtime.md)

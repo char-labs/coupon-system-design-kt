@@ -2,55 +2,130 @@
 
 ## 목적
 
-이 문서는 현재 저장소의 쿠폰 발급 경로를 설명하는 단일 기준 문서다.
-기준 구조는 `Redis reserve + direct Kafka publish + worker Redis processing limit + worker persist` 이며, `request table + relay + CDC` 구조는 현재 범위에 포함하지 않는다.
+이 문서는 현재 저장소의 쿠폰 발급 런타임 계약을 설명하는 단일 기준 문서다.
+모듈 구조와 상위 아키텍처 요약은 [current-architecture-overview.md](./current-architecture-overview.md)를 먼저 본다.
+Redis coordination 선택 기준은 [redis-coordination-choice.md](./redis-coordination-choice.md)를 본다.
+
+현재 기준 구조는 아래 한 줄로 정리된다.
+
+- `Redis reserve -> Kafka publish -> worker consume -> distributed lock -> DB persist`
+
+`request table + relay + CDC` 구조는 현재 저장소에 없다.
+
+## 현재 책임 분리
+
+| 계층 | 현재 책임 | 대표 코드 |
+| --- | --- | --- |
+| API intake | 발급 요청 수락, 즉시 판정, Kafka publish | [CouponIssueIntakeFacade.kt](../../coupon/coupon-domain/src/main/kotlin/com/coupon/coupon/intake/CouponIssueIntakeFacade.kt) |
+| Worker execution | 메시지 소비, retry/DLQ, 최종 발급 반영 | [CouponIssueKafkaListener.kt](../../coupon/coupon-worker/src/main/kotlin/com/coupon/kafka/CouponIssueKafkaListener.kt) |
+| Domain write | 재고 차감, 발급 row 저장, 사용/취소 상태 전이 | [CouponIssueService.kt](../../coupon/coupon-domain/src/main/kotlin/com/coupon/coupon/CouponIssueService.kt) |
+| Lock infra | `@WithDistributedLock` + AOP + `REQUIRES_NEW` | [DistributedLockAspect.kt](../../coupon/coupon-domain/src/main/kotlin/com/coupon/shared/lock/DistributedLockAspect.kt) |
+| Redis state | duplicate 방지, stock reserve, processing limit | `storage:redis` |
+| Outbox projection | lifecycle event를 `coupon_activity`로 후속 반영 | [OutboxPoller.kt](../../coupon/coupon-worker/src/main/kotlin/com/coupon/outbox/OutboxPoller.kt) |
 
 ## 용어
 
 - `intake`: API 서버가 발급 요청을 받아 즉시 판정하는 구간
-- `reserve`: Redis에서 중복 발급과 선착순 한도를 먼저 차단하는 구간
+- `reserve`: Redis에서 duplicate와 stock slot을 먼저 선점하는 구간
 - `publish`: reserve 성공 후 Kafka broker ack까지 받는 구간
-- `consume`: worker가 Kafka 메시지를 받아 실행 결과를 결정하는 구간
-- `persist`: worker가 DB 재고 감소와 `t_coupon_issue` 저장으로 최종 상태를 반영하는 구간
-- `dlq`: 재시도 소진 후 별도 토픽으로 보내는 구간
-- `projection`: 발급 완료 이후 outbox 기반 후속 반영 구간
+- `consume`: worker가 Kafka 메시지를 받아 처리 결과를 결정하는 구간
+- `persist`: worker가 재고 감소와 `t_coupon_issue` 저장을 끝내는 구간
+- `projection`: 발급 이후 lifecycle event를 outbox 기반으로 처리하는 구간
 
 ## 공식 발급 흐름
 
-1. `POST /coupon-issues` 요청이 들어오면 API 서버가 쿠폰 유효성을 확인한다.
-2. API 서버는 Redis에서 duplicate/stock slot을 reserve 한다.
-3. reserve 결과가 `SUCCESS`일 때만 Kafka에 `CouponIssueMessage`를 발행한다.
+1. `POST /coupon-issues`가 들어오면 API가 쿠폰 상세를 조회하고 발급 가능성을 검증한다.
+2. API는 Redis state에서 duplicate와 stock slot을 reserve 한다.
+3. reserve 결과가 `SUCCESS`일 때만 `CouponIssueMessage`를 Kafka에 발행한다.
 4. Kafka broker ack를 받으면 API는 `202 Accepted`와 `SUCCESS`를 반환한다.
-5. worker는 메시지를 consume 한 뒤 Redis 기반 processing limit permit을 먼저 획득한다.
-6. worker는 락을 잡고 DB 재고를 감소시킨다.
-7. worker는 `t_coupon_issue`를 저장해 최종 발급 상태를 반영한다.
-8. 발급 이후 상태 전이(`issued/used/canceled`)는 outbox projection으로 후속 처리한다.
+5. worker는 메시지를 consume 한 뒤 Redis rate limiter permit을 먼저 획득한다.
+6. worker는 `couponId` 기준 `@WithDistributedLock` 안에서 재고를 감소시킨다.
+7. worker는 `t_coupon_issue`를 저장하고 lifecycle domain event를 발행한다.
+8. `issued/used/canceled` lifecycle event는 same transaction 안에서 `t_outbox_event`에 기록된다.
+9. outbox worker가 `coupon_activity` projection을 비동기로 처리한다.
 
 ## `SUCCESS`의 의미
 
-`SUCCESS`는 DB 반영 완료가 아니다.
-현재 계약에서 `SUCCESS`는 아래 두 조건이 모두 끝났음을 의미한다.
+`SUCCESS`는 최종 DB 발급 완료가 아니다.
+현재 계약에서 `SUCCESS`는 아래 두 조건이 모두 끝났다는 뜻이다.
 
 - Redis reserve 성공
 - Kafka broker ack 성공
 
-최종 발급 row 생성은 worker가 비동기로 수행한다.
+최종 발급 row 생성과 재고 차감은 worker가 비동기로 수행한다.
 
-## 책임 분리
+## 현재 정합성 레이어
 
-- DB: 최종 truth
-- Redis: admission control, duplicate 방지, 선착순 slot 관리, worker cluster-wide processing limit
-- Kafka: accepted command bus
-- Worker: 최종 persist와 retry/DLQ 처리
-- Outbox: intake path가 아닌 후속 projection 전용
+### 1. Redis reserve
+
+- duplicate check
+- stock slot reserve
+- Redis state가 없으면 DB 기준 rebuild
+- 구현은 Spring Data Redis `DefaultRedisScript` 기반 Lua script다.
+- 이유는 `occupied-count`와 `reserved-users` 두 키를 짧고 원자적으로 함께 갱신해야 하기 때문이다.
+
+관련 코드:
+
+- [CouponIssueService.kt](../../coupon/coupon-domain/src/main/kotlin/com/coupon/coupon/CouponIssueService.kt)
+- [CouponIssueStateRepository.kt](../../coupon/coupon-domain/src/main/kotlin/com/coupon/coupon/CouponIssueStateRepository.kt)
+- [CouponIssueRedisCoreRepository.kt](../../storage/redis/src/main/kotlin/com/coupon/redis/coupon/CouponIssueRedisCoreRepository.kt)
+
+### 2. Distributed lock AOP
+
+- `couponId` 또는 `couponIssueId`에서 lock key를 계산한다.
+- business service는 저수준 `Lock`을 직접 주입받지 않는다.
+- `requiresNew`는 lock infrastructure 안에서만 사용한다.
+- 구현은 raw Lua가 아니라 Redisson lock + AOP다.
+- 이유는 lock acquire/release lifecycle과 `REQUIRES_NEW` 경계를 메서드 실행 구간 단위로 다뤄야 하기 때문이다.
+
+관련 코드:
+
+- [WithDistributedLock.kt](../../coupon/coupon-domain/src/main/kotlin/com/coupon/shared/lock/WithDistributedLock.kt)
+- [DistributedLockAspect.kt](../../coupon/coupon-domain/src/main/kotlin/com/coupon/shared/lock/DistributedLockAspect.kt)
+- [RequiresNewTransactionExecutor.kt](../../coupon/coupon-domain/src/main/kotlin/com/coupon/shared/tx/RequiresNewTransactionExecutor.kt)
+
+### 3. DB truth
+
+- `t_coupon.remaining_quantity`
+- `t_coupon_issue`
+- unique constraint가 최종 duplicate 방어선이다.
+
+### 4. Kafka retry / DLQ
+
+- retryable failure는 Kafka error handler가 backoff 재시도한다.
+- retry가 모두 소진되면 DLQ listener가 Redis reserve를 release 한다.
+
+### 5. Worker processing limit
+
+- worker는 consume 직후 Redisson `RRateLimiter` permit을 먼저 획득한다.
+- 이 limiter는 reserve Lua script와 별개 역할이며, cluster-wide 처리량 제어만 담당한다.
 
 ## 실패 및 보상 규칙
 
-- reserve 실패 시 publish 하지 않는다.
-- publish 실패 시 Redis reserve를 release 하고 `COUPON_ISSUE_KAFKA_ERROR`를 반환한다.
-- worker가 non-retryable business error로 거절하면 Redis reserve를 release 한다.
-- worker retry가 모두 소진되어 DLQ로 이동하면 DLQ consumer가 Redis reserve를 release 한다.
-- `ALREADY_ISSUED_COUPON`은 DB unique constraint가 최종 정합성을 닫는 경로로 본다.
+| 구간 | 현재 동작 |
+| --- | --- |
+| reserve 실패 | publish 하지 않는다 |
+| publish 실패 | Redis reserve를 release 하고 `COUPON_ISSUE_KAFKA_ERROR`를 반환한다 |
+| worker non-retryable reject | Redis reserve를 release 하고 ack 한다 |
+| worker retryable failure | retry exception을 던져 Kafka 재시도로 넘긴다 |
+| DLQ 확정 | DLQ listener가 Redis reserve를 release 하고 ack 한다 |
+| `ALREADY_ISSUED_COUPON` | DB unique constraint 기반 idempotent terminal result로 해석한다 |
+
+## 상태 전이와 outbox 범위
+
+- `use`와 `cancel`은 동기식 원본 상태 변경이다.
+- outbox는 상태 전이 자체를 대신하지 않는다.
+- outbox는 lifecycle 후속 projection durability를 제공한다.
+
+현재 outbox worker가 처리하는 event:
+
+- `COUPON_ISSUED`
+- `COUPON_USED`
+- `COUPON_CANCELED`
+
+현재 projection target:
+
+- `coupon_activity`
 
 ## 메시지 계약
 
@@ -61,24 +136,22 @@
 - `requestId`
 - `acceptedAt`
 
-`requestId`는 API 로그, Kafka 로그, worker 로그를 한 요청으로 연결하는 용도다.
-`acceptedAt`은 worker에서 end-to-end 지연을 계산하는 기준 시각이다.
+의미는 다음과 같다.
+
+- `requestId`: API 로그와 worker 로그를 한 요청으로 연결
+- `acceptedAt`: end-to-end 지연 계산 기준 시각
 
 ## 관측성 원칙
 
-복잡한 커스텀 telemetry 추상화는 두지 않는다.
 현재 저장소는 아래 세 축으로 관측한다.
 
-- 기본 Micrometer/Actuator: HTTP, JVM, Kafka producer/consumer, Spring Kafka observation
-- 구조화 로그: business phase/result/errorType/duration
-- Grafana/Loki: 구조화 로그를 기반으로 발급 흐름을 조회
+- 기본 Micrometer/Actuator
+- 구조화 로그
+- Grafana/Loki 조회
 
-로컬 docker observability는 `Promtail` 대신 `Grafana Alloy`를 사용한다.
-이 선택은 Grafana 문서 기준으로 Promtail이 2026-03-02에 EOL에 도달했기 때문이다.
-docker profile에서는 Logback JSON stdout을 사용하고, Alloy가 Docker logs를 읽어 Loki로 전달한다.
-collector 선택 배경은 [loki-log-collector-choice.md](/Users/yunbeom/ybcha/coupon-system-design-kt/docs/architecture/loki-log-collector-choice.md)에 정리한다.
+복잡한 커스텀 telemetry 추상화는 두지 않는다.
 
-## 기본 엔드포인트
+### 기본 엔드포인트
 
 - `/actuator/health`
 - `/actuator/health/liveness`
@@ -86,9 +159,7 @@ collector 선택 배경은 [loki-log-collector-choice.md](/Users/yunbeom/ybcha/c
 - `/actuator/metrics`
 - `/actuator/prometheus`
 
-## 구조화 로그 필드
-
-쿠폰 발급 관련 로그는 아래 key를 공통으로 사용한다.
+### 구조화 로그 필드
 
 - `event`
 - `phase`
@@ -100,7 +171,7 @@ collector 선택 배경은 [loki-log-collector-choice.md](/Users/yunbeom/ybcha/c
 - `durationMs`
 - `errorType`
 
-예시 phase는 아래와 같다.
+예시 phase:
 
 - `intake.reserve`
 - `intake.publish`
@@ -109,9 +180,12 @@ collector 선택 배경은 [loki-log-collector-choice.md](/Users/yunbeom/ybcha/c
 - `worker.consume`
 - `worker.dlq`
 
-## Loki / Grafana 조회 예시
+### Loki / Grafana
 
-로그가 Loki로 수집되고 있다면 아래 LogQL로 바로 필터링할 수 있다.
+로컬 observability는 `Promtail`이 아니라 `Grafana Alloy`를 사용한다.
+collector 선택 배경은 [loki-log-collector-choice.md](./loki-log-collector-choice.md)를 본다.
+
+로그 예시:
 
 ```logql
 {service_name="coupon-app"} | json | message =~ ".*event=coupon.issue.*phase=intake.publish.*result=FAILURE.*"
@@ -126,38 +200,29 @@ collector 선택 배경은 [loki-log-collector-choice.md](/Users/yunbeom/ybcha/c
 ```
 
 ```logql
-{service_name="coupon-worker"} | json | message =~ ".*event=coupon.issue.*phase=worker.limit.*"
-```
-
-```logql
 {service_name=~"coupon-app|coupon-worker"} | json | traceId="f6fd23fa270283ee1880ce39e0c97293"
 ```
 
-`durationMs`가 포함된 `intake.publish`와 `worker.consume` 로그는 Grafana에서 지연 분포 패널의 입력으로 사용할 수 있다.
+## 로컬 스택 기준
 
-로컬 Grafana provisioning에는 `coupon-runtime/Coupon Issuance Runtime` 대시보드를 포함한다.
-대시보드 폴더는 provider를 여러 개로 쪼개지 않고, Grafana `foldersFromFilesStructure`로 파일 시스템 구조를 그대로 매핑한다.
-이 대시보드는 아래 구성을 기본으로 가진다.
+Docker Compose는 역할별로 분리되어 있다.
 
-- `Accepted Requests`, `Publish Failures`, `Worker Success`, `DLQ Count`
-- `Immediate Result Breakdown`, `Publish Outcome`, `Worker Outcome`
-- `Worker Processing Limit`, `Publish Duration p95`, `Accepted To Persist p95`
-- `Coupon Issue Logs`, `Failures And Retries`
+- `docker-compose.infrastructure.yml`
+- `docker-compose.runtime.yml`
+- `docker-compose.observability.yml`
+- `docker-compose.load-test.yml`
 
-추적이 필요한 경우 `RequestId regex` 변수에 특정 request id를 넣어 한 요청의 intake/worker 흐름만 좁혀서 본다.
-trace 상관관계가 필요한 경우 Loki에서 `traceId` 필드로 app/worker 로그를 함께 조회한다.
+상세는 [docker/README.md](../../docker/README.md)를 본다.
 
-## 운영 해석 순서
+## 현재 구조에서 기억할 제약
 
-확장이나 성능 이슈는 아래 순서로 판단한다.
-
-1. 구조화 로그로 어떤 phase에서 실패/재시도가 늘어나는지 본다.
-2. `/actuator/metrics`와 Prometheus에서 HTTP/Kafka/JVM 지표를 본다.
-3. DB 슬로우 쿼리, connection pool, lock contention을 확인한다.
-4. 그 다음에 worker concurrency, partition 수, broker topology를 조정한다.
+- worker는 아직 명시적 `@ComponentScan` 예외 규칙을 사용한다.
+- Redis state rebuild는 첫 reserve 요청 시점에 지연 수행된다.
+- durable acceptance layer는 아직 없다.
+- intake path에 outbox relay를 다시 넣지 않는다.
 
 ## 비목표
 
-- intake path에 outbox relay를 다시 도입하지 않는다.
-- stage/prod 운영 표준을 코드에서 과도하게 강제하지 않는다.
-- Loki/Grafana 자체 배포 설정을 이 저장소 안에서 크게 확장하지 않는다.
+- request table / relay / CDC를 이미 구현된 것처럼 문서화하지 않는다.
+- stage/prod 운영 표준을 코드 안에서 과도하게 강제하지 않는다.
+- Loki/Grafana 배포 자체를 이 저장소 안에서 크게 확장하지 않는다.

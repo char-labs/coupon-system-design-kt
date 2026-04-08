@@ -19,7 +19,7 @@ local compose 는 단일 Kafka broker + KRaft 구성이다.
 
 - [`CouponIssueKafkaConfig.kt`](../src/main/kotlin/com/coupon/config/CouponIssueKafkaConfig.kt)
 - [`CouponIssueKafkaProperties.kt`](../src/main/kotlin/com/coupon/config/CouponIssueKafkaProperties.kt)
-- [`CouponIssueKafkaMessagePublisher.kt`](../../coupon-api/src/main/kotlin/com/coupon/coupon/messaging/CouponIssueKafkaMessagePublisher.kt)
+- [`CouponIssueKafkaMessagePublisher.kt`](../../coupon-api/src/main/kotlin/com/coupon/coupon/intake/messaging/CouponIssueKafkaMessagePublisher.kt)
 
 ## 지금 토폴로지가 단순한 이유
 
