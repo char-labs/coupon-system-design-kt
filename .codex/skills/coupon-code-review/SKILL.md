@@ -13,16 +13,18 @@ Use this skill when the user asks for any review, regression scan, bottleneck re
 
 1. Read `./AGENTS.md`.
 2. Map changed modules first.
-3. Review correctness, contract, auth, and validation risks before style comments.
-4. Review performance and operational risks next.
-5. Output findings first, ordered by severity, with file references and impact.
-6. Distinguish measured bottlenecks from static risk signals. If runtime proof is missing, say so and recommend instrumentation or a test.
+3. If the diff claims a dependency is absent or introduces a custom client or adapter, verify repo-local dependency declarations first and check official external references when current vendor behavior matters.
+4. Review correctness, contract, auth, and validation risks before style comments.
+5. Review performance and operational risks next.
+6. Output findings first, ordered by severity, with file references and impact.
+7. Distinguish measured bottlenecks from static risk signals. If runtime proof is missing, say so and recommend instrumentation or a test.
 
 ## Focus Areas
 
 - API contract, validation, auth, response wrapping, and docs drift
 - transaction boundaries, null handling, and branching logic
 - repository contracts, query patterns, cache invalidation, and lock behavior
+- custom external adapter choices that ignore an existing SDK or repo-local dependency declaration
 - N+1, repeated single-row lookups, slow page or count queries, and needless hydration
 - thread-pool saturation, long queues, retry storms, event backlog, and missing observability
 

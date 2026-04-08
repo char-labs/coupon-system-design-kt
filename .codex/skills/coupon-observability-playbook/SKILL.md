@@ -14,15 +14,17 @@ Use this skill when a change needs to be measurable and debuggable in production
 1. Read `./AGENTS.md`.
 2. Read [metric-catalog.md](./references/metric-catalog.md).
 3. Identify the business flow and failure modes.
-4. Add or review:
+4. If alerting or vendor integration is involved, inspect repo-local dependency declarations first and verify official external references when current SDK or API behavior matters.
+5. Add or review:
    - structured logs
    - trace or span tags
    - Prometheus counters, timers, and gauges
    - async backlog or executor pressure signals
-5. If Grafana, Loki, or Datadog setup is missing, capture that as TODO rather than assuming dashboards already exist.
+6. If Grafana, Loki, Datadog, Slack, or similar setup is missing, capture that as TODO rather than assuming dashboards or SDKs already exist.
 
 ## Rules
 
 - Prefer business metrics for coupon issue, use, cancel, lock failure, retry, and cache hit or miss patterns.
 - Do not over-instrument every internal method. Focus on externally visible flow boundaries and shared bottlenecks.
 - Distinguish current Prometheus support from future dashboarding or alerting work.
+- Treat vendor SDK availability and supported integration style as verified facts, not guesses.

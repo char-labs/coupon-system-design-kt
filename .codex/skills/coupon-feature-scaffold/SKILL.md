@@ -13,14 +13,16 @@ Use this skill to add a new feature without drifting from the project's vertical
 
 1. Read `./AGENTS.md` and [architecture.md](./references/architecture.md).
 2. Classify the feature as `crud`, `stateful`, or `auth-adjacent`.
-3. Mirror the nearest existing feature:
+3. If the feature touches a third-party service, client, or alerting channel, inspect the target module `build.gradle.kts`, any repo version catalog files, and `settings.gradle.kts` before choosing a new dependency or transport style.
+4. If the feature depends on current vendor APIs or SDK capabilities, verify with official external references before scaffolding.
+5. Mirror the nearest existing feature:
    - `Coupon` for aggregate CRUD
    - `CouponIssue` for state transitions, ownership checks, and quantity changes
    - `Auth` or `User` for authentication and principal-driven flows
-4. Generate a file checklist before editing:
+6. Generate a file checklist before editing:
    `python3 .codex/skills/coupon-feature-scaffold/scripts/feature_scaffold_plan.py <feature-name> --kind <crud|stateful|auth-adjacent>`
-5. Implement the smallest consistent slice through API, domain, and storage.
-6. If the flow has concurrency or cache sensitivity, explicitly decide whether it needs `Tx`, `Lock`, `Cache`, or monitoring updates.
+7. Implement the smallest consistent slice through API, domain, and storage.
+8. If the flow has concurrency or cache sensitivity, explicitly decide whether it needs `Tx`, `Lock`, `Cache`, or monitoring updates.
 
 ## Rules
 
@@ -30,6 +32,7 @@ Use this skill to add a new feature without drifting from the project's vertical
 - Use `Tx.writeable {}` for mutable service flows and `Tx.readable {}` only when a read path needs explicit transactional scope.
 - Reuse existing enums and errors before creating new ones.
 - Do not introduce message queue or CDC dependencies as if they already exist. Record those as TODO when relevant.
+- Keep third-party SDK wiring inside infra-facing adapters or config, not feature orchestration services.
 
 ## Resources
 

@@ -135,6 +135,9 @@
 - Do not use subagents for trivial single-file edits.
 - Claude-aligned roles are explicit Spawn entrypoints only.
 - Prefer the nearest existing feature slice before inventing a new abstraction.
+- Before concluding that a third-party dependency is absent or proposing a custom adapter, inspect the nearest `build.gradle.kts`, any repo version catalog files, and `settings.gradle.kts` first.
+- If repo-local files do not settle the decision and the current vendor API or SDK behavior matters, verify with official external references such as official docs, SDK docs, release notes, or artifact pages.
+- Clearly separate locally verified facts from externally sourced guidance when explaining adoption direction.
 - Distinguish static review signals from measured production evidence.
 - Do not claim Kafka, CDC, DB replication, Redis Cluster sharding, or autoscaling behavior as already implemented.
 - Read [docs/architecture/coupon-system-expansion-todo.md](docs/architecture/coupon-system-expansion-todo.md) for the current gap list and expansion TODO.

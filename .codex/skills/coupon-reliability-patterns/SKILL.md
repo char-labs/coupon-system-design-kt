@@ -14,14 +14,15 @@ Use this skill when the main question is correctness under concurrency or failur
 1. Read `./AGENTS.md`.
 2. Read [patterns.md](./references/patterns.md).
 3. Separate what the repo supports now from future design goals.
-4. Review each mutable flow for:
+4. If retry, alerting, delivery, or adapter design depends on a third-party SDK or vendor behavior, inspect repo-local dependency declarations first and verify official external references when needed.
+5. Review each mutable flow for:
    - transaction boundary
    - lock requirement
    - idempotency requirement
    - retry safety
    - fallback behavior
    - event emission point
-5. If durable messaging or CDC is required but absent, record it as TODO instead of pretending it exists.
+6. If durable messaging or CDC is required but absent, record it as TODO instead of pretending it exists.
 
 ## Current Baseline
 
@@ -36,3 +37,4 @@ Use this skill when the main question is correctness under concurrency or failur
 - Prefer explicit failure over silent fallback when business invariants would be broken.
 - Use lock review for duplicate issue, oversell, or racing status transition paths.
 - Treat Kafka, outbox, CDC, DB replication, and Redis Cluster as future infrastructure until code and infra exist.
+- Do not conclude that a custom transport is required until local dependencies and official vendor references are checked.
