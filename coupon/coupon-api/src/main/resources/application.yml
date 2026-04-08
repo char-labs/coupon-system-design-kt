@@ -32,6 +32,7 @@ api:
       enabled: true
       topic: coupon.issue.v1
       ack-timeout: 10s
+      observation-enabled: true
       topic-partitions: 3
       topic-replicas: 1
 

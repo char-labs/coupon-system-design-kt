@@ -8,6 +8,7 @@ data class CouponIssueKafkaProperties(
     val enabled: Boolean = true,
     val topic: String = "coupon.issue.v1",
     val ackTimeout: Duration = Duration.ofSeconds(10),
+    val observationEnabled: Boolean = true,
     val topicPartitions: Int = 3,
     val topicReplicas: Int = 1,
 ) {

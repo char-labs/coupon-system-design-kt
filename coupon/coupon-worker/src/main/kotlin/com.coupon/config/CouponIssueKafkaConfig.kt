@@ -104,7 +104,10 @@ class CouponIssueKafkaConfig(
     fun couponIssueKafkaTemplate(
         @Qualifier("couponIssueProducerFactory")
         producerFactory: ProducerFactory<String, CouponIssueMessage>,
-    ): KafkaTemplate<String, CouponIssueMessage> = KafkaTemplate(producerFactory)
+    ): KafkaTemplate<String, CouponIssueMessage> =
+        KafkaTemplate(producerFactory).apply {
+            setObservationEnabled(couponIssueKafkaProperties.observationEnabled)
+        }
 
     @Bean
     fun couponIssueDirectErrorHandler(

@@ -54,7 +54,9 @@ class CouponIssueKafkaConfig(
 
     @Bean
     fun couponIssueKafkaTemplate(producerFactory: ProducerFactory<String, CouponIssueMessage>): KafkaTemplate<String, CouponIssueMessage> =
-        KafkaTemplate(producerFactory)
+        KafkaTemplate(producerFactory).apply {
+            setObservationEnabled(couponIssueKafkaProperties.observationEnabled)
+        }
 
     private fun bootstrapServers(): String = environment.getProperty("spring.kafka.bootstrap-servers", "localhost:9092")
 }
