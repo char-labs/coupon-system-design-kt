@@ -3,11 +3,19 @@ management:
     enabled: true
     sampling:
       probability: 1.0
+  endpoint:
+    health:
+      probes:
+        enabled: true
   endpoints:
     web:
       exposure:
-        include: health, prometheus
+        include: health, metrics, prometheus
       base-path: /actuator
   health:
     defaults:
+      enabled: true
+    livenessstate:
+      enabled: true
+    readinessstate:
       enabled: true

@@ -3,6 +3,7 @@ package com.coupon.support.testing
 import com.coupon.coupon.CouponIssueEventPublisher
 import com.coupon.coupon.CouponIssueFacade
 import com.coupon.coupon.CouponIssueMessage
+import com.coupon.coupon.CouponIssuePublishReceipt
 import com.coupon.coupon.CouponIssueRedisRepository
 import com.coupon.coupon.command.CouponIssueCommand
 import com.coupon.enums.coupon.CouponIssueResult
@@ -127,12 +128,18 @@ private class InMemoryCacheRepository : CacheRepository {
 private class SynchronousCouponIssueEventPublisher(
     private val couponIssueFacadeProvider: ObjectProvider<CouponIssueFacade>,
 ) : CouponIssueEventPublisher {
-    override fun publish(message: CouponIssueMessage) {
+    override fun publish(message: CouponIssueMessage): CouponIssuePublishReceipt {
         couponIssueFacadeProvider.getObject().executeIssue(
             CouponIssueCommand.Issue(
                 couponId = message.couponId,
                 userId = message.userId,
             ),
+        )
+
+        return CouponIssuePublishReceipt(
+            topic = "sync.coupon.issue",
+            partition = 0,
+            offset = 0,
         )
     }
 }

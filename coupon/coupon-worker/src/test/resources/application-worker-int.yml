@@ -10,6 +10,9 @@ worker:
       observation-enabled: false
       topic-partitions: 1
       topic-replicas: 1
+      processing-limit:
+        enabled: true
+        permits-per-second: 1000
 
 spring:
   kafka:

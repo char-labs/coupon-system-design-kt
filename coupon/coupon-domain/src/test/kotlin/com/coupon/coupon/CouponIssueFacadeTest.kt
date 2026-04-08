@@ -17,6 +17,7 @@ import io.mockk.justRun
 import io.mockk.mockk
 import io.mockk.verify
 import io.mockk.verifySequence
+import java.time.Clock
 
 class CouponIssueFacadeTest :
     BehaviorSpec({
@@ -28,7 +29,13 @@ class CouponIssueFacadeTest :
 
                 every { context.couponService.getAvailableCouponForIssue(command.couponId) } returns coupon
                 every { context.couponIssueService.reserveIssue(coupon, command.userId) } returns CouponIssueResult.SUCCESS
-                justRun { context.couponIssueService.publishIssue(command.couponId, command.userId) }
+                every {
+                    context.couponIssueService.publishIssue(
+                        match {
+                            it.couponId == command.couponId && it.userId == command.userId
+                        },
+                    )
+                } returns CouponIssuePublishReceipt(topic = "coupon.issue.v1", partition = 0, offset = 1L)
 
                 val result = context.couponIssueFacade.issue(command)
 
@@ -37,7 +44,11 @@ class CouponIssueFacadeTest :
                     verifySequence {
                         context.couponService.getAvailableCouponForIssue(command.couponId)
                         context.couponIssueService.reserveIssue(coupon, command.userId)
-                        context.couponIssueService.publishIssue(command.couponId, command.userId)
+                        context.couponIssueService.publishIssue(
+                            match {
+                                it.couponId == command.couponId && it.userId == command.userId
+                            },
+                        )
                     }
                 }
             }
@@ -54,7 +65,43 @@ class CouponIssueFacadeTest :
 
                 then("즉시 duplicate를 반환하고 발행은 생략한다") {
                     result shouldBe CouponIssueResult.DUPLICATE
-                    verify(exactly = 0) { context.couponIssueService.publishIssue(any(), any()) }
+                    verify(exactly = 0) { context.couponIssueService.publishIssue(any()) }
+                }
+            }
+
+            `when`("Kafka publish가 실패하면") {
+                val context = CouponIssueFacadeTestContext()
+                val command = CouponIssueFixtures.issueCommand(couponId = 14L, userId = 140L)
+                val coupon = FixedCouponFixtures.standard(id = command.couponId, totalQuantity = 10L)
+
+                every { context.couponService.getAvailableCouponForIssue(command.couponId) } returns coupon
+                every { context.couponIssueService.reserveIssue(coupon, command.userId) } returns CouponIssueResult.SUCCESS
+                every {
+                    context.couponIssueService.publishIssue(
+                        match {
+                            it.couponId == command.couponId && it.userId == command.userId
+                        },
+                    )
+                } throws RuntimeException("broker timeout")
+                justRun { context.couponIssueService.release(command.couponId, command.userId) }
+
+                val exception =
+                    io.kotest.assertions.throwables.shouldThrow<ErrorException> {
+                        context.couponIssueFacade.issue(command)
+                    }
+
+                then("Redis reserve를 해제하고 Kafka 오류를 반환한다") {
+                    exception.errorType shouldBe ErrorType.COUPON_ISSUE_KAFKA_ERROR
+                    verifySequence {
+                        context.couponService.getAvailableCouponForIssue(command.couponId)
+                        context.couponIssueService.reserveIssue(coupon, command.userId)
+                        context.couponIssueService.publishIssue(
+                            match {
+                                it.couponId == command.couponId && it.userId == command.userId
+                            },
+                        )
+                        context.couponIssueService.release(command.couponId, command.userId)
+                    }
                 }
             }
         }
@@ -177,6 +224,7 @@ class CouponIssueFacadeTest :
             CouponIssueFacade(
                 couponService = couponService,
                 couponIssueService = couponIssueService,
+                clock = Clock.systemUTC(),
             )
 
         val recordedLockExecutions get() = lockRepository.executions

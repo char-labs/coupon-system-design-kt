@@ -1,6 +1,15 @@
 spring.application.name: coupon-worker
 spring.profiles.active: ${SPRING_PROFILES_ACTIVE:local}
 
+management:
+  endpoint:
+    health:
+      group:
+        liveness:
+          include: livenessState
+        readiness:
+          include: readinessState,couponIssueWorker,outboxWorker
+
 spring:
   config:
     import:

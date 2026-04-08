@@ -33,7 +33,9 @@ class CouponIssueController(
 ) {
     @Operation(
         summary = "쿠폰 발급 요청",
-        description = "쿠폰 발급을 즉시 판정하고 ApiResponse.data.result 에 SUCCESS, DUPLICATE, SOLD_OUT 중 하나를 반환합니다.",
+        description =
+            "쿠폰 발급을 즉시 판정하고 ApiResponse.data.result 에 SUCCESS, DUPLICATE, SOLD_OUT 중 하나를 반환합니다. " +
+                "SUCCESS는 Redis reserve와 Kafka broker ack 완료를 의미하며, 최종 발급 row는 worker가 비동기로 반영합니다.",
     )
     @PostMapping
     fun issueCoupon(

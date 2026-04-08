@@ -18,9 +18,9 @@ internal data class LockExecution(
     val timeoutException: ErrorType,
 )
 
-internal class RecordingLockRepository : LockRepository {
-    private val _executions = mutableListOf<LockExecution>()
-    val executions: List<LockExecution> get() = _executions.toList()
+internal open class RecordingLockRepository : LockRepository {
+    protected val executionLog = mutableListOf<LockExecution>()
+    val executions: List<LockExecution> get() = executionLog.toList()
 
     override fun tryLock(
         key: String,
@@ -35,7 +35,7 @@ internal class RecordingLockRepository : LockRepository {
         timeoutException: ErrorType,
         func: () -> T,
     ): T {
-        _executions += LockExecution(key = key, timeoutMillis = timeoutMillis, timeoutException = timeoutException)
+        executionLog += LockExecution(key = key, timeoutMillis = timeoutMillis, timeoutException = timeoutException)
         return func()
     }
 }

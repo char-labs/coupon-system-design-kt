@@ -25,6 +25,9 @@ worker:
       observation-enabled: true
       topic-partitions: 3
       topic-replicas: 1
+      processing-limit:
+        enabled: true
+        permits-per-second: 100
       retry:
         max-attempts: 5
         initial-interval: 1s

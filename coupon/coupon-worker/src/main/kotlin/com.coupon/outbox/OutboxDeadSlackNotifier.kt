@@ -4,14 +4,17 @@ import com.coupon.client.slack.SlackClient
 import com.coupon.client.slack.SlackMessage
 import com.coupon.support.logging.logger
 import com.coupon.support.outbox.OutboxEvent
+import org.springframework.beans.factory.ObjectProvider
 import org.springframework.stereotype.Component
 import java.time.LocalDateTime
 
 @Component
 class OutboxDeadSlackNotifier(
-    private val slackClient: SlackClient,
+    slackClientProvider: ObjectProvider<SlackClient>,
 ) : OutboxDeadEventNotifier {
     private val log by logger()
+    private val slackClient: SlackClient =
+        slackClientProvider.getIfAvailable { DisabledSlackClient() }
 
     override fun notifyMarkedDead(
         event: OutboxEvent,
@@ -50,4 +53,11 @@ class OutboxDeadSlackNotifier(
             appendLine("processedAt: $processedAt")
             append("reason: $reason")
         }
+}
+
+private class DisabledSlackClient : SlackClient {
+    override val enabled: Boolean = false
+
+    override fun sendMessage(message: SlackMessage) {
+    }
 }

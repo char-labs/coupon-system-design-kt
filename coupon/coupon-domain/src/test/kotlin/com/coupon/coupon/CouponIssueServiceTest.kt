@@ -79,18 +79,69 @@ class CouponIssueServiceTest :
                     }
                 }
             }
+
+            `when`("다른 요청이 상태 초기화 락을 선점하고 있다면") {
+                val lockRepository = FailFirstLockRepository()
+                val context = CouponIssueServiceTestContext(lockRepository)
+                val coupon = FixedCouponFixtures.standard(id = 13L, totalQuantity = 10L)
+
+                every { context.couponIssueRedisRepository.hasState(coupon.id) } returnsMany listOf(false, false, true)
+                every {
+                    context.couponIssueRedisRepository.reserve(
+                        couponId = coupon.id,
+                        userId = 121L,
+                        totalQuantity = coupon.totalQuantity,
+                        ttl = any(),
+                    )
+                } returns CouponIssueResult.SUCCESS
+
+                val result = context.couponIssueService.reserveIssue(coupon, 121L)
+
+                then("초기화 완료를 잠시 기다린 뒤 reserve를 수행한다") {
+                    result shouldBe CouponIssueResult.SUCCESS
+                    context.recordedLockExecutions.single() shouldBe
+                        LockExecution(
+                            key = "COUPON_ISSUE_STATE_INIT:${coupon.id}",
+                            timeoutMillis = 1_000L,
+                            timeoutException = ErrorType.LOCK_ACQUISITION_FAILED,
+                        )
+                    verifySequence {
+                        context.couponIssueRedisRepository.hasState(coupon.id)
+                        context.couponIssueRedisRepository.hasState(coupon.id)
+                        context.couponIssueRedisRepository.hasState(coupon.id)
+                        context.couponIssueRedisRepository.reserve(
+                            couponId = coupon.id,
+                            userId = 121L,
+                            totalQuantity = coupon.totalQuantity,
+                            ttl = any(),
+                        )
+                    }
+                }
+            }
         }
 
         given("CouponIssueService로 발급 메시지를 발행하면") {
             `when`("쿠폰과 사용자 id가 주어지면") {
                 val context = CouponIssueServiceTestContext()
 
-                justRun { context.couponIssueEventPublisher.publish(CouponIssueMessage(10L, 100L)) }
+                every {
+                    context.couponIssueEventPublisher.publish(
+                        match {
+                            it.couponId == 10L && it.userId == 100L
+                        },
+                    )
+                } returns CouponIssuePublishReceipt(topic = "coupon.issue.v1", partition = 0, offset = 1L)
 
-                context.couponIssueService.publishIssue(couponId = 10L, userId = 100L)
+                context.couponIssueService.publishIssue(CouponIssueMessage(couponId = 10L, userId = 100L))
 
                 then("발급 이벤트 퍼블리셔를 호출한다") {
-                    verify(exactly = 1) { context.couponIssueEventPublisher.publish(CouponIssueMessage(10L, 100L)) }
+                    verify(exactly = 1) {
+                        context.couponIssueEventPublisher.publish(
+                            match {
+                                it.couponId == 10L && it.userId == 100L
+                            },
+                        )
+                    }
                 }
             }
         }
@@ -279,8 +330,9 @@ class CouponIssueServiceTest :
             }
         }
     }) {
-    private class CouponIssueServiceTestContext {
-        private val lockRepository = RecordingLockRepository()
+    private class CouponIssueServiceTestContext(
+        private val lockRepository: RecordingLockRepository = RecordingLockRepository(),
+    ) {
         val couponIssueRepository = mockk<CouponIssueRepository>()
         val couponIssueValidator = mockk<CouponIssueValidator>()
         val couponIssueRedisRepository = mockk<CouponIssueRedisRepository>(relaxed = true)
@@ -299,6 +351,25 @@ class CouponIssueServiceTest :
 
         init {
             DomainServiceTestRuntime.initialize(lockRepository)
+        }
+    }
+
+    private class FailFirstLockRepository : RecordingLockRepository() {
+        private var shouldFail = true
+
+        override fun <T> executeWithLock(
+            key: String,
+            timeoutMillis: Long,
+            timeoutException: ErrorType,
+            func: () -> T,
+        ): T {
+            executionLog += LockExecution(key = key, timeoutMillis = timeoutMillis, timeoutException = timeoutException)
+            if (shouldFail) {
+                shouldFail = false
+                throw ErrorException(timeoutException)
+            }
+
+            return func()
         }
     }
 }

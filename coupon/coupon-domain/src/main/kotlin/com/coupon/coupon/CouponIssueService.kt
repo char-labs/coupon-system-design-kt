@@ -12,6 +12,7 @@ import com.coupon.support.page.Page
 import com.coupon.support.tx.Tx
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.stereotype.Service
+import java.lang.Thread.sleep
 import java.time.Duration
 import java.time.LocalDateTime
 
@@ -36,17 +37,7 @@ class CouponIssueService(
         )
     }
 
-    fun publishIssue(
-        couponId: Long,
-        userId: Long,
-    ) {
-        couponIssueEventPublisher.publish(
-            CouponIssueMessage(
-                couponId = couponId,
-                userId = userId,
-            ),
-        )
-    }
+    fun publishIssue(message: CouponIssueMessage): CouponIssuePublishReceipt = couponIssueEventPublisher.publish(message)
 
     /**
      * Shared issuance core used after coupon validation and stock decrement are already handled outside.
@@ -155,16 +146,42 @@ class CouponIssueService(
             return
         }
 
-        Lock.executeWithLock(
-            key = "COUPON_ISSUE_STATE_INIT:${coupon.id}",
-            timeoutMillis = STATE_INIT_LOCK_TIMEOUT_MILLIS,
-        ) {
-            if (couponIssueRedisRepository.hasState(coupon.id)) {
-                return@executeWithLock
+        try {
+            Lock.executeWithLock(
+                key = "COUPON_ISSUE_STATE_INIT:${coupon.id}",
+                timeoutMillis = STATE_INIT_LOCK_TIMEOUT_MILLIS,
+            ) {
+                if (couponIssueRedisRepository.hasState(coupon.id)) {
+                    return@executeWithLock
+                }
+
+                rebuildState(coupon)
+            }
+        } catch (e: ErrorException) {
+            if (e.errorType != ErrorType.LOCK_ACQUISITION_FAILED) {
+                throw e
             }
 
-            rebuildState(coupon)
+            waitForInitializedState(coupon.id)
         }
+    }
+
+    /**
+     * When another request is rebuilding the Redis state, followers should wait
+     * briefly for that initialization instead of failing the whole issuance path.
+     */
+    private fun waitForInitializedState(couponId: Long) {
+        val deadline = System.nanoTime() + Duration.ofMillis(STATE_INIT_WAIT_TIMEOUT_MILLIS).toNanos()
+
+        while (System.nanoTime() < deadline) {
+            if (couponIssueRedisRepository.hasState(couponId)) {
+                return
+            }
+
+            sleep(STATE_INIT_POLL_INTERVAL_MILLIS)
+        }
+
+        throw ErrorException(ErrorType.LOCK_ACQUISITION_FAILED)
     }
 
     private fun stateTtl(endAt: LocalDateTime): Duration {
@@ -178,6 +195,8 @@ class CouponIssueService(
 
     companion object {
         private const val STATE_INIT_LOCK_TIMEOUT_MILLIS = 1_000L
+        private const val STATE_INIT_WAIT_TIMEOUT_MILLIS = 2_000L
+        private const val STATE_INIT_POLL_INTERVAL_MILLIS = 25L
         private val MINIMUM_STATE_TTL: Duration = Duration.ofMinutes(10)
     }
 }

@@ -2,7 +2,7 @@ package com.coupon.config
 
 import com.coupon.coupon.CouponIssueEventPublisher
 import com.coupon.coupon.CouponIssueMessage
-import com.coupon.support.logging.logger
+import com.coupon.coupon.CouponIssuePublishReceipt
 import org.apache.kafka.clients.producer.ProducerRecord
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.kafka.core.KafkaTemplate
@@ -20,9 +20,7 @@ class CouponIssueKafkaPublisher(
     private val couponIssueKafkaProperties: CouponIssueKafkaProperties,
     private val kafkaTemplate: KafkaTemplate<String, CouponIssueMessage>,
 ) : CouponIssueEventPublisher {
-    private val log by logger()
-
-    override fun publish(message: CouponIssueMessage) {
+    override fun publish(message: CouponIssueMessage): CouponIssuePublishReceipt {
         val record =
             ProducerRecord(
                 couponIssueKafkaProperties.topic,
@@ -36,9 +34,10 @@ class CouponIssueKafkaPublisher(
                 .get(couponIssueKafkaProperties.ackTimeout.toMillis(), TimeUnit.MILLISECONDS)
                 .recordMetadata
 
-        log.info {
-            "Published coupon issue message topic=${metadata.topic()}, partition=${metadata.partition()}, " +
-                "offset=${metadata.offset()}, couponId=${message.couponId}, userId=${message.userId}"
-        }
+        return CouponIssuePublishReceipt(
+            topic = metadata.topic(),
+            partition = metadata.partition(),
+            offset = metadata.offset(),
+        )
     }
 }

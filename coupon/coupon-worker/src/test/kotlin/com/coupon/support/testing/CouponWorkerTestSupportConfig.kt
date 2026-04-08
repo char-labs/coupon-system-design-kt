@@ -2,7 +2,9 @@ package com.coupon.support.testing
 
 import com.coupon.auth.AuthenticationHistoryRepository
 import com.coupon.auth.TokenRepository
+import com.coupon.client.slack.SlackClient
 import com.coupon.coupon.CouponIssueEventPublisher
+import com.coupon.coupon.CouponIssueProcessingLimiter
 import com.coupon.coupon.CouponIssueRedisRepository
 import com.coupon.enums.coupon.CouponIssueResult
 import com.coupon.enums.error.ErrorType
@@ -39,12 +41,24 @@ class CouponWorkerTestSupportConfig {
     fun passwordEncoder(): PasswordEncoder = PasswordEncoderFactories.createDelegatingPasswordEncoder()
 
     @Bean
+    fun slackClient(): SlackClient =
+        object : SlackClient {
+            override val enabled: Boolean = false
+
+            override fun sendMessage(message: com.coupon.client.slack.SlackMessage) = Unit
+        }
+
+    @Bean
     @Primary
     fun couponIssueStateRepository(): CouponIssueRedisRepository = InMemoryCouponIssueRedisRepository()
 
     @Bean
     @Primary
     fun couponIssueEventPublisher(): CouponIssueEventPublisher = mockk(relaxed = true)
+
+    @Bean
+    @Primary
+    fun couponIssueProcessingLimiter(): CouponIssueProcessingLimiter = mockk(relaxed = true)
 }
 
 private class InMemoryLockRepository : LockRepository {

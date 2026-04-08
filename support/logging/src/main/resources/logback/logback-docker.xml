@@ -1,13 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
     <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
-    <property name="LOG_PATTERN"
-              value="%clr(%d{HH:mm:ss.SSS}){faint} [%clr(${level:-%5p})][%32X{traceId:-},%16X{spanId:-}][%clr(%.40logger{39}:%line){cyan}%clr(]){faint} - %m%n${LOG_EXCEPTION_CONVERSION_WORD:-%wEx}"/>
+    <springProperty scope="context" name="APP_NAME" source="spring.application.name" defaultValue="coupon-app"/>
+    <springProperty scope="context" name="PROFILE" source="spring.profiles.active" defaultValue="docker"/>
 
     <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
-        <encoder>
-            <pattern>${LOG_PATTERN}</pattern>
-            <charset>utf8</charset>
+        <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+            <customFields>{"app":"${APP_NAME}","profile":"${PROFILE}"}</customFields>
         </encoder>
     </appender>
 
