@@ -14,7 +14,7 @@ Use this skill when the user asks to commit, push, or do a combined commit-push 
 1. Read `./AGENTS.md`.
 2. Inspect `git status` and split unrelated changes into the smallest safe commit groups.
 3. Run the narrowest matching `ktlintFormat` task before validation.
-4. For each group, choose the smallest Java 25 validation command that proves the change.
+4. For each group, choose the smallest validation command from [docs/agent/validation.md](../../../docs/agent/validation.md) and prefer plain `./gradlew`.
 5. Propose the ordered commit and push plan first using English `[Topic] Issue summary` commit messages.
 6. Wait for the explicit approval token `확인` before mutating git state.
 7. After approval, stage one group at a time, commit, restage if formatting changed files, then push once at the end.

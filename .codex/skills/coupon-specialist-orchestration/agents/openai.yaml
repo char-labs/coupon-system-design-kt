@@ -1,0 +1,4 @@
+interface:
+  display_name: "Coupon Specialist Orchestration"
+  short_description: "Route non-trivial coupon-system tasks through the right specialists"
+  default_prompt: "Use $coupon-specialist-orchestration to choose the right specialist agents for this coupon-system task, synthesize their recommendations, and continue the work."

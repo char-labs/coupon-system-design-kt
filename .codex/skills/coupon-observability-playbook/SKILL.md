@@ -14,7 +14,7 @@ Use this skill when a change needs to be measurable and debuggable in production
 1. Read `./AGENTS.md`.
 2. Read [metric-catalog.md](./references/metric-catalog.md).
 3. Identify the business flow and failure modes.
-4. If alerting or vendor integration is involved, inspect repo-local dependency declarations first and verify official external references when current SDK or API behavior matters.
+4. If alerting or vendor integration is involved, follow [docs/agent/adoption-rubric.md](../../../docs/agent/adoption-rubric.md) before choosing a new SDK or transport style.
 5. Add or review:
    - structured logs
    - trace or span tags
@@ -27,4 +27,4 @@ Use this skill when a change needs to be measurable and debuggable in production
 - Prefer business metrics for coupon issue, use, cancel, lock failure, retry, and cache hit or miss patterns.
 - Do not over-instrument every internal method. Focus on externally visible flow boundaries and shared bottlenecks.
 - Distinguish current Prometheus support from future dashboarding or alerting work.
-- Treat vendor SDK availability and supported integration style as verified facts, not guesses.
+- For pure vendor or SDK adoption questions, prefer `$coupon-tech-adoption-review`.

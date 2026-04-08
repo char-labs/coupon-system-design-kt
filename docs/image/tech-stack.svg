@@ -1,132 +1,159 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 520" font-family="'Segoe UI', Arial, sans-serif">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 620" font-family="'Segoe UI', Arial, sans-serif">
   <defs>
     <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#0f172a"/>
-      <stop offset="100%" style="stop-color:#1e293b"/>
+      <stop offset="0%" style="stop-color:#0f172a"/><stop offset="100%" style="stop-color:#1e293b"/>
     </linearGradient>
     <linearGradient id="cardGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" style="stop-color:#1e293b"/>
-      <stop offset="100%" style="stop-color:#334155"/>
+      <stop offset="0%" style="stop-color:#1e293b"/><stop offset="100%" style="stop-color:#334155"/>
     </linearGradient>
     <filter id="shadow" x="-5%" y="-5%" width="110%" height="115%">
       <feDropShadow dx="0" dy="2" stdDeviation="4" flood-color="#000" flood-opacity="0.3"/>
     </filter>
-    <filter id="glow" x="-10%" y="-10%" width="120%" height="120%">
-      <feGaussianBlur stdDeviation="3" result="blur"/>
-      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
-    </filter>
   </defs>
 
-  <!-- Background -->
-  <rect width="900" height="520" rx="16" fill="url(#bgGrad)"/>
+  <rect width="960" height="620" rx="16" fill="url(#bgGrad)"/>
 
   <!-- Title -->
-  <text x="450" y="48" text-anchor="middle" fill="#f8fafc" font-size="22" font-weight="700" letter-spacing="1">🍽️ YogiEat Coupon System — Tech Stack</text>
-  <line x1="250" y1="60" x2="650" y2="60" stroke="#3b82f6" stroke-width="2" opacity="0.5"/>
+  <text x="480" y="48" text-anchor="middle" fill="#f8fafc" font-size="22" font-weight="700" letter-spacing="1">🍽️ YogiEat Coupon System — Tech Stack</text>
+  <line x1="280" y1="60" x2="680" y2="60" stroke="#3b82f6" stroke-width="2" opacity="0.5"/>
 
   <!-- Row 1: Backend -->
   <text x="55" y="100" fill="#94a3b8" font-size="11" font-weight="600" letter-spacing="2">BACKEND</text>
   <g filter="shadow">
-    <rect x="40" y="112" width="130" height="56" rx="10" fill="url(#cardGrad)" stroke="#7c3aed" stroke-width="1.5"/>
-    <text x="105" y="137" text-anchor="middle" fill="#a78bfa" font-size="11" font-weight="600">Spring Boot 4</text>
-    <text x="105" y="155" text-anchor="middle" fill="#64748b" font-size="9">Framework</text>
+    <rect x="40" y="112" width="140" height="56" rx="10" fill="url(#cardGrad)" stroke="#7c3aed" stroke-width="1.5"/>
+    <text x="110" y="137" text-anchor="middle" fill="#a78bfa" font-size="11" font-weight="600">Spring Boot 4</text>
+    <text x="110" y="155" text-anchor="middle" fill="#64748b" font-size="9">Framework</text>
   </g>
   <g filter="shadow">
-    <rect x="185" y="112" width="130" height="56" rx="10" fill="url(#cardGrad)" stroke="#7c3aed" stroke-width="1.5"/>
-    <text x="250" y="137" text-anchor="middle" fill="#a78bfa" font-size="11" font-weight="600">Kotlin</text>
-    <text x="250" y="155" text-anchor="middle" fill="#64748b" font-size="9">Language (JDK 25)</text>
+    <rect x="195" y="112" width="140" height="56" rx="10" fill="url(#cardGrad)" stroke="#7c3aed" stroke-width="1.5"/>
+    <text x="265" y="137" text-anchor="middle" fill="#a78bfa" font-size="11" font-weight="600">Kotlin (JDK 25)</text>
+    <text x="265" y="155" text-anchor="middle" fill="#64748b" font-size="9">Language</text>
   </g>
   <g filter="shadow">
-    <rect x="330" y="112" width="130" height="56" rx="10" fill="url(#cardGrad)" stroke="#7c3aed" stroke-width="1.5"/>
-    <text x="395" y="137" text-anchor="middle" fill="#a78bfa" font-size="11" font-weight="600">Spring Security</text>
-    <text x="395" y="155" text-anchor="middle" fill="#64748b" font-size="9">JWT Auth</text>
+    <rect x="350" y="112" width="140" height="56" rx="10" fill="url(#cardGrad)" stroke="#7c3aed" stroke-width="1.5"/>
+    <text x="420" y="137" text-anchor="middle" fill="#a78bfa" font-size="11" font-weight="600">Spring Security</text>
+    <text x="420" y="155" text-anchor="middle" fill="#64748b" font-size="9">JWT (jjwt)</text>
   </g>
   <g filter="shadow">
-    <rect x="475" y="112" width="130" height="56" rx="10" fill="url(#cardGrad)" stroke="#7c3aed" stroke-width="1.5"/>
-    <text x="540" y="137" text-anchor="middle" fill="#a78bfa" font-size="11" font-weight="600">JPA / Hibernate</text>
-    <text x="540" y="155" text-anchor="middle" fill="#64748b" font-size="9">ORM</text>
+    <rect x="505" y="112" width="140" height="56" rx="10" fill="url(#cardGrad)" stroke="#7c3aed" stroke-width="1.5"/>
+    <text x="575" y="137" text-anchor="middle" fill="#a78bfa" font-size="11" font-weight="600">JPA / Hibernate</text>
+    <text x="575" y="155" text-anchor="middle" fill="#64748b" font-size="9">ORM</text>
   </g>
   <g filter="shadow">
-    <rect x="620" y="112" width="130" height="56" rx="10" fill="url(#cardGrad)" stroke="#7c3aed" stroke-width="1.5"/>
-    <text x="685" y="137" text-anchor="middle" fill="#a78bfa" font-size="11" font-weight="600">Flyway</text>
-    <text x="685" y="155" text-anchor="middle" fill="#64748b" font-size="9">DB Migration</text>
+    <rect x="660" y="112" width="140" height="56" rx="10" fill="url(#cardGrad)" stroke="#7c3aed" stroke-width="1.5"/>
+    <text x="730" y="137" text-anchor="middle" fill="#a78bfa" font-size="11" font-weight="600">Kotlin-JDSL</text>
+    <text x="730" y="155" text-anchor="middle" fill="#64748b" font-size="9">Type-safe Query DSL</text>
+  </g>
+  <g filter="shadow">
+    <rect x="815" y="112" width="120" height="56" rx="10" fill="url(#cardGrad)" stroke="#7c3aed" stroke-width="1.5"/>
+    <text x="875" y="137" text-anchor="middle" fill="#a78bfa" font-size="11" font-weight="600">Flyway</text>
+    <text x="875" y="155" text-anchor="middle" fill="#64748b" font-size="9">DB Migration</text>
   </g>
 
   <!-- Row 2: Data & Messaging -->
   <text x="55" y="205" fill="#94a3b8" font-size="11" font-weight="600" letter-spacing="2">DATA &amp; MESSAGING</text>
   <g filter="shadow">
-    <rect x="40" y="217" width="130" height="56" rx="10" fill="url(#cardGrad)" stroke="#3b82f6" stroke-width="1.5"/>
-    <text x="105" y="242" text-anchor="middle" fill="#60a5fa" font-size="11" font-weight="600">MySQL 8</text>
-    <text x="105" y="260" text-anchor="middle" fill="#64748b" font-size="9">Primary DB</text>
+    <rect x="40" y="217" width="140" height="56" rx="10" fill="url(#cardGrad)" stroke="#3b82f6" stroke-width="1.5"/>
+    <text x="110" y="242" text-anchor="middle" fill="#60a5fa" font-size="11" font-weight="600">MySQL 8</text>
+    <text x="110" y="260" text-anchor="middle" fill="#64748b" font-size="9">Primary DB</text>
   </g>
   <g filter="shadow">
-    <rect x="185" y="217" width="130" height="56" rx="10" fill="url(#cardGrad)" stroke="#ef4444" stroke-width="1.5"/>
-    <text x="250" y="242" text-anchor="middle" fill="#f87171" font-size="11" font-weight="600">Redis 7</text>
-    <text x="250" y="260" text-anchor="middle" fill="#64748b" font-size="9">Cache / Lock / State</text>
+    <rect x="195" y="217" width="140" height="56" rx="10" fill="url(#cardGrad)" stroke="#ef4444" stroke-width="1.5"/>
+    <text x="265" y="242" text-anchor="middle" fill="#f87171" font-size="11" font-weight="600">Redis 7</text>
+    <text x="265" y="260" text-anchor="middle" fill="#64748b" font-size="9">Cache / State / Limiter</text>
   </g>
   <g filter="shadow">
-    <rect x="330" y="217" width="130" height="56" rx="10" fill="url(#cardGrad)" stroke="#f59e0b" stroke-width="1.5"/>
-    <text x="395" y="242" text-anchor="middle" fill="#fbbf24" font-size="11" font-weight="600">Apache Kafka</text>
-    <text x="395" y="260" text-anchor="middle" fill="#64748b" font-size="9">Event Streaming</text>
+    <rect x="350" y="217" width="140" height="56" rx="10" fill="url(#cardGrad)" stroke="#f59e0b" stroke-width="1.5"/>
+    <text x="420" y="242" text-anchor="middle" fill="#fbbf24" font-size="11" font-weight="600">Apache Kafka</text>
+    <text x="420" y="260" text-anchor="middle" fill="#64748b" font-size="9">Event Streaming</text>
   </g>
   <g filter="shadow">
-    <rect x="475" y="217" width="130" height="56" rx="10" fill="url(#cardGrad)" stroke="#ef4444" stroke-width="1.5"/>
-    <text x="540" y="242" text-anchor="middle" fill="#f87171" font-size="11" font-weight="600">Redisson</text>
-    <text x="540" y="260" text-anchor="middle" fill="#64748b" font-size="9">Distributed Lock</text>
+    <rect x="505" y="217" width="140" height="56" rx="10" fill="url(#cardGrad)" stroke="#ef4444" stroke-width="1.5"/>
+    <text x="575" y="242" text-anchor="middle" fill="#f87171" font-size="11" font-weight="600">Redisson</text>
+    <text x="575" y="260" text-anchor="middle" fill="#64748b" font-size="9">Distributed Lock</text>
   </g>
   <g filter="shadow">
-    <rect x="620" y="217" width="130" height="56" rx="10" fill="url(#cardGrad)" stroke="#3b82f6" stroke-width="1.5"/>
-    <text x="685" y="242" text-anchor="middle" fill="#60a5fa" font-size="11" font-weight="600">H2</text>
-    <text x="685" y="260" text-anchor="middle" fill="#64748b" font-size="9">Test / Local DB</text>
+    <rect x="660" y="217" width="140" height="56" rx="10" fill="url(#cardGrad)" stroke="#3b82f6" stroke-width="1.5"/>
+    <text x="730" y="242" text-anchor="middle" fill="#60a5fa" font-size="11" font-weight="600">TSID</text>
+    <text x="730" y="260" text-anchor="middle" fill="#64748b" font-size="9">Snowflake ID Gen</text>
+  </g>
+  <g filter="shadow">
+    <rect x="815" y="217" width="120" height="56" rx="10" fill="url(#cardGrad)" stroke="#3b82f6" stroke-width="1.5"/>
+    <text x="875" y="242" text-anchor="middle" fill="#60a5fa" font-size="11" font-weight="600">Jackson 3</text>
+    <text x="875" y="260" text-anchor="middle" fill="#64748b" font-size="9">Serialization</text>
   </g>
 
   <!-- Row 3: Infra & DevOps -->
   <text x="55" y="310" fill="#94a3b8" font-size="11" font-weight="600" letter-spacing="2">INFRA &amp; DEVOPS</text>
   <g filter="shadow">
-    <rect x="40" y="322" width="130" height="56" rx="10" fill="url(#cardGrad)" stroke="#10b981" stroke-width="1.5"/>
-    <text x="105" y="347" text-anchor="middle" fill="#34d399" font-size="11" font-weight="600">Docker Compose</text>
-    <text x="105" y="365" text-anchor="middle" fill="#64748b" font-size="9">Container Orchestration</text>
+    <rect x="40" y="322" width="140" height="56" rx="10" fill="url(#cardGrad)" stroke="#10b981" stroke-width="1.5"/>
+    <text x="110" y="347" text-anchor="middle" fill="#34d399" font-size="11" font-weight="600">Docker Compose</text>
+    <text x="110" y="365" text-anchor="middle" fill="#64748b" font-size="9">Container Orchestration</text>
   </g>
   <g filter="shadow">
-    <rect x="185" y="322" width="130" height="56" rx="10" fill="url(#cardGrad)" stroke="#10b981" stroke-width="1.5"/>
-    <text x="250" y="347" text-anchor="middle" fill="#34d399" font-size="11" font-weight="600">Gradle</text>
-    <text x="250" y="365" text-anchor="middle" fill="#64748b" font-size="9">Multi-module Build</text>
+    <rect x="195" y="322" width="140" height="56" rx="10" fill="url(#cardGrad)" stroke="#10b981" stroke-width="1.5"/>
+    <text x="265" y="347" text-anchor="middle" fill="#34d399" font-size="11" font-weight="600">Gradle</text>
+    <text x="265" y="365" text-anchor="middle" fill="#64748b" font-size="9">Multi-module Build</text>
   </g>
   <g filter="shadow">
-    <rect x="330" y="322" width="130" height="56" rx="10" fill="url(#cardGrad)" stroke="#10b981" stroke-width="1.5"/>
-    <text x="395" y="347" text-anchor="middle" fill="#34d399" font-size="11" font-weight="600">KtLint</text>
-    <text x="395" y="365" text-anchor="middle" fill="#64748b" font-size="9">Code Formatting</text>
+    <rect x="350" y="322" width="140" height="56" rx="10" fill="url(#cardGrad)" stroke="#10b981" stroke-width="1.5"/>
+    <text x="420" y="347" text-anchor="middle" fill="#34d399" font-size="11" font-weight="600">KtLint</text>
+    <text x="420" y="365" text-anchor="middle" fill="#64748b" font-size="9">Code Formatting</text>
+  </g>
+  <g filter="shadow">
+    <rect x="505" y="322" width="140" height="56" rx="10" fill="url(#cardGrad)" stroke="#10b981" stroke-width="1.5"/>
+    <text x="575" y="347" text-anchor="middle" fill="#34d399" font-size="11" font-weight="600">Swagger / OpenAPI</text>
+    <text x="575" y="365" text-anchor="middle" fill="#64748b" font-size="9">API Documentation</text>
   </g>
 
-  <!-- Row 4: Testing & Monitoring -->
-  <text x="55" y="415" fill="#94a3b8" font-size="11" font-weight="600" letter-spacing="2">TESTING &amp; MONITORING</text>
+  <!-- Row 4: Testing -->
+  <text x="55" y="415" fill="#94a3b8" font-size="11" font-weight="600" letter-spacing="2">TESTING</text>
   <g filter="shadow">
-    <rect x="40" y="427" width="130" height="56" rx="10" fill="url(#cardGrad)" stroke="#ec4899" stroke-width="1.5"/>
-    <text x="105" y="452" text-anchor="middle" fill="#f472b6" font-size="11" font-weight="600">Kotest</text>
-    <text x="105" y="470" text-anchor="middle" fill="#64748b" font-size="9">Testing Framework</text>
+    <rect x="40" y="427" width="140" height="56" rx="10" fill="url(#cardGrad)" stroke="#ec4899" stroke-width="1.5"/>
+    <text x="110" y="452" text-anchor="middle" fill="#f472b6" font-size="11" font-weight="600">Kotest</text>
+    <text x="110" y="470" text-anchor="middle" fill="#64748b" font-size="9">Testing Framework</text>
   </g>
   <g filter="shadow">
-    <rect x="185" y="427" width="130" height="56" rx="10" fill="url(#cardGrad)" stroke="#ec4899" stroke-width="1.5"/>
-    <text x="250" y="452" text-anchor="middle" fill="#f472b6" font-size="11" font-weight="600">TestContainers</text>
-    <text x="250" y="470" text-anchor="middle" fill="#64748b" font-size="9">Integration Test</text>
+    <rect x="195" y="427" width="140" height="56" rx="10" fill="url(#cardGrad)" stroke="#ec4899" stroke-width="1.5"/>
+    <text x="265" y="452" text-anchor="middle" fill="#f472b6" font-size="11" font-weight="600">TestContainers</text>
+    <text x="265" y="470" text-anchor="middle" fill="#64748b" font-size="9">Integration Test</text>
   </g>
   <g filter="shadow">
-    <rect x="330" y="427" width="130" height="56" rx="10" fill="url(#cardGrad)" stroke="#ec4899" stroke-width="1.5"/>
-    <text x="395" y="452" text-anchor="middle" fill="#f472b6" font-size="11" font-weight="600">Prometheus</text>
-    <text x="395" y="470" text-anchor="middle" fill="#64748b" font-size="9">Metrics</text>
+    <rect x="350" y="427" width="140" height="56" rx="10" fill="url(#cardGrad)" stroke="#ec4899" stroke-width="1.5"/>
+    <text x="420" y="452" text-anchor="middle" fill="#f472b6" font-size="11" font-weight="600">MockK</text>
+    <text x="420" y="470" text-anchor="middle" fill="#64748b" font-size="9">Mocking Library</text>
   </g>
   <g filter="shadow">
-    <rect x="475" y="427" width="130" height="56" rx="10" fill="url(#cardGrad)" stroke="#ec4899" stroke-width="1.5"/>
-    <text x="540" y="452" text-anchor="middle" fill="#f472b6" font-size="11" font-weight="600">Sentry</text>
-    <text x="540" y="470" text-anchor="middle" fill="#64748b" font-size="9">Error Tracking</text>
-  </g>
-  <g filter="shadow">
-    <rect x="620" y="427" width="130" height="56" rx="10" fill="url(#cardGrad)" stroke="#ec4899" stroke-width="1.5"/>
-    <text x="685" y="452" text-anchor="middle" fill="#f472b6" font-size="11" font-weight="600">Micrometer</text>
-    <text x="685" y="470" text-anchor="middle" fill="#64748b" font-size="9">Observability</text>
+    <rect x="505" y="427" width="140" height="56" rx="10" fill="url(#cardGrad)" stroke="#ec4899" stroke-width="1.5"/>
+    <text x="575" y="452" text-anchor="middle" fill="#f472b6" font-size="11" font-weight="600">Instancio</text>
+    <text x="575" y="470" text-anchor="middle" fill="#64748b" font-size="9">Fixture Generation</text>
   </g>
 
-  <!-- Decorative corner accents -->
-  <circle cx="860" cy="40" r="80" fill="#3b82f6" opacity="0.03"/>
-  <circle cx="40" cy="480" r="60" fill="#7c3aed" opacity="0.03"/>
+  <!-- Row 5: Monitoring & Observability -->
+  <text x="55" y="520" fill="#94a3b8" font-size="11" font-weight="600" letter-spacing="2">MONITORING &amp; OBSERVABILITY</text>
+  <g filter="shadow">
+    <rect x="40" y="532" width="140" height="56" rx="10" fill="url(#cardGrad)" stroke="#06b6d4" stroke-width="1.5"/>
+    <text x="110" y="557" text-anchor="middle" fill="#22d3ee" font-size="11" font-weight="600">Prometheus</text>
+    <text x="110" y="575" text-anchor="middle" fill="#64748b" font-size="9">Metrics</text>
+  </g>
+  <g filter="shadow">
+    <rect x="195" y="532" width="140" height="56" rx="10" fill="url(#cardGrad)" stroke="#06b6d4" stroke-width="1.5"/>
+    <text x="265" y="557" text-anchor="middle" fill="#22d3ee" font-size="11" font-weight="600">Micrometer</text>
+    <text x="265" y="575" text-anchor="middle" fill="#64748b" font-size="9">Metrics Facade</text>
+  </g>
+  <g filter="shadow">
+    <rect x="350" y="532" width="140" height="56" rx="10" fill="url(#cardGrad)" stroke="#06b6d4" stroke-width="1.5"/>
+    <text x="420" y="557" text-anchor="middle" fill="#22d3ee" font-size="11" font-weight="600">OpenTelemetry</text>
+    <text x="420" y="575" text-anchor="middle" fill="#64748b" font-size="9">Distributed Tracing</text>
+  </g>
+  <g filter="shadow">
+    <rect x="505" y="532" width="140" height="56" rx="10" fill="url(#cardGrad)" stroke="#06b6d4" stroke-width="1.5"/>
+    <text x="575" y="557" text-anchor="middle" fill="#22d3ee" font-size="11" font-weight="600">Sentry</text>
+    <text x="575" y="575" text-anchor="middle" fill="#64748b" font-size="9">Error Tracking</text>
+  </g>
+  <g filter="shadow">
+    <rect x="660" y="532" width="140" height="56" rx="10" fill="url(#cardGrad)" stroke="#06b6d4" stroke-width="1.5"/>
+    <text x="730" y="557" text-anchor="middle" fill="#22d3ee" font-size="11" font-weight="600">Slack Webhook</text>
+    <text x="730" y="575" text-anchor="middle" fill="#64748b" font-size="9">Alert Notification</text>
+  </g>
 </svg>
