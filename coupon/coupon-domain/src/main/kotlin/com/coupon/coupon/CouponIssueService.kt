@@ -23,7 +23,7 @@ import java.time.LocalDateTime
 class CouponIssueService(
     private val couponIssueRepository: CouponIssueRepository,
     private val couponIssueValidator: CouponIssueValidator,
-    private val couponIssueStateRepository: CouponIssueStateRepository,
+    private val couponIssueRedisRepository: CouponIssueRedisRepository,
     private val applicationEventPublisher: ApplicationEventPublisher,
     private val clock: Clock,
 ) {
@@ -33,7 +33,7 @@ class CouponIssueService(
     ): CouponIssueResult {
         // Redis 발급 상태가 비어 있으면 한 번만 복구하고, 이미 다른 요청이 복구 중이면 잠시 기다린다.
         val ttl = stateTtl(coupon.endAt)
-        if (!couponIssueStateRepository.hasState(coupon.id)) {
+        if (!couponIssueRedisRepository.hasState(coupon.id)) {
             try {
                 (AopContext.currentProxy() as CouponIssueService).initializeStateIfAbsent(coupon, ttl)
             } catch (e: ErrorException) {
@@ -45,7 +45,7 @@ class CouponIssueService(
             }
         }
 
-        return couponIssueStateRepository.reserve(
+        return couponIssueRedisRepository.reserve(
             couponId = coupon.id,
             userId = userId,
             totalQuantity = coupon.totalQuantity,
@@ -87,22 +87,11 @@ class CouponIssueService(
         couponId: Long,
         userId: Long,
     ) {
-        couponIssueStateRepository.release(couponId, userId)
+        couponIssueRedisRepository.release(couponId, userId)
     }
 
     fun releaseStockSlot(couponId: Long) {
-        couponIssueStateRepository.releaseStockSlot(couponId)
-    }
-
-    fun rebuildState(coupon: CouponDetail) {
-        val issuedUsers = couponIssueRepository.findUserIdsByCouponId(coupon.id)
-        val occupiedCount = coupon.totalQuantity - coupon.remainingQuantity
-        couponIssueStateRepository.rebuild(
-            couponId = coupon.id,
-            occupiedCount = occupiedCount,
-            userIds = issuedUsers,
-            ttl = stateTtl(coupon.endAt),
-        )
+        couponIssueRedisRepository.releaseStockSlot(couponId)
     }
 
     @WithDistributedLock(
@@ -113,13 +102,13 @@ class CouponIssueService(
         coupon: CouponDetail,
         ttl: Duration,
     ) {
-        if (couponIssueStateRepository.hasState(coupon.id)) {
+        if (couponIssueRedisRepository.hasState(coupon.id)) {
             return
         }
 
         val issuedUsers = couponIssueRepository.findUserIdsByCouponId(coupon.id)
         val occupiedCount = coupon.totalQuantity - coupon.remainingQuantity
-        couponIssueStateRepository.rebuild(
+        couponIssueRedisRepository.rebuild(
             couponId = coupon.id,
             occupiedCount = occupiedCount,
             userIds = issuedUsers,
@@ -185,7 +174,7 @@ class CouponIssueService(
         val deadline = System.nanoTime() + Duration.ofMillis(STATE_INIT_WAIT_TIMEOUT_MILLIS).toNanos()
 
         while (System.nanoTime() < deadline) {
-            if (couponIssueStateRepository.hasState(couponId)) {
+            if (couponIssueRedisRepository.hasState(couponId)) {
                 return
             }
 

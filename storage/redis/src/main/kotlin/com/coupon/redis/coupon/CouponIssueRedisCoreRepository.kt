@@ -1,6 +1,6 @@
 package com.coupon.redis.coupon
 
-import com.coupon.coupon.CouponIssueStateRepository
+import com.coupon.coupon.CouponIssueRedisRepository
 import com.coupon.enums.coupon.CouponIssueResult
 import org.springframework.data.redis.core.RedisTemplate
 import org.springframework.data.redis.core.script.DefaultRedisScript
@@ -10,7 +10,7 @@ import java.time.Duration
 @Repository
 class CouponIssueRedisCoreRepository(
     private val redisTemplate: RedisTemplate<String, String>,
-) : CouponIssueStateRepository {
+) : CouponIssueRedisRepository {
     override fun reserve(
         couponId: Long,
         userId: Long,

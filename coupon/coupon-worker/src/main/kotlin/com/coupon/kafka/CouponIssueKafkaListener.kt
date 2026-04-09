@@ -52,7 +52,7 @@ class CouponIssueKafkaListener(
 
         when (val result = couponIssueExecutionFacade.execute(message)) {
             is CouponIssueExecutionResult.Succeeded -> {
-                val durationMs = e2eDurationMillis(message)
+                val durationMs = Duration.between(message.acceptedAt, clock.instant()).toMillis().coerceAtLeast(0)
                 log.info {
                     "event=coupon.issue phase=worker.consume result=SUCCESS requestId=${message.requestId} " +
                         "couponId=${message.couponId} userId=${message.userId} acceptedAt=${message.acceptedAt} " +
@@ -62,7 +62,7 @@ class CouponIssueKafkaListener(
             }
 
             CouponIssueExecutionResult.AlreadyIssued -> {
-                val durationMs = e2eDurationMillis(message)
+                val durationMs = Duration.between(message.acceptedAt, clock.instant()).toMillis().coerceAtLeast(0)
                 log.info {
                     "event=coupon.issue phase=worker.consume result=ALREADY_ISSUED requestId=${message.requestId} " +
                         "couponId=${message.couponId} userId=${message.userId} acceptedAt=${message.acceptedAt} " +
@@ -72,7 +72,7 @@ class CouponIssueKafkaListener(
             }
 
             is CouponIssueExecutionResult.Rejected -> {
-                val durationMs = e2eDurationMillis(message)
+                val durationMs = Duration.between(message.acceptedAt, clock.instant()).toMillis().coerceAtLeast(0)
                 log.info {
                     "event=coupon.issue phase=worker.consume result=REJECTED requestId=${message.requestId} " +
                         "couponId=${message.couponId} userId=${message.userId} acceptedAt=${message.acceptedAt} " +
@@ -82,7 +82,7 @@ class CouponIssueKafkaListener(
             }
 
             is CouponIssueExecutionResult.Retry -> {
-                val durationMs = e2eDurationMillis(message)
+                val durationMs = Duration.between(message.acceptedAt, clock.instant()).toMillis().coerceAtLeast(0)
                 log.warn {
                     "event=coupon.issue phase=worker.consume result=RETRY requestId=${message.requestId} " +
                         "couponId=${message.couponId} userId=${message.userId} acceptedAt=${message.acceptedAt} " +
@@ -111,7 +111,7 @@ class CouponIssueKafkaListener(
             couponId = message.couponId,
             userId = message.userId,
         )
-        val durationMs = e2eDurationMillis(message)
+        val durationMs = Duration.between(message.acceptedAt, clock.instant()).toMillis().coerceAtLeast(0)
 
         log.error {
             "event=coupon.issue phase=worker.dlq result=DLQ requestId=${message.requestId} " +
@@ -122,6 +122,4 @@ class CouponIssueKafkaListener(
         acknowledgment.acknowledge()
     }
 
-    private fun e2eDurationMillis(message: CouponIssueMessage): Long =
-        Duration.between(message.acceptedAt, clock.instant()).toMillis().coerceAtLeast(0)
 }

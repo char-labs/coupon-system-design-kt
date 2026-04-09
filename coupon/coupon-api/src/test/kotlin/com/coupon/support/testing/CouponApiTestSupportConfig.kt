@@ -1,6 +1,6 @@
 package com.coupon.support.testing
 
-import com.coupon.coupon.CouponIssueStateRepository
+import com.coupon.coupon.CouponIssueRedisRepository
 import com.coupon.coupon.command.CouponIssueCommand
 import com.coupon.coupon.execution.CouponIssueExecutionFacade
 import com.coupon.coupon.intake.CouponIssueMessage
@@ -23,7 +23,7 @@ class CouponApiTestSupportConfig {
 
     @Bean
     @Primary
-    fun couponIssueStateRepository(): CouponIssueStateRepository = InMemoryCouponIssueStateRepository()
+    fun couponIssueStateRepository(): CouponIssueRedisRepository = InMemoryCouponIssueRedisRepository()
 
     @Bean
     @Primary
@@ -36,7 +36,7 @@ class CouponApiTestSupportConfig {
     ): CouponIssueMessagePublisher = SynchronousCouponIssueMessagePublisher(couponIssueExecutionFacadeProvider)
 }
 
-private class InMemoryCouponIssueStateRepository : CouponIssueStateRepository {
+private class InMemoryCouponIssueRedisRepository : CouponIssueRedisRepository {
     private val states = ConcurrentHashMap<Long, IssueState>()
 
     override fun reserve(

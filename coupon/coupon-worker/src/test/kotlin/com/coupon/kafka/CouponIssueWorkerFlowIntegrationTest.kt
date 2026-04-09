@@ -1,7 +1,7 @@
 package com.coupon.kafka
 
 import com.coupon.coupon.CouponIssueService
-import com.coupon.coupon.CouponIssueStateRepository
+import com.coupon.coupon.CouponIssueRedisRepository
 import com.coupon.coupon.CouponService
 import com.coupon.coupon.execution.CouponIssueExecutionFacade
 import com.coupon.coupon.execution.CouponIssueExecutionResult
@@ -30,7 +30,7 @@ class CouponIssueWorkerFlowIntegrationTest : BehaviorSpec() {
     private lateinit var couponIssueService: CouponIssueService
 
     @Autowired
-    private lateinit var couponIssueStateRepository: CouponIssueStateRepository
+    private lateinit var couponIssueRedisRepository: CouponIssueRedisRepository
 
     @Autowired
     private lateinit var userService: UserService
@@ -78,7 +78,7 @@ class CouponIssueWorkerFlowIntegrationTest : BehaviorSpec() {
                             acceptedAt = Instant.parse("2026-04-08T00:00:00Z"),
                         ),
                     )
-                    couponIssueStateRepository.clear(coupon.id)
+                    couponIssueRedisRepository.clear(coupon.id)
 
                     val result = couponIssueService.reserveIssue(couponService.getCoupon(coupon.id), user.id)
 

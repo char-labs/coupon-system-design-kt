@@ -35,10 +35,10 @@ class CouponIssueServiceTest :
                 val context = CouponIssueServiceTestContext()
                 val coupon = FixedCouponFixtures.standard(id = 12L, totalQuantity = 10L)
 
-                every { context.couponIssueStateRepository.hasState(coupon.id) } returnsMany listOf(false, false)
+                every { context.couponIssueRedisRepository.hasState(coupon.id) } returnsMany listOf(false, false)
                 every { context.couponIssueRepository.findUserIdsByCouponId(coupon.id) } returns setOf(1L, 2L)
                 justRun {
-                    context.couponIssueStateRepository.rebuild(
+                    context.couponIssueRedisRepository.rebuild(
                         couponId = coupon.id,
                         occupiedCount = coupon.totalQuantity - coupon.remainingQuantity,
                         userIds = setOf(1L, 2L),
@@ -46,7 +46,7 @@ class CouponIssueServiceTest :
                     )
                 }
                 every {
-                    context.couponIssueStateRepository.reserve(
+                    context.couponIssueRedisRepository.reserve(
                         couponId = coupon.id,
                         userId = 120L,
                         totalQuantity = coupon.totalQuantity,
@@ -65,16 +65,16 @@ class CouponIssueServiceTest :
                             timeoutException = ErrorType.LOCK_ACQUISITION_FAILED,
                         )
                     verifySequence {
-                        context.couponIssueStateRepository.hasState(coupon.id)
-                        context.couponIssueStateRepository.hasState(coupon.id)
+                        context.couponIssueRedisRepository.hasState(coupon.id)
+                        context.couponIssueRedisRepository.hasState(coupon.id)
                         context.couponIssueRepository.findUserIdsByCouponId(coupon.id)
-                        context.couponIssueStateRepository.rebuild(
+                        context.couponIssueRedisRepository.rebuild(
                             couponId = coupon.id,
                             occupiedCount = coupon.totalQuantity - coupon.remainingQuantity,
                             userIds = setOf(1L, 2L),
                             ttl = any(),
                         )
-                        context.couponIssueStateRepository.reserve(
+                        context.couponIssueRedisRepository.reserve(
                             couponId = coupon.id,
                             userId = 120L,
                             totalQuantity = coupon.totalQuantity,
@@ -89,9 +89,9 @@ class CouponIssueServiceTest :
                 val context = CouponIssueServiceTestContext(lockRepository)
                 val coupon = FixedCouponFixtures.standard(id = 13L, totalQuantity = 10L)
 
-                every { context.couponIssueStateRepository.hasState(coupon.id) } returnsMany listOf(false, false, true)
+                every { context.couponIssueRedisRepository.hasState(coupon.id) } returnsMany listOf(false, false, true)
                 every {
-                    context.couponIssueStateRepository.reserve(
+                    context.couponIssueRedisRepository.reserve(
                         couponId = coupon.id,
                         userId = 121L,
                         totalQuantity = coupon.totalQuantity,
@@ -110,10 +110,10 @@ class CouponIssueServiceTest :
                             timeoutException = ErrorType.LOCK_ACQUISITION_FAILED,
                         )
                     verifySequence {
-                        context.couponIssueStateRepository.hasState(coupon.id)
-                        context.couponIssueStateRepository.hasState(coupon.id)
-                        context.couponIssueStateRepository.hasState(coupon.id)
-                        context.couponIssueStateRepository.reserve(
+                        context.couponIssueRedisRepository.hasState(coupon.id)
+                        context.couponIssueRedisRepository.hasState(coupon.id)
+                        context.couponIssueRedisRepository.hasState(coupon.id)
+                        context.couponIssueRedisRepository.reserve(
                             couponId = coupon.id,
                             userId = 121L,
                             totalQuantity = coupon.totalQuantity,
@@ -313,7 +313,7 @@ class CouponIssueServiceTest :
     ) {
         val couponIssueRepository = mockk<CouponIssueRepository>()
         val couponIssueValidator = mockk<CouponIssueValidator>()
-        val couponIssueStateRepository = mockk<CouponIssueStateRepository>(relaxed = true)
+        val couponIssueRedisRepository = mockk<CouponIssueRedisRepository>(relaxed = true)
         val applicationEventPublisher = mockk<ApplicationEventPublisher>(relaxed = true)
         private val tx = RequiresNewTransactionExecutor()
         private val lock =
@@ -327,7 +327,7 @@ class CouponIssueServiceTest :
                 CouponIssueService(
                     couponIssueRepository = couponIssueRepository,
                     couponIssueValidator = couponIssueValidator,
-                    couponIssueStateRepository = couponIssueStateRepository,
+                    couponIssueRedisRepository = couponIssueRedisRepository,
                     applicationEventPublisher = applicationEventPublisher,
                     clock = Clock.systemUTC(),
                 ),

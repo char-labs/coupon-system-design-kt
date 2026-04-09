@@ -2,7 +2,7 @@ package com.coupon.support.testing
 
 import com.coupon.auth.AuthenticationHistoryRepository
 import com.coupon.auth.TokenRepository
-import com.coupon.coupon.CouponIssueStateRepository
+import com.coupon.coupon.CouponIssueRedisRepository
 import com.coupon.coupon.execution.CouponIssueProcessingLimiter
 import com.coupon.coupon.intake.CouponIssueMessagePublisher
 import com.coupon.enums.coupon.CouponIssueResult
@@ -50,7 +50,7 @@ class CouponWorkerTestSupportConfig {
 
     @Bean
     @Primary
-    fun couponIssueStateRepository(): CouponIssueStateRepository = InMemoryCouponIssueStateRepository()
+    fun couponIssueStateRepository(): CouponIssueRedisRepository = InMemoryCouponIssueRedisRepository()
 
     @Bean
     @Primary
@@ -95,7 +95,7 @@ private class InMemoryLockRepository : LockRepository {
     }
 }
 
-private class InMemoryCouponIssueStateRepository : CouponIssueStateRepository {
+private class InMemoryCouponIssueRedisRepository : CouponIssueRedisRepository {
     private val states = ConcurrentHashMap<Long, IssueState>()
 
     override fun reserve(
