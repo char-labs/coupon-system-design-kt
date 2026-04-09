@@ -1,254 +1,135 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 850" font-family="'Segoe UI', Arial, sans-serif">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 580" font-family="'Segoe UI', 'Apple SD Gothic Neo', Arial, sans-serif">
   <defs>
-    <linearGradient id="bgG" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#0f172a"/><stop offset="100%" style="stop-color:#1e293b"/>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0d1117"/>
+      <stop offset="100%" stop-color="#0f172a"/>
     </linearGradient>
-    <linearGradient id="apiG" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" style="stop-color:#312e81"/><stop offset="100%" style="stop-color:#1e1b4b"/>
-    </linearGradient>
-    <linearGradient id="workerG" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" style="stop-color:#7c2d12"/><stop offset="100%" style="stop-color:#431407"/>
-    </linearGradient>
-    <linearGradient id="domainG" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" style="stop-color:#064e3b"/><stop offset="100%" style="stop-color:#022c22"/>
-    </linearGradient>
-    <linearGradient id="storageG" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" style="stop-color:#1e3a5f"/><stop offset="100%" style="stop-color:#0c1929"/>
-    </linearGradient>
-    <filter id="s"><feDropShadow dx="0" dy="3" stdDeviation="5" flood-color="#000" flood-opacity="0.4"/></filter>
-    <marker id="arrow" viewBox="0 0 10 7" refX="10" refY="3.5" markerWidth="8" markerHeight="6" orient="auto-start-auto">
-      <polygon points="0 0, 10 3.5, 0 7" fill="#64748b"/>
+    <!-- Card fills -->
+    <linearGradient id="cg0" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#1a1a2e"/><stop offset="100%" stop-color="#16213e"/></linearGradient>
+    <linearGradient id="cg1" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#1e1b4b"/><stop offset="100%" stop-color="#1a1a2e"/></linearGradient>
+    <linearGradient id="cg2" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#052e16"/><stop offset="100%" stop-color="#071a15"/></linearGradient>
+    <linearGradient id="cg3" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#1c1107"/><stop offset="100%" stop-color="#1a1207"/></linearGradient>
+    <linearGradient id="cg4" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#1c1107"/><stop offset="100%" stop-color="#1a0f05"/></linearGradient>
+    <linearGradient id="cg5" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#1a1a2e"/><stop offset="100%" stop-color="#0f172a"/></linearGradient>
+    <!-- Arrow markers -->
+    <marker id="arrGray" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#475569"/>
     </marker>
-    <marker id="arrowBlue" viewBox="0 0 10 7" refX="10" refY="3.5" markerWidth="8" markerHeight="6" orient="auto-start-auto">
-      <polygon points="0 0, 10 3.5, 0 7" fill="#3b82f6"/>
+    <marker id="arrOrange" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#f97316"/>
     </marker>
-    <marker id="arrowAmber" viewBox="0 0 10 7" refX="10" refY="3.5" markerWidth="8" markerHeight="6" orient="auto-start-auto">
-      <polygon points="0 0, 10 3.5, 0 7" fill="#f59e0b"/>
+    <marker id="arrGreen" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#10b981"/>
     </marker>
-    <marker id="arrowRed" viewBox="0 0 10 7" refX="10" refY="3.5" markerWidth="8" markerHeight="6" orient="auto-start-auto">
-      <polygon points="0 0, 10 3.5, 0 7" fill="#ef4444"/>
-    </marker>
-    <marker id="arrowGreen" viewBox="0 0 10 7" refX="10" refY="3.5" markerWidth="8" markerHeight="6" orient="auto-start-auto">
-      <polygon points="0 0, 10 3.5, 0 7" fill="#10b981"/>
-    </marker>
+    <filter id="glow"><feGaussianBlur stdDeviation="7" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+    <filter id="shadow"><feDropShadow dx="0" dy="4" stdDeviation="14" flood-color="#000" flood-opacity="0.5"/></filter>
+    <style>
+      .title { fill: #f8fafc; font-size: 32px; font-weight: 700; }
+      .subtitle { fill: #64748b; font-size: 15px; }
+      .label { font-size: 19px; font-weight: 700; }
+      .body { fill: #cbd5e1; font-size: 14px; }
+      .tech { fill: #475569; font-size: 12px; }
+      .note { fill: #64748b; font-size: 13px; }
+    </style>
   </defs>
 
-  <rect width="1200" height="850" rx="16" fill="url(#bgG)"/>
+  <rect width="1280" height="580" rx="28" fill="url(#bg)"/>
+
+  <!-- Subtle grid -->
+  <line x1="0" y1="190" x2="1280" y2="190" stroke="#fff" stroke-width="0.3" opacity="0.04"/>
+  <line x1="0" y1="380" x2="1280" y2="380" stroke="#fff" stroke-width="0.3" opacity="0.04"/>
+  <line x1="426" y1="0" x2="426" y2="580" stroke="#fff" stroke-width="0.3" opacity="0.04"/>
+  <line x1="852" y1="0" x2="852" y2="580" stroke="#fff" stroke-width="0.3" opacity="0.04"/>
 
   <!-- Title -->
-  <text x="600" y="42" text-anchor="middle" fill="#f8fafc" font-size="22" font-weight="700">🍽️ YogiEat Coupon System — System Architecture</text>
-  <line x1="350" y1="54" x2="850" y2="54" stroke="#3b82f6" stroke-width="2" opacity="0.4"/>
+  <text x="72" y="66" class="title">시스템 아키텍처</text>
+  <rect x="72" y="74" width="140" height="3" rx="2" fill="#6366f1" opacity="0.7"/>
+  <text x="72" y="100" class="subtitle">요청 수락은 빠르게, 처리는 안정적으로. API와 Worker를 분리해 트래픽 급증에도 DB 부하를 통제한다.</text>
 
   <!-- Client -->
-  <g filter="s">
-    <rect x="30" y="78" width="130" height="60" rx="12" fill="#334155" stroke="#94a3b8" stroke-width="1"/>
-    <text x="95" y="105" text-anchor="middle" fill="#f8fafc" font-size="13" font-weight="600">👤 Client</text>
-    <text x="95" y="123" text-anchor="middle" fill="#94a3b8" font-size="9">HTTP Request</text>
+  <g filter="url(#shadow)">
+    <rect x="52" y="188" width="152" height="104" rx="22" fill="url(#cg0)" stroke="#334155" stroke-width="1.5"/>
   </g>
-  <line x1="160" y1="108" x2="220" y2="108" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <circle cx="88" cy="226" r="5" fill="#94a3b8" opacity="0.6"/>
+  <text x="128" y="232" text-anchor="middle" fill="#94a3b8" class="label">Client</text>
+  <text x="128" y="272" text-anchor="middle" class="tech">쿠폰 발급 요청</text>
 
-  <!-- ========== API SERVER ========== -->
-  <g filter="s">
-    <rect x="230" y="70" width="400" height="160" rx="14" fill="url(#apiG)" stroke="#6366f1" stroke-width="1.5"/>
-    <text x="430" y="94" text-anchor="middle" fill="#a5b4fc" font-size="14" font-weight="700">coupon-api (8080)</text>
-
-    <!-- Controllers row -->
-    <rect x="248" y="106" width="100" height="32" rx="7" fill="#1e1b4b" stroke="#818cf8" stroke-width="1"/>
-    <text x="298" y="127" text-anchor="middle" fill="#c7d2fe" font-size="9">CouponController</text>
-
-    <rect x="356" y="106" width="118" height="32" rx="7" fill="#1e1b4b" stroke="#818cf8" stroke-width="1"/>
-    <text x="415" y="127" text-anchor="middle" fill="#c7d2fe" font-size="9">CouponIssueController</text>
-
-    <rect x="482" y="106" width="132" height="32" rx="7" fill="#1e1b4b" stroke="#818cf8" stroke-width="1"/>
-    <text x="548" y="127" text-anchor="middle" fill="#c7d2fe" font-size="9">RestaurantCouponCtrl</text>
-
-    <!-- Infrastructure row -->
-    <rect x="248" y="146" width="100" height="32" rx="7" fill="#1e1b4b" stroke="#818cf8" stroke-width="1"/>
-    <text x="298" y="167" text-anchor="middle" fill="#c7d2fe" font-size="9">AuthController</text>
-
-    <rect x="356" y="146" width="118" height="32" rx="7" fill="#1e1b4b" stroke="#818cf8" stroke-width="1"/>
-    <text x="415" y="167" text-anchor="middle" fill="#c7d2fe" font-size="9">JWT Security Filter</text>
-
-    <rect x="482" y="146" width="132" height="32" rx="7" fill="#1e1b4b" stroke="#818cf8" stroke-width="1"/>
-    <text x="548" y="167" text-anchor="middle" fill="#c7d2fe" font-size="9">Kafka Publisher</text>
-
-    <!-- Bottom row -->
-    <rect x="248" y="186" width="100" height="32" rx="7" fill="#1e1b4b" stroke="#818cf8" stroke-width="1"/>
-    <text x="298" y="207" text-anchor="middle" fill="#c7d2fe" font-size="9">UserController</text>
-
-    <rect x="356" y="186" width="118" height="32" rx="7" fill="#1e1b4b" stroke="#818cf8" stroke-width="1"/>
-    <text x="415" y="207" text-anchor="middle" fill="#c7d2fe" font-size="9">ExceptionAdvice</text>
-
-    <rect x="482" y="186" width="132" height="32" rx="7" fill="#1e1b4b" stroke="#818cf8" stroke-width="1"/>
-    <text x="548" y="207" text-anchor="middle" fill="#c7d2fe" font-size="9">LoggingFilter</text>
+  <!-- API Server -->
+  <g filter="url(#shadow)">
+    <rect x="262" y="160" width="268" height="160" rx="24" fill="url(#cg1)" stroke="#6366f1" stroke-width="1.8"/>
   </g>
+  <circle cx="290" cy="200" r="5" fill="#818cf8" filter="url(#glow)" opacity="0.9"/>
+  <text x="396" y="207" text-anchor="middle" fill="#818cf8" class="label">API Server</text>
+  <line x1="286" y1="220" x2="506" y2="220" stroke="#6366f1" stroke-width="0.6" opacity="0.35"/>
+  <text x="396" y="248" text-anchor="middle" class="body">인증, 요청 검증</text>
+  <text x="396" y="272" text-anchor="middle" class="body">Redis 예약 → Kafka 발행</text>
+  <text x="396" y="300" text-anchor="middle" class="tech">Spring Boot · JWT · Kafka Producer</text>
 
-  <!-- ========== KAFKA ========== -->
-  <g filter="s">
-    <rect x="700" y="78" width="170" height="60" rx="12" fill="#451a03" stroke="#f59e0b" stroke-width="1.5"/>
-    <text x="785" y="104" text-anchor="middle" fill="#fbbf24" font-size="12" font-weight="700">Apache Kafka</text>
-    <text x="785" y="122" text-anchor="middle" fill="#a3a3a3" font-size="9">coupon.issue.v1 (3 partitions)</text>
+  <!-- Redis (upper right) -->
+  <g filter="url(#shadow)">
+    <rect x="598" y="148" width="220" height="120" rx="22" fill="url(#cg2)" stroke="#10b981" stroke-width="1.8"/>
   </g>
-  <line x1="630" y1="108" x2="695" y2="108" stroke="#f59e0b" stroke-width="1.5" stroke-dasharray="6,3" marker-end="url(#arrowAmber)"/>
-  <text x="662" y="100" text-anchor="middle" fill="#fbbf24" font-size="8">async</text>
+  <circle cx="626" cy="188" r="5" fill="#34d399" filter="url(#glow)" opacity="0.9"/>
+  <text x="708" y="195" text-anchor="middle" fill="#34d399" class="label">Redis</text>
+  <text x="708" y="224" text-anchor="middle" class="body">재고 가드 + 중복 체크</text>
+  <text x="708" y="248" text-anchor="middle" class="tech">Lua Script · Redisson Lock</text>
 
-  <!-- ========== WORKER SERVER ========== -->
-  <g filter="s">
-    <rect x="930" y="70" width="240" height="160" rx="14" fill="url(#workerG)" stroke="#f97316" stroke-width="1.5"/>
-    <text x="1050" y="94" text-anchor="middle" fill="#fdba74" font-size="14" font-weight="700">coupon-worker (8081)</text>
-
-    <rect x="948" y="106" width="205" height="32" rx="7" fill="#431407" stroke="#fb923c" stroke-width="1"/>
-    <text x="1050" y="127" text-anchor="middle" fill="#fed7aa" font-size="9">CouponIssueKafkaListener</text>
-
-    <rect x="948" y="146" width="205" height="32" rx="7" fill="#431407" stroke="#fb923c" stroke-width="1"/>
-    <text x="1050" y="167" text-anchor="middle" fill="#fed7aa" font-size="9">OutboxPoller + Dispatcher</text>
-
-    <rect x="948" y="186" width="205" height="32" rx="7" fill="#431407" stroke="#fb923c" stroke-width="1"/>
-    <text x="1050" y="207" text-anchor="middle" fill="#fed7aa" font-size="9">Slack Dead Event Notifier</text>
+  <!-- Kafka (lower right of center) -->
+  <g filter="url(#shadow)">
+    <rect x="598" y="316" width="220" height="120" rx="22" fill="url(#cg3)" stroke="#f59e0b" stroke-width="1.8"/>
   </g>
-  <line x1="870" y1="108" x2="925" y2="108" stroke="#f59e0b" stroke-width="1.5" marker-end="url(#arrowAmber)"/>
+  <circle cx="626" cy="356" r="5" fill="#fbbf24" filter="url(#glow)" opacity="0.9"/>
+  <text x="708" y="363" text-anchor="middle" fill="#fbbf24" class="label">Kafka</text>
+  <text x="708" y="392" text-anchor="middle" class="body">트래픽 버퍼링 + 순서 보장</text>
+  <text x="708" y="416" text-anchor="middle" class="tech">KRaft · 3 Partitions · Idempotent</text>
 
-  <!-- ========== DOMAIN LAYER ========== -->
-  <g filter="s">
-    <rect x="230" y="270" width="630" height="210" rx="14" fill="url(#domainG)" stroke="#10b981" stroke-width="1.5"/>
-    <text x="545" y="296" text-anchor="middle" fill="#6ee7b7" font-size="14" font-weight="700">coupon-domain — Clean Architecture Core</text>
-
-    <!-- Intake Pipeline -->
-    <rect x="248" y="310" width="140" height="48" rx="8" fill="#022c22" stroke="#34d399" stroke-width="1"/>
-    <text x="318" y="331" text-anchor="middle" fill="#a7f3d0" font-size="10" font-weight="600">IntakeFacade</text>
-    <text x="318" y="347" text-anchor="middle" fill="#6ee7b7" font-size="8">Reserve + Publish</text>
-
-    <!-- Execution Pipeline -->
-    <rect x="400" y="310" width="140" height="48" rx="8" fill="#022c22" stroke="#34d399" stroke-width="1"/>
-    <text x="470" y="331" text-anchor="middle" fill="#a7f3d0" font-size="10" font-weight="600">ExecutionFacade</text>
-    <text x="470" y="347" text-anchor="middle" fill="#6ee7b7" font-size="8">Lock + Execute + Route</text>
-
-    <!-- Locking Executor -->
-    <rect x="552" y="310" width="140" height="48" rx="8" fill="#022c22" stroke="#34d399" stroke-width="1"/>
-    <text x="622" y="331" text-anchor="middle" fill="#a7f3d0" font-size="10" font-weight="600">LockingExecutor</text>
-    <text x="622" y="347" text-anchor="middle" fill="#6ee7b7" font-size="8">@WithDistributedLock</text>
-
-    <!-- Cancellation -->
-    <rect x="704" y="310" width="140" height="48" rx="8" fill="#022c22" stroke="#34d399" stroke-width="1"/>
-    <text x="774" y="331" text-anchor="middle" fill="#a7f3d0" font-size="10" font-weight="600">CancellationExec</text>
-    <text x="774" y="347" text-anchor="middle" fill="#6ee7b7" font-size="8">Rollback + Release</text>
-
-    <!-- Second row -->
-    <rect x="248" y="370" width="140" height="48" rx="8" fill="#022c22" stroke="#34d399" stroke-width="1"/>
-    <text x="318" y="391" text-anchor="middle" fill="#a7f3d0" font-size="10" font-weight="600">CouponService</text>
-    <text x="318" y="407" text-anchor="middle" fill="#6ee7b7" font-size="8">CRUD + Quantity</text>
-
-    <rect x="400" y="370" width="140" height="48" rx="8" fill="#022c22" stroke="#34d399" stroke-width="1"/>
-    <text x="470" y="391" text-anchor="middle" fill="#a7f3d0" font-size="10" font-weight="600">CouponIssueService</text>
-    <text x="470" y="407" text-anchor="middle" fill="#6ee7b7" font-size="8">Issue + State Mgmt</text>
-
-    <rect x="552" y="370" width="140" height="48" rx="8" fill="#022c22" stroke="#34d399" stroke-width="1"/>
-    <text x="622" y="391" text-anchor="middle" fill="#a7f3d0" font-size="10" font-weight="600">Domain Models</text>
-    <text x="622" y="407" text-anchor="middle" fill="#6ee7b7" font-size="8">Coupon / Issue / User</text>
-
-    <rect x="704" y="370" width="140" height="48" rx="8" fill="#022c22" stroke="#34d399" stroke-width="1"/>
-    <text x="774" y="391" text-anchor="middle" fill="#a7f3d0" font-size="10" font-weight="600">Restaurant Facade</text>
-    <text x="774" y="407" text-anchor="middle" fill="#6ee7b7" font-size="8">Restaurant → Coupon</text>
-
-    <!-- Third row -->
-    <rect x="248" y="430" width="140" height="32" rx="6" fill="#022c22" stroke="#065f46" stroke-width="0.8"/>
-    <text x="318" y="451" text-anchor="middle" fill="#6ee7b7" font-size="9">Validator / Evaluator</text>
-
-    <rect x="400" y="430" width="140" height="32" rx="6" fill="#022c22" stroke="#065f46" stroke-width="0.8"/>
-    <text x="470" y="451" text-anchor="middle" fill="#6ee7b7" font-size="9">Command / Criteria</text>
-
-    <rect x="552" y="430" width="140" height="32" rx="6" fill="#022c22" stroke="#065f46" stroke-width="0.8"/>
-    <text x="622" y="451" text-anchor="middle" fill="#6ee7b7" font-size="9">Event / Outbox</text>
-
-    <rect x="704" y="430" width="140" height="32" rx="6" fill="#022c22" stroke="#065f46" stroke-width="0.8"/>
-    <text x="774" y="451" text-anchor="middle" fill="#6ee7b7" font-size="9">Auth / Token</text>
+  <!-- Worker -->
+  <g filter="url(#shadow)">
+    <rect x="886" y="160" width="268" height="160" rx="24" fill="url(#cg4)" stroke="#f97316" stroke-width="1.8"/>
   </g>
+  <circle cx="914" cy="200" r="5" fill="#fb923c" filter="url(#glow)" opacity="0.9"/>
+  <text x="1020" y="207" text-anchor="middle" fill="#fb923c" class="label">Worker</text>
+  <line x1="910" y1="220" x2="1130" y2="220" stroke="#f97316" stroke-width="0.6" opacity="0.35"/>
+  <text x="1020" y="248" text-anchor="middle" class="body">분산 락으로 수량 보호</text>
+  <text x="1020" y="272" text-anchor="middle" class="body">발급 실행 + 재시도 / DLQ</text>
+  <text x="1020" y="300" text-anchor="middle" class="tech">Kafka Consumer · Redisson Lock</text>
 
-  <!-- Enum module -->
-  <g filter="s">
-    <rect x="930" y="270" width="240" height="80" rx="14" fill="#1e293b" stroke="#94a3b8" stroke-width="1"/>
-    <text x="1050" y="296" text-anchor="middle" fill="#e2e8f0" font-size="12" font-weight="700">coupon-enum</text>
-    <text x="1050" y="316" text-anchor="middle" fill="#94a3b8" font-size="9">CouponStatus / CouponType / TrafficPolicy</text>
-    <text x="1050" y="332" text-anchor="middle" fill="#94a3b8" font-size="9">IssueStatus / ErrorType (34 types)</text>
+  <!-- MySQL -->
+  <g filter="url(#shadow)">
+    <rect x="886" y="368" width="268" height="108" rx="22" fill="url(#cg5)" stroke="#3b82f6" stroke-width="1.8"/>
   </g>
+  <circle cx="914" cy="408" r="5" fill="#60a5fa" filter="url(#glow)" opacity="0.9"/>
+  <text x="1020" y="415" text-anchor="middle" fill="#60a5fa" class="label">MySQL</text>
+  <text x="1020" y="444" text-anchor="middle" class="body">최종 발급 결과 저장</text>
+  <text x="1020" y="462" text-anchor="middle" class="tech">Unique 제약 · TSID · Flyway</text>
 
-  <!-- Arrows: API/Worker → Domain -->
-  <line x1="430" y1="230" x2="430" y2="265" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow)"/>
-  <line x1="1050" y1="230" x2="1050" y2="380" stroke="#64748b" stroke-width="1.5"/>
-  <line x1="1050" y1="380" x2="865" y2="380" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <!-- Arrows -->
+  <line x1="204" y1="240" x2="258" y2="240" stroke="#475569" stroke-width="2.2" marker-end="url(#arrGray)"/>
 
-  <!-- ========== STORAGE LAYER ========== -->
-  <g filter="s">
-    <rect x="230" y="520" width="630" height="130" rx="14" fill="url(#storageG)" stroke="#3b82f6" stroke-width="1.5"/>
-    <text x="545" y="546" text-anchor="middle" fill="#93c5fd" font-size="14" font-weight="700">Storage Layer — Adapters (3-Layer Repository)</text>
+  <!-- API → Redis -->
+  <line x1="530" y1="220" x2="594" y2="208" stroke="#10b981" stroke-width="2.2" marker-end="url(#arrGreen)"/>
 
-    <rect x="248" y="558" width="140" height="52" rx="8" fill="#0c1929" stroke="#2563eb" stroke-width="1"/>
-    <text x="318" y="579" text-anchor="middle" fill="#bfdbfe" font-size="10" font-weight="600">db-core</text>
-    <text x="318" y="595" text-anchor="middle" fill="#60a5fa" font-size="8">JPA Entity + Kotlin-JDSL</text>
+  <!-- API → Kafka (dashed, async) -->
+  <line x1="530" y1="280" x2="594" y2="356" stroke="#f59e0b" stroke-width="2.2" stroke-dasharray="7,4" marker-end="url(#arrOrange)"/>
+  <text x="542" y="320" fill="#f59e0b" font-size="11px" font-weight="700">async</text>
 
-    <rect x="400" y="558" width="140" height="52" rx="8" fill="#0c1929" stroke="#dc2626" stroke-width="1"/>
-    <text x="470" y="579" text-anchor="middle" fill="#fca5a5" font-size="10" font-weight="600">redis</text>
-    <text x="470" y="595" text-anchor="middle" fill="#f87171" font-size="8">Lock / Cache / State / Limiter</text>
+  <!-- Kafka → Worker -->
+  <line x1="818" y1="376" x2="882" y2="276" stroke="#475569" stroke-width="2.2" marker-end="url(#arrGray)"/>
 
-    <rect x="552" y="558" width="140" height="52" rx="8" fill="#0c1929" stroke="#2563eb" stroke-width="1"/>
-    <text x="622" y="579" text-anchor="middle" fill="#bfdbfe" font-size="10" font-weight="600">Outbox Store</text>
-    <text x="622" y="595" text-anchor="middle" fill="#60a5fa" font-size="8">Transactional Outbox</text>
+  <!-- Worker → MySQL -->
+  <line x1="1020" y1="320" x2="1020" y2="364" stroke="#475569" stroke-width="2.2" marker-end="url(#arrGray)"/>
 
-    <rect x="704" y="558" width="140" height="52" rx="8" fill="#0c1929" stroke="#2563eb" stroke-width="1"/>
-    <text x="774" y="579" text-anchor="middle" fill="#bfdbfe" font-size="10" font-weight="600">TSID Generator</text>
-    <text x="774" y="595" text-anchor="middle" fill="#60a5fa" font-size="8">Snowflake ID</text>
-  </g>
-
-  <line x1="545" y1="480" x2="545" y2="515" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow)"/>
-
-  <!-- ========== External Infra ========== -->
-  <g filter="s">
-    <rect x="60" y="700" width="180" height="65" rx="12" fill="#1e3a5f" stroke="#3b82f6" stroke-width="1.5"/>
-    <text x="150" y="727" text-anchor="middle" fill="#93c5fd" font-size="13" font-weight="700">🗄️ MySQL 8</text>
-    <text x="150" y="748" text-anchor="middle" fill="#64748b" font-size="9">7 Tables · Flyway V9 · HikariCP</text>
-  </g>
-  <g filter="s">
-    <rect x="280" y="700" width="180" height="65" rx="12" fill="#3b1111" stroke="#ef4444" stroke-width="1.5"/>
-    <text x="370" y="727" text-anchor="middle" fill="#fca5a5" font-size="13" font-weight="700">⚡ Redis 7</text>
-    <text x="370" y="748" text-anchor="middle" fill="#64748b" font-size="9">Lua Script · Redisson · RateLimiter</text>
-  </g>
-  <g filter="s">
-    <rect x="500" y="700" width="180" height="65" rx="12" fill="#451a03" stroke="#f59e0b" stroke-width="1.5"/>
-    <text x="590" y="727" text-anchor="middle" fill="#fbbf24" font-size="13" font-weight="700">📨 Kafka (KRaft)</text>
-    <text x="590" y="748" text-anchor="middle" fill="#64748b" font-size="9">3 Partitions · Idempotent Producer</text>
-  </g>
-  <g filter="s">
-    <rect x="720" y="700" width="180" height="65" rx="12" fill="#3b1111" stroke="#dc2626" stroke-width="1.5"/>
-    <text x="810" y="727" text-anchor="middle" fill="#fca5a5" font-size="13" font-weight="700">☠️ DLQ Topic</text>
-    <text x="810" y="748" text-anchor="middle" fill="#64748b" font-size="9">coupon.issue.v1-dlt</text>
-  </g>
-
-  <!-- Arrows: Storage → External -->
-  <line x1="318" y1="650" x2="150" y2="695" stroke="#3b82f6" stroke-width="1.5" marker-end="url(#arrowBlue)"/>
-  <line x1="470" y1="650" x2="370" y2="695" stroke="#ef4444" stroke-width="1.5" marker-end="url(#arrowRed)"/>
-  <line x1="622" y1="650" x2="590" y2="695" stroke="#f59e0b" stroke-width="1.5" marker-end="url(#arrowAmber)"/>
-  <line x1="680" y1="700" x2="715" y2="700" stroke="#dc2626" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#arrowRed)"/>
-  <text x="697" y="694" text-anchor="middle" fill="#dc2626" font-size="8">retry fail</text>
-
-  <!-- ========== SUPPORT MODULES ========== -->
-  <g filter="s">
-    <rect x="930" y="520" width="240" height="130" rx="14" fill="#1e293b" stroke="#94a3b8" stroke-width="1"/>
-    <text x="1050" y="546" text-anchor="middle" fill="#e2e8f0" font-size="13" font-weight="700">support</text>
-
-    <rect x="948" y="558" width="205" height="32" rx="6" fill="#334155" stroke="#64748b" stroke-width="1"/>
-    <text x="1050" y="579" text-anchor="middle" fill="#cbd5e1" font-size="10">logging (Logback + Sentry + OTel)</text>
-
-    <rect x="948" y="598" width="205" height="32" rx="6" fill="#334155" stroke="#64748b" stroke-width="1"/>
-    <text x="1050" y="619" text-anchor="middle" fill="#cbd5e1" font-size="10">monitoring (Prometheus + Health)</text>
-  </g>
-
-  <!-- Legend -->
-  <rect x="930" y="700" width="240" height="90" rx="10" fill="#1e293b" stroke="#475569" stroke-width="1"/>
-  <text x="1050" y="722" text-anchor="middle" fill="#94a3b8" font-size="10" font-weight="600">LEGEND</text>
-  <line x1="948" y1="735" x2="985" y2="735" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow)"/>
-  <text x="995" y="739" fill="#94a3b8" font-size="9">sync call</text>
-  <line x1="948" y1="755" x2="985" y2="755" stroke="#f59e0b" stroke-width="1.5" stroke-dasharray="6,3" marker-end="url(#arrowAmber)"/>
-  <text x="995" y="759" fill="#94a3b8" font-size="9">async event</text>
-  <line x1="948" y1="775" x2="985" y2="775" stroke="#dc2626" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#arrowRed)"/>
-  <text x="995" y="779" fill="#94a3b8" font-size="9">error / DLQ</text>
+  <!-- Bottom bar -->
+  <rect x="72" y="508" width="1136" height="46" rx="16" fill="#161b27" stroke="#1e293b" stroke-width="1.2"/>
+  <circle cx="112" cy="531" r="4" fill="#6366f1" opacity="0.8"/>
+  <text x="128" y="535" fill="#94a3b8" font-size="13px">API는 DB write 없이 빠르게 응답</text>
+  <line x1="360" y1="516" x2="360" y2="546" stroke="#1e293b" stroke-width="1"/>
+  <circle cx="392" cy="531" r="4" fill="#f59e0b" opacity="0.8"/>
+  <text x="408" y="535" fill="#94a3b8" font-size="13px">Kafka로 트래픽을 평탄화</text>
+  <line x1="620" y1="516" x2="620" y2="546" stroke="#1e293b" stroke-width="1"/>
+  <circle cx="652" cy="531" r="4" fill="#f97316" opacity="0.8"/>
+  <text x="668" y="535" fill="#94a3b8" font-size="13px">Worker가 락 + DB write를 책임</text>
+  <line x1="920" y1="516" x2="920" y2="546" stroke="#1e293b" stroke-width="1"/>
+  <circle cx="952" cy="531" r="4" fill="#ef4444" opacity="0.8"/>
+  <text x="968" y="535" fill="#94a3b8" font-size="13px">실패 시 DLQ + Slack 알림</text>
 </svg>

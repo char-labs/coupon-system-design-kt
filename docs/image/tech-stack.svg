@@ -1,159 +1,156 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 620" font-family="'Segoe UI', Arial, sans-serif">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 620" font-family="'Segoe UI', 'Apple SD Gothic Neo', Arial, sans-serif">
   <defs>
-    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#0f172a"/><stop offset="100%" style="stop-color:#1e293b"/>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0d1117"/>
+      <stop offset="100%" stop-color="#0f172a"/>
     </linearGradient>
-    <linearGradient id="cardGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" style="stop-color:#1e293b"/><stop offset="100%" style="stop-color:#334155"/>
+    <linearGradient id="card1g" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1e1b4b"/>
+      <stop offset="100%" stop-color="#1a1a2e"/>
     </linearGradient>
-    <filter id="shadow" x="-5%" y="-5%" width="110%" height="115%">
-      <feDropShadow dx="0" dy="2" stdDeviation="4" flood-color="#000" flood-opacity="0.3"/>
-    </filter>
+    <linearGradient id="card2g" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1c1107"/>
+      <stop offset="100%" stop-color="#1a1207"/>
+    </linearGradient>
+    <linearGradient id="card3g" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#052e16"/>
+      <stop offset="100%" stop-color="#071a15"/>
+    </linearGradient>
+    <linearGradient id="card4g" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1e0a3c"/>
+      <stop offset="100%" stop-color="#190a2e"/>
+    </linearGradient>
+    <linearGradient id="accentLine1" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#6366f1"/>
+      <stop offset="100%" stop-color="#818cf8" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="accentLine2" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#f97316"/>
+      <stop offset="100%" stop-color="#fb923c" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="accentLine3" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#10b981"/>
+      <stop offset="100%" stop-color="#34d399" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="accentLine4" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#a855f7"/>
+      <stop offset="100%" stop-color="#c084fc" stop-opacity="0"/>
+    </linearGradient>
+    <filter id="glow1"><feGaussianBlur stdDeviation="8" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+    <filter id="glow2"><feGaussianBlur stdDeviation="6" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+    <filter id="shadow"><feDropShadow dx="0" dy="4" stdDeviation="16" flood-color="#000" flood-opacity="0.5"/></filter>
+    <style>
+      .title { fill: #f8fafc; font-size: 32px; font-weight: 700; }
+      .subtitle { fill: #64748b; font-size: 15px; }
+      .card-title { font-size: 19px; font-weight: 700; }
+      .body { fill: #cbd5e1; font-size: 14px; }
+      .note { fill: #64748b; font-size: 13px; }
+      .pill { font-size: 11px; font-weight: 700; }
+      .dot { }
+    </style>
   </defs>
 
-  <rect width="960" height="620" rx="16" fill="url(#bgGrad)"/>
+  <!-- Background -->
+  <rect width="1280" height="620" rx="28" fill="url(#bg)"/>
 
-  <!-- Title -->
-  <text x="480" y="48" text-anchor="middle" fill="#f8fafc" font-size="22" font-weight="700" letter-spacing="1">🍽️ YogiEat Coupon System — Tech Stack</text>
-  <line x1="280" y1="60" x2="680" y2="60" stroke="#3b82f6" stroke-width="2" opacity="0.5"/>
+  <!-- Subtle grid pattern -->
+  <line x1="0" y1="200" x2="1280" y2="200" stroke="#ffffff" stroke-width="0.3" opacity="0.04"/>
+  <line x1="0" y1="400" x2="1280" y2="400" stroke="#ffffff" stroke-width="0.3" opacity="0.04"/>
+  <line x1="320" y1="0" x2="320" y2="620" stroke="#ffffff" stroke-width="0.3" opacity="0.04"/>
+  <line x1="640" y1="0" x2="640" y2="620" stroke="#ffffff" stroke-width="0.3" opacity="0.04"/>
+  <line x1="960" y1="0" x2="960" y2="620" stroke="#ffffff" stroke-width="0.3" opacity="0.04"/>
 
-  <!-- Row 1: Backend -->
-  <text x="55" y="100" fill="#94a3b8" font-size="11" font-weight="600" letter-spacing="2">BACKEND</text>
-  <g filter="shadow">
-    <rect x="40" y="112" width="140" height="56" rx="10" fill="url(#cardGrad)" stroke="#7c3aed" stroke-width="1.5"/>
-    <text x="110" y="137" text-anchor="middle" fill="#a78bfa" font-size="11" font-weight="600">Spring Boot 4</text>
-    <text x="110" y="155" text-anchor="middle" fill="#64748b" font-size="9">Framework</text>
-  </g>
-  <g filter="shadow">
-    <rect x="195" y="112" width="140" height="56" rx="10" fill="url(#cardGrad)" stroke="#7c3aed" stroke-width="1.5"/>
-    <text x="265" y="137" text-anchor="middle" fill="#a78bfa" font-size="11" font-weight="600">Kotlin (JDK 25)</text>
-    <text x="265" y="155" text-anchor="middle" fill="#64748b" font-size="9">Language</text>
-  </g>
-  <g filter="shadow">
-    <rect x="350" y="112" width="140" height="56" rx="10" fill="url(#cardGrad)" stroke="#7c3aed" stroke-width="1.5"/>
-    <text x="420" y="137" text-anchor="middle" fill="#a78bfa" font-size="11" font-weight="600">Spring Security</text>
-    <text x="420" y="155" text-anchor="middle" fill="#64748b" font-size="9">JWT (jjwt)</text>
-  </g>
-  <g filter="shadow">
-    <rect x="505" y="112" width="140" height="56" rx="10" fill="url(#cardGrad)" stroke="#7c3aed" stroke-width="1.5"/>
-    <text x="575" y="137" text-anchor="middle" fill="#a78bfa" font-size="11" font-weight="600">JPA / Hibernate</text>
-    <text x="575" y="155" text-anchor="middle" fill="#64748b" font-size="9">ORM</text>
-  </g>
-  <g filter="shadow">
-    <rect x="660" y="112" width="140" height="56" rx="10" fill="url(#cardGrad)" stroke="#7c3aed" stroke-width="1.5"/>
-    <text x="730" y="137" text-anchor="middle" fill="#a78bfa" font-size="11" font-weight="600">Kotlin-JDSL</text>
-    <text x="730" y="155" text-anchor="middle" fill="#64748b" font-size="9">Type-safe Query DSL</text>
-  </g>
-  <g filter="shadow">
-    <rect x="815" y="112" width="120" height="56" rx="10" fill="url(#cardGrad)" stroke="#7c3aed" stroke-width="1.5"/>
-    <text x="875" y="137" text-anchor="middle" fill="#a78bfa" font-size="11" font-weight="600">Flyway</text>
-    <text x="875" y="155" text-anchor="middle" fill="#64748b" font-size="9">DB Migration</text>
-  </g>
+  <!-- Title area -->
+  <text x="72" y="70" class="title">기술 스택</text>
+  <!-- Accent underline -->
+  <rect x="72" y="78" width="120" height="3" rx="2" fill="url(#accentLine1)"/>
+  <text x="72" y="106" class="subtitle">고트래픽 수락 → 비동기 처리 → DB 반영 → 운영 대응 흐름에 맞춰 기술을 선택했다.</text>
 
-  <!-- Row 2: Data & Messaging -->
-  <text x="55" y="205" fill="#94a3b8" font-size="11" font-weight="600" letter-spacing="2">DATA &amp; MESSAGING</text>
-  <g filter="shadow">
-    <rect x="40" y="217" width="140" height="56" rx="10" fill="url(#cardGrad)" stroke="#3b82f6" stroke-width="1.5"/>
-    <text x="110" y="242" text-anchor="middle" fill="#60a5fa" font-size="11" font-weight="600">MySQL 8</text>
-    <text x="110" y="260" text-anchor="middle" fill="#64748b" font-size="9">Primary DB</text>
+  <!-- ===== Card 1: Backend Core ===== -->
+  <g filter="url(#shadow)">
+    <rect x="72" y="144" width="272" height="296" rx="24" fill="url(#card1g)" stroke="#6366f1" stroke-width="1.5"/>
   </g>
-  <g filter="shadow">
-    <rect x="195" y="217" width="140" height="56" rx="10" fill="url(#cardGrad)" stroke="#ef4444" stroke-width="1.5"/>
-    <text x="265" y="242" text-anchor="middle" fill="#f87171" font-size="11" font-weight="600">Redis 7</text>
-    <text x="265" y="260" text-anchor="middle" fill="#64748b" font-size="9">Cache / State / Limiter</text>
-  </g>
-  <g filter="shadow">
-    <rect x="350" y="217" width="140" height="56" rx="10" fill="url(#cardGrad)" stroke="#f59e0b" stroke-width="1.5"/>
-    <text x="420" y="242" text-anchor="middle" fill="#fbbf24" font-size="11" font-weight="600">Apache Kafka</text>
-    <text x="420" y="260" text-anchor="middle" fill="#64748b" font-size="9">Event Streaming</text>
-  </g>
-  <g filter="shadow">
-    <rect x="505" y="217" width="140" height="56" rx="10" fill="url(#cardGrad)" stroke="#ef4444" stroke-width="1.5"/>
-    <text x="575" y="242" text-anchor="middle" fill="#f87171" font-size="11" font-weight="600">Redisson</text>
-    <text x="575" y="260" text-anchor="middle" fill="#64748b" font-size="9">Distributed Lock</text>
-  </g>
-  <g filter="shadow">
-    <rect x="660" y="217" width="140" height="56" rx="10" fill="url(#cardGrad)" stroke="#3b82f6" stroke-width="1.5"/>
-    <text x="730" y="242" text-anchor="middle" fill="#60a5fa" font-size="11" font-weight="600">TSID</text>
-    <text x="730" y="260" text-anchor="middle" fill="#64748b" font-size="9">Snowflake ID Gen</text>
-  </g>
-  <g filter="shadow">
-    <rect x="815" y="217" width="120" height="56" rx="10" fill="url(#cardGrad)" stroke="#3b82f6" stroke-width="1.5"/>
-    <text x="875" y="242" text-anchor="middle" fill="#60a5fa" font-size="11" font-weight="600">Jackson 3</text>
-    <text x="875" y="260" text-anchor="middle" fill="#64748b" font-size="9">Serialization</text>
-  </g>
+  <!-- Top accent line -->
+  <!-- Glow dot -->
+  <circle cx="96" cy="186" r="5" fill="#818cf8" filter="url(#glow2)" opacity="0.9"/>
+  <text x="112" y="192" fill="#818cf8" class="card-title">Backend Core</text>
+  <line x1="96" y1="206" x2="320" y2="206" stroke="#6366f1" stroke-width="0.6" opacity="0.4"/>
+  <text x="100" y="234" class="body">Kotlin + Spring Boot 4</text>
+  <text x="100" y="260" class="body">Spring Security (JWT)</text>
+  <text x="100" y="286" class="body">Spring Kafka</text>
+  <text x="100" y="312" class="body">JPA + Kotlin-JDSL</text>
+  <text x="100" y="338" class="body">OpenAPI / Swagger</text>
+  <line x1="96" y1="358" x2="320" y2="358" stroke="#6366f1" stroke-width="0.6" opacity="0.3"/>
+  <text x="100" y="384" class="note">API 개발 + 타입 안전한 쿼리</text>
+  <text x="100" y="402" class="note">+ 비동기 메시징 기반</text>
 
-  <!-- Row 3: Infra & DevOps -->
-  <text x="55" y="310" fill="#94a3b8" font-size="11" font-weight="600" letter-spacing="2">INFRA &amp; DEVOPS</text>
-  <g filter="shadow">
-    <rect x="40" y="322" width="140" height="56" rx="10" fill="url(#cardGrad)" stroke="#10b981" stroke-width="1.5"/>
-    <text x="110" y="347" text-anchor="middle" fill="#34d399" font-size="11" font-weight="600">Docker Compose</text>
-    <text x="110" y="365" text-anchor="middle" fill="#64748b" font-size="9">Container Orchestration</text>
+  <!-- ===== Card 2: Data & Messaging ===== -->
+  <g filter="url(#shadow)">
+    <rect x="360" y="144" width="272" height="296" rx="24" fill="url(#card2g)" stroke="#f97316" stroke-width="1.5"/>
   </g>
-  <g filter="shadow">
-    <rect x="195" y="322" width="140" height="56" rx="10" fill="url(#cardGrad)" stroke="#10b981" stroke-width="1.5"/>
-    <text x="265" y="347" text-anchor="middle" fill="#34d399" font-size="11" font-weight="600">Gradle</text>
-    <text x="265" y="365" text-anchor="middle" fill="#64748b" font-size="9">Multi-module Build</text>
-  </g>
-  <g filter="shadow">
-    <rect x="350" y="322" width="140" height="56" rx="10" fill="url(#cardGrad)" stroke="#10b981" stroke-width="1.5"/>
-    <text x="420" y="347" text-anchor="middle" fill="#34d399" font-size="11" font-weight="600">KtLint</text>
-    <text x="420" y="365" text-anchor="middle" fill="#64748b" font-size="9">Code Formatting</text>
-  </g>
-  <g filter="shadow">
-    <rect x="505" y="322" width="140" height="56" rx="10" fill="url(#cardGrad)" stroke="#10b981" stroke-width="1.5"/>
-    <text x="575" y="347" text-anchor="middle" fill="#34d399" font-size="11" font-weight="600">Swagger / OpenAPI</text>
-    <text x="575" y="365" text-anchor="middle" fill="#64748b" font-size="9">API Documentation</text>
-  </g>
+  <circle cx="384" cy="186" r="5" fill="#fb923c" filter="url(#glow2)" opacity="0.9"/>
+  <text x="400" y="192" fill="#fb923c" class="card-title">Data &amp; Messaging</text>
+  <line x1="384" y1="206" x2="608" y2="206" stroke="#f97316" stroke-width="0.6" opacity="0.4"/>
+  <text x="388" y="234" class="body">MySQL 8 + Flyway</text>
+  <text x="388" y="260" class="body">Redis 7 (Redisson)</text>
+  <text x="388" y="286" class="body">Apache Kafka (KRaft)</text>
+  <text x="388" y="312" class="body">TSID (Snowflake ID)</text>
+  <text x="388" y="338" class="body">Jackson 3</text>
+  <line x1="384" y1="358" x2="608" y2="358" stroke="#f97316" stroke-width="0.6" opacity="0.3"/>
+  <text x="388" y="384" class="note">정합성, 캐시, 비동기 처리,</text>
+  <text x="388" y="402" class="note">스키마 관리까지 역할 분리</text>
 
-  <!-- Row 4: Testing -->
-  <text x="55" y="415" fill="#94a3b8" font-size="11" font-weight="600" letter-spacing="2">TESTING</text>
-  <g filter="shadow">
-    <rect x="40" y="427" width="140" height="56" rx="10" fill="url(#cardGrad)" stroke="#ec4899" stroke-width="1.5"/>
-    <text x="110" y="452" text-anchor="middle" fill="#f472b6" font-size="11" font-weight="600">Kotest</text>
-    <text x="110" y="470" text-anchor="middle" fill="#64748b" font-size="9">Testing Framework</text>
+  <!-- ===== Card 3: Observability ===== -->
+  <g filter="url(#shadow)">
+    <rect x="648" y="144" width="272" height="296" rx="24" fill="url(#card3g)" stroke="#10b981" stroke-width="1.5"/>
   </g>
-  <g filter="shadow">
-    <rect x="195" y="427" width="140" height="56" rx="10" fill="url(#cardGrad)" stroke="#ec4899" stroke-width="1.5"/>
-    <text x="265" y="452" text-anchor="middle" fill="#f472b6" font-size="11" font-weight="600">TestContainers</text>
-    <text x="265" y="470" text-anchor="middle" fill="#64748b" font-size="9">Integration Test</text>
-  </g>
-  <g filter="shadow">
-    <rect x="350" y="427" width="140" height="56" rx="10" fill="url(#cardGrad)" stroke="#ec4899" stroke-width="1.5"/>
-    <text x="420" y="452" text-anchor="middle" fill="#f472b6" font-size="11" font-weight="600">MockK</text>
-    <text x="420" y="470" text-anchor="middle" fill="#64748b" font-size="9">Mocking Library</text>
-  </g>
-  <g filter="shadow">
-    <rect x="505" y="427" width="140" height="56" rx="10" fill="url(#cardGrad)" stroke="#ec4899" stroke-width="1.5"/>
-    <text x="575" y="452" text-anchor="middle" fill="#f472b6" font-size="11" font-weight="600">Instancio</text>
-    <text x="575" y="470" text-anchor="middle" fill="#64748b" font-size="9">Fixture Generation</text>
-  </g>
+  <circle cx="672" cy="186" r="5" fill="#34d399" filter="url(#glow2)" opacity="0.9"/>
+  <text x="688" y="192" fill="#34d399" class="card-title">Observability</text>
+  <line x1="672" y1="206" x2="896" y2="206" stroke="#10b981" stroke-width="0.6" opacity="0.4"/>
+  <text x="676" y="234" class="body">Actuator + Prometheus</text>
+  <text x="676" y="260" class="body">Grafana Dashboard</text>
+  <text x="676" y="286" class="body">OpenTelemetry Tracing</text>
+  <text x="676" y="312" class="body">Sentry Error Tracking</text>
+  <text x="676" y="338" class="body">Slack Webhook Alert</text>
+  <line x1="672" y1="358" x2="896" y2="358" stroke="#10b981" stroke-width="0.6" opacity="0.3"/>
+  <text x="676" y="384" class="note">상태 확인 → 오류 추적 →</text>
+  <text x="676" y="402" class="note">알림까지 한 세트로 구성</text>
 
-  <!-- Row 5: Monitoring & Observability -->
-  <text x="55" y="520" fill="#94a3b8" font-size="11" font-weight="600" letter-spacing="2">MONITORING &amp; OBSERVABILITY</text>
-  <g filter="shadow">
-    <rect x="40" y="532" width="140" height="56" rx="10" fill="url(#cardGrad)" stroke="#06b6d4" stroke-width="1.5"/>
-    <text x="110" y="557" text-anchor="middle" fill="#22d3ee" font-size="11" font-weight="600">Prometheus</text>
-    <text x="110" y="575" text-anchor="middle" fill="#64748b" font-size="9">Metrics</text>
+  <!-- ===== Card 4: Quality & Tooling ===== -->
+  <g filter="url(#shadow)">
+    <rect x="936" y="144" width="272" height="296" rx="24" fill="url(#card4g)" stroke="#a855f7" stroke-width="1.5"/>
   </g>
-  <g filter="shadow">
-    <rect x="195" y="532" width="140" height="56" rx="10" fill="url(#cardGrad)" stroke="#06b6d4" stroke-width="1.5"/>
-    <text x="265" y="557" text-anchor="middle" fill="#22d3ee" font-size="11" font-weight="600">Micrometer</text>
-    <text x="265" y="575" text-anchor="middle" fill="#64748b" font-size="9">Metrics Facade</text>
-  </g>
-  <g filter="shadow">
-    <rect x="350" y="532" width="140" height="56" rx="10" fill="url(#cardGrad)" stroke="#06b6d4" stroke-width="1.5"/>
-    <text x="420" y="557" text-anchor="middle" fill="#22d3ee" font-size="11" font-weight="600">OpenTelemetry</text>
-    <text x="420" y="575" text-anchor="middle" fill="#64748b" font-size="9">Distributed Tracing</text>
-  </g>
-  <g filter="shadow">
-    <rect x="505" y="532" width="140" height="56" rx="10" fill="url(#cardGrad)" stroke="#06b6d4" stroke-width="1.5"/>
-    <text x="575" y="557" text-anchor="middle" fill="#22d3ee" font-size="11" font-weight="600">Sentry</text>
-    <text x="575" y="575" text-anchor="middle" fill="#64748b" font-size="9">Error Tracking</text>
-  </g>
-  <g filter="shadow">
-    <rect x="660" y="532" width="140" height="56" rx="10" fill="url(#cardGrad)" stroke="#06b6d4" stroke-width="1.5"/>
-    <text x="730" y="557" text-anchor="middle" fill="#22d3ee" font-size="11" font-weight="600">Slack Webhook</text>
-    <text x="730" y="575" text-anchor="middle" fill="#64748b" font-size="9">Alert Notification</text>
-  </g>
+  <circle cx="960" cy="186" r="5" fill="#c084fc" filter="url(#glow2)" opacity="0.9"/>
+  <text x="976" y="192" fill="#c084fc" class="card-title">Quality &amp; Tooling</text>
+  <line x1="960" y1="206" x2="1184" y2="206" stroke="#a855f7" stroke-width="0.6" opacity="0.4"/>
+  <text x="964" y="234" class="body">Gradle Multi-module</text>
+  <text x="964" y="260" class="body">KtLint</text>
+  <text x="964" y="286" class="body">Kotest + MockK</text>
+  <text x="964" y="312" class="body">TestContainers</text>
+  <text x="964" y="338" class="body">Docker Compose</text>
+  <line x1="960" y1="358" x2="1184" y2="358" stroke="#a855f7" stroke-width="0.6" opacity="0.3"/>
+  <text x="964" y="384" class="note">코드 품질, 테스트 신뢰성,</text>
+  <text x="964" y="402" class="note">로컬 재현성 확보</text>
+
+  <!-- ===== Bottom Summary Bar ===== -->
+  <rect x="72" y="476" width="1136" height="116" rx="22" fill="#161b27" stroke="#1e293b" stroke-width="1.5"/>
+
+  <rect x="96" y="498" width="340" height="72" rx="18" fill="#1e1b4b" stroke="#6366f1" stroke-width="1"/>
+  <!-- glow accent -->
+  <circle cx="120" cy="512" r="4" fill="#818cf8" opacity="0.7" filter="url(#glow2)"/>
+  <text x="136" y="516" fill="#818cf8" font-size="13px" font-weight="700">Redis + Kafka</text>
+  <text x="266" y="540" text-anchor="middle" fill="#94a3b8" font-size="13px">DB 부하 없이 순간 트래픽 흡수</text>
+  <text x="266" y="558" text-anchor="middle" fill="#94a3b8" font-size="13px">빠른 응답 보장</text>
+
+  <rect x="468" y="498" width="344" height="72" rx="18" fill="#1c1107" stroke="#f97316" stroke-width="1"/>
+  <circle cx="492" cy="512" r="4" fill="#fb923c" opacity="0.7" filter="url(#glow2)"/>
+  <text x="508" y="516" fill="#fb923c" font-size="13px" font-weight="700">Worker 분리</text>
+  <text x="640" y="540" text-anchor="middle" fill="#94a3b8" font-size="13px">동시성 제어와 재시도를</text>
+  <text x="640" y="558" text-anchor="middle" fill="#94a3b8" font-size="13px">한 곳에 집중</text>
+
+  <rect x="844" y="498" width="340" height="72" rx="18" fill="#052e16" stroke="#10b981" stroke-width="1"/>
+  <circle cx="868" cy="512" r="4" fill="#34d399" opacity="0.7" filter="url(#glow2)"/>
+  <text x="884" y="516" fill="#34d399" font-size="13px" font-weight="700">Prometheus + Sentry</text>
+  <text x="1014" y="540" text-anchor="middle" fill="#94a3b8" font-size="13px">장애 감지부터</text>
+  <text x="1014" y="558" text-anchor="middle" fill="#94a3b8" font-size="13px">원인 분석까지 커버</text>
 </svg>
