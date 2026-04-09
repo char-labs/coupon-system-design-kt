@@ -71,6 +71,8 @@ projection 종류가 늘어날 때 아래 기준이 필요하다.
 
 - 어떤 지표 조합에서 partition을 늘릴지 기준 문서화
 - `worker.limit`, consumer lag, DB write latency를 함께 보는 실측 템플릿 정리
+- Lua reserve 가 실제 병목일 때만 request-count prefilter 로 전환하는 계획 유지:
+  [redis-request-counter-adoption-plan.md](./redis-request-counter-adoption-plan.md)
 
 ## 관측성 TODO
 
