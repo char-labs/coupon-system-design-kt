@@ -30,12 +30,22 @@
   - reserve state, distributed lock, processing limit
 - `kafka`
   - accepted issue command transport
+- `kafka-ui`
+  - 토픽, lag, consumer 상태 확인
+- `grafana`
+  - 운영 대시보드
+- `loki`
+  - 구조화 로그 저장소
+- `alloy`
+  - Docker stdout collector
+- `influxdb`
+  - k6 대시보드 datasource
 
 운영 기본 원칙은 단순하다.
 
-- `coupon-app`은 호스트 포트로 publish 하고, 앞단 Nginx가 이를 reverse proxy 한다.
-- `MySQL`, `Redis`, `Kafka`, `coupon-worker`는 private network 안에만 둔다.
-- `kafka-ui`, `grafana`, `loki`, `influxdb`는 prod 기본 compose에 넣지 않는다.
+- `coupon-app`, `coupon-worker`, `kafka-ui`, `grafana`, `loki`, `alloy`, `influxdb`는 호스트 포트로 publish 하고, 필요하면 앞단 Nginx가 이를 reverse proxy 한다.
+- `MySQL`, `Redis`, `Kafka`는 private network 안에 둔다.
+- `prod` compose는 운영 편의를 위해 `kafka-ui + grafana + loki + alloy + influxdb`까지 함께 포함한다.
 
 ## 2Core 8GB 권장 배분
 
@@ -46,8 +56,14 @@
 | `mysql` | `0.50` | `2048MB` | `1024MB` | `max-connections=50`, buffer pool `768M` |
 | `kafka` | `0.40` | `1536MB` | `768MB` | heap `768M` |
 | `redis` | `0.10` | `192MB` | `64MB` | `noeviction`, AOF on |
+| `kafka-ui` | `0.10` | `256MB` | `64MB` | 상태 확인용 UI |
+| `grafana` | `0.15` | `384MB` | `128MB` | 운영 대시보드 |
+| `loki` | `0.15` | `384MB` | `128MB` | 로그 저장소 |
+| `alloy` | `0.10` | `128MB` | `64MB` | Docker 로그 collector |
+| `influxdb` | `0.15` | `256MB` | `128MB` | k6 datasource |
 
-메모리 limit 합은 약 `6.2GB`라서 OS와 Docker page cache용 headroom을 남긴다.
+전체 메모리 limit 합은 약 `7.6GB`다. 즉 `2Core 8GB`에서 전부 함께 올리면 디버깅 편의성은 높지만 headroom은 꽤 줄어든다.
+운영 안정성을 더 우선하면 `kafka-ui/grafana/loki/alloy/influxdb`를 별도 호스트로 분리하는 편이 낫다.
 
 ## 현재 저장소 기준 운영 주의점
 
@@ -98,6 +114,7 @@ prod compose는 이 값을 2Core 8GB에 맞게 낮춰서 시작한다.
 - sustained safe range는 대략 `60~65 VU` 부근으로 본다.
 - `65 VU`는 clean pass였지만 운영 공개치는 여유를 두고 `50~60 VU`에서 시작하는 편이 맞다.
 - `70 VU`는 이미 실패가 발생하므로 단일 `2Core 8GB` 운영 상한으로 보지 않는다.
+- 관측성 스택까지 같은 호스트에 같이 올리면 실제 운영 상한은 이보다 더 보수적으로 잡는 편이 맞다.
 
 중요한 점은 `issue-overload`가 최종 DB 반영 throughput이 아니라 intake acceptance 경로를 강하게 보는 시나리오라는 점이다.
 즉, 이 수치는 “지속 요청 압력에 대한 수락 안정성”으로 해석해야지, “최종 발급 row/sec”와 동일하게 보면 안 된다.
@@ -105,6 +122,12 @@ prod compose는 이 값을 2Core 8GB에 맞게 낮춰서 시작한다.
 ## 도메인과 네트워크
 
 - 공개 도메인: `coupon-api.yogieat.com`
+- 추가 도메인 예시:
+  - `kafka-ui.yogieat.com`
+  - `grafana.yogieat.com`
+  - `loki.yogieat.com`
+  - `alloy.yogieat.com`
+  - `influxdb.yogieat.com`
 - DNS: `A` 레코드가 VM 공인 IP를 가리켜야 한다
 - 방화벽: `80/tcp`, `443/tcp`만 허용
 - 내부 포트:
@@ -113,6 +136,12 @@ prod compose는 이 값을 2Core 8GB에 맞게 낮춰서 시작한다.
   - `mysql:3306`
   - `redis:6379`
   - `kafka:9092`
+- 부가 서비스 포트:
+  - `kafka-ui:8080`
+  - `grafana:3000`
+  - `loki:3100`
+  - `alloy:12345`
+  - `influxdb:8086`
 
 ## 실행 파일
 
@@ -127,8 +156,8 @@ prod compose는 이 값을 2Core 8GB에 맞게 낮춰서 시작한다.
 즉, 인스턴스에서도 저장소 루트에 `.env`만 두고 아래 명령을 실행하면 된다.
 
 1. [.env.example](/Users/yunbeom/ybcha/coupon-system-design-kt/.env.example)를 참고해 저장소 루트에 `.env`를 만든다.
-2. `APP_HOST_PORT`, `WORKER_HOST_PORT`, DB 비밀번호, JWT secret을 교체한다.
-3. 호스트 Nginx가 `APP_HOST_PORT`를 `coupon-api.yogieat.com`으로 reverse proxy 하게 설정한다.
+2. `APP_HOST_PORT`, `WORKER_HOST_PORT`, `KAFKA_UI_HOST_PORT`, `GRAFANA_HOST_PORT`, DB 비밀번호, JWT secret, Grafana 관리자 계정을 교체한다.
+3. 호스트 Nginx가 각 호스트 포트를 원하는 도메인으로 reverse proxy 하게 설정한다.
 4. 아래 명령으로 기동한다.
 
 ```bash
@@ -141,6 +170,8 @@ docker compose \
 
 ```bash
 curl -si http://127.0.0.1:18080/actuator/health
+curl -si http://127.0.0.1:18085
+curl -si http://127.0.0.1:3000/api/health
 docker compose -f docker/docker-compose.prod.yml ps
 ```
 
