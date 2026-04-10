@@ -1,4 +1,4 @@
 interface:
   display_name: "Coupon Technical Writing"
-  short_description: "Auto-orchestrate reference-backed backend blog drafts with visuals"
-  default_prompt: "Use $coupon-technical-writing to write a backend blog post grounded in this coupon-system repository, with references and image suggestions."
+  short_description: "Auto-orchestrate reference-backed backend blog drafts with visuals, concrete headlines, and polished Korean tone"
+  default_prompt: "Use $coupon-technical-writing to write a backend blog post grounded in this coupon-system repository, with references, image suggestions, concrete headlines, and polished Korean 합니다체."

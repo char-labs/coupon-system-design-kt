@@ -54,6 +54,20 @@ technical explanations based on this repository.
   - practical pain-point focus
   - one or two short analogies when they improve readability
   - no forced humor or excessive metaphors
+- Default to polished Korean `합니다체` for article prose.
+- Avoid `한다체` narration unless it is a quote, label, code-adjacent explanation, or compact note.
+- Prefer titles that make the tech topic and scope obvious:
+  - concrete tech name + `사용기` or `과정`
+  - short hook + comma + topic + `에 대해`
+  - a focused question when the article is question-driven
+- Do not optimize for brevity alone.
+- Keep the core message clear, but expand sections that need detail:
+  - tricky runtime boundaries
+  - tradeoff comparisons
+  - failure handling and retries
+  - why other options were rejected
+  - code or architecture behavior that readers can easily misunderstand
+- Short paragraphs are good, but the article can be long when the topic genuinely needs more context.
 - When text alone is weak, insert an `이미지 제안:` block with the section, image type, why it helps, and a caption draft.
 - Write in Korean unless the user explicitly asks for another language.
 
