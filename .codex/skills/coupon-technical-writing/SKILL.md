@@ -21,6 +21,7 @@ technical explanations based on this repository.
    - source rules: [references/source-policy.md](./references/source-policy.md)
    - topic-by-topic external map: [references/decision-reference-map.md](./references/decision-reference-map.md)
    - writing patterns: [references/blog-pattern-benchmarks.md](./references/blog-pattern-benchmarks.md)
+   - author voice: [references/author-style-profile.md](./references/author-style-profile.md)
    - visuals: [references/visual-playbook.md](./references/visual-playbook.md)
    - output shape: [references/article-template.md](./references/article-template.md)
    - review rules: [references/review-checklist.md](./references/review-checklist.md)
@@ -48,6 +49,11 @@ technical explanations based on this repository.
 - For full drafts, always include `개요`, `초안`, `이미지 제안`, and `References`.
 - `References` must list at least `Local References` and `External References`.
 - Add `Writing Benchmarks` only when a benchmark article materially influenced the structure.
+- Blend the user's own writing pattern lightly:
+  - warm first-person framing
+  - practical pain-point focus
+  - one or two short analogies when they improve readability
+  - no forced humor or excessive metaphors
 - When text alone is weak, insert an `이미지 제안:` block with the section, image type, why it helps, and a caption draft.
 - Write in Korean unless the user explicitly asks for another language.
 
@@ -66,6 +72,7 @@ technical explanations based on this repository.
 - Source policy: [references/source-policy.md](./references/source-policy.md)
 - Decision reference map: [references/decision-reference-map.md](./references/decision-reference-map.md)
 - Writing benchmarks: [references/blog-pattern-benchmarks.md](./references/blog-pattern-benchmarks.md)
+- Author style profile: [references/author-style-profile.md](./references/author-style-profile.md)
 - Visual playbook: [references/visual-playbook.md](./references/visual-playbook.md)
 - Writing structures and section templates: [references/article-template.md](./references/article-template.md)
 - Reviewer checklist: [references/review-checklist.md](./references/review-checklist.md)

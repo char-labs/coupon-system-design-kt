@@ -68,8 +68,9 @@
 2. [../../.codex/skills/coupon-technical-writing/references/decision-reference-map.md](../../.codex/skills/coupon-technical-writing/references/decision-reference-map.md)
 3. [../../.codex/skills/coupon-technical-writing/references/blog-pattern-benchmarks.md](../../.codex/skills/coupon-technical-writing/references/blog-pattern-benchmarks.md)
 4. [../../.codex/skills/coupon-technical-writing/references/visual-playbook.md](../../.codex/skills/coupon-technical-writing/references/visual-playbook.md)
-5. [../../.codex/skills/coupon-technical-writing/references/review-checklist.md](../../.codex/skills/coupon-technical-writing/references/review-checklist.md)
-6. [../../.codex/skills/coupon-technical-writing/references/article-template.md](../../.codex/skills/coupon-technical-writing/references/article-template.md)
+5. [../../.codex/skills/coupon-technical-writing/references/author-style-profile.md](../../.codex/skills/coupon-technical-writing/references/author-style-profile.md)
+6. [../../.codex/skills/coupon-technical-writing/references/review-checklist.md](../../.codex/skills/coupon-technical-writing/references/review-checklist.md)
+7. [../../.codex/skills/coupon-technical-writing/references/article-template.md](../../.codex/skills/coupon-technical-writing/references/article-template.md)
 
 ## Source Policy 요약
 
@@ -139,11 +140,31 @@
 - 후반: 운영/실패/한계
 - 마무리: 교훈 2~3개 + `References`
 
+## 개인 문체 적용 규칙
+
+작성자는 [ybchar.dev/tech-blog](https://ybchar.dev/tech-blog) 와 [velog](https://velog.io/@uiurihappy) 를 운영하므로,
+기본 글 구조 위에 아래 톤을 약하게 섞는다.
+
+- 첫 문단은 너무 딱딱한 교과서 톤보다 `문제 공감` 이 먼저 오게 쓴다
+- 설명은 실무 관점과 pain point 해결 중심으로 잡는다
+- 지나치게 권위적인 단정 대신 `내가 이 문제를 이렇게 이해했다` 는 1인칭 관찰 톤을 허용한다
+- 비유는 글당 1~2개 정도만 사용한다
+- 비유는 기술 의미를 더 잘 이해시키는 범위에서만 쓴다
+- 과한 개그, 밈, 감탄사 남발은 피한다
+- 기술 사실 설명이 끝난 뒤 가볍게 풀어주는 식의 비유가 가장 안전하다
+
+예시 방향:
+
+- outbox 는 `메인 업무가 끝난 뒤 영수증을 별도 보관함에 넣어 후속 처리를 맡기는 구조`
+- Lua reserve 는 `입구에서 번호표와 좌석 수를 동시에 확인하는 안내 데스크`
+- Kafka intake 분리는 `주문 접수와 실제 조리를 같은 테이블에서 처리하지 않는 구조`
+
 ## 금지 규칙
 
 - `SUCCESS` 를 최종 발급 완료처럼 쓰지 않는다
 - outbox 를 intake durability 용도로 설명하지 않는다
 - `request table`, `relay`, `CDC`, durable acceptance 를 이미 구현된 것처럼 쓰지 않는다
 - benchmark 블로그를 기술 사실의 근거처럼 쓰지 않는다
+- 개인 문체를 살리겠다고 기술 설명보다 비유가 앞서지 않게 한다
 - 예전 phase 문서를 현재 동작의 단일 근거처럼 쓰지 않는다
 - worker component scan 예외를 숨기지 않는다
