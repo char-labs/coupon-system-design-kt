@@ -5,7 +5,7 @@ import { config } from './lib/config.js';
 import { buildSummary } from './lib/summary.js';
 import { prepareUserSessions, waitForAdminSignin } from './lib/api.js';
 import {
-  acceptIssueCoupon,
+  acceptIssueCouponSafely,
   activateCoupon,
   buildCouponPayload,
   createCoupon,
@@ -88,7 +88,15 @@ export default function (data) {
     return;
   }
 
-  const issueResult = acceptIssueCoupon(target.accessToken, target.couponId);
+  const issueResult = acceptIssueCouponSafely(target.accessToken, target.couponId);
+  if (!issueResult.successEnvelope || ![200, 202].includes(issueResult.status)) {
+    issueOverloadUnexpectedFailureCount.add(1);
+    check(issueResult, {
+      'issue_overload unexpected response status': () => false,
+    });
+    return;
+  }
+
   if (issueResult.result !== 'SUCCESS') {
     if (issueResult.result === 'SOLD_OUT') {
       issueOverloadSoldOutCount.add(1);

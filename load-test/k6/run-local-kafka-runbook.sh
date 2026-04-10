@@ -75,6 +75,28 @@ start_stack() {
   )
 }
 
+stop_stack() {
+  (
+    cd "${ROOT_DIR}"
+    docker compose "${COMPOSE_FILES[@]}" down --remove-orphans
+  )
+}
+
+wipe_stack() {
+  if [[ "${RUNBOOK_ALLOW_VOLUME_RESET:-0}" != "1" ]]; then
+    cat >&2 <<'EOF'
+[fail] reset-data deletes Docker volumes for the local Kafka/MySQL/Redis/InfluxDB stack.
+Re-run with RUNBOOK_ALLOW_VOLUME_RESET=1 if you intend to wipe local load-test state.
+EOF
+    return 1
+  fi
+
+  (
+    cd "${ROOT_DIR}"
+    docker compose "${COMPOSE_FILES[@]}" down -v --remove-orphans
+  )
+}
+
 wait_for_http() {
   local name="$1"
   local url="$2"
@@ -108,14 +130,18 @@ usage() {
   cat <<'EOF'
 Usage:
   ./load-test/k6/run-local-kafka-runbook.sh up
+  ./load-test/k6/run-local-kafka-runbook.sh down
   ./load-test/k6/run-local-kafka-runbook.sh check
+  ./load-test/k6/run-local-kafka-runbook.sh reset-data
   ./load-test/k6/run-local-kafka-runbook.sh smoke
+  ./load-test/k6/run-local-kafka-runbook.sh smoke-clean
   ./load-test/k6/run-local-kafka-runbook.sh ramp
   ./load-test/k6/run-local-kafka-runbook.sh real-ramp
   ./load-test/k6/run-local-kafka-runbook.sh burst
   ./load-test/k6/run-local-kafka-runbook.sh restaurant-burst
   ./load-test/k6/run-local-kafka-runbook.sh overload
   ./load-test/k6/run-local-kafka-runbook.sh full
+  ./load-test/k6/run-local-kafka-runbook.sh full-clean
 
 Environment overrides:
   BASE_URL=http://127.0.0.1:18080
@@ -123,21 +149,30 @@ Environment overrides:
   INFLUX_OUT=influxdb=http://localhost:8086/myk6db
   ADMIN_EMAIL=loadtest-admin@coupon.local
   ADMIN_PASSWORD='admin1234!'
+  RUNBOOK_ALLOW_VOLUME_RESET=1
 
 Behavior:
   up        Start docker stack only
+  down      Stop docker stack and keep volumes
   check     Verify app, worker, Grafana, Loki, Alloy, InfluxDB, Kafka UI
-  smoke     Run Redis reserve + async execution smoke test
+  reset-data Remove docker stack and volumes for a clean local rerun
+  smoke     Run Redis reserve + async execution smoke test on current stack
+  smoke-clean reset-data -> up -> check -> smoke
   ramp      Run prepared-user immediate-issue ramp test (optional)
   real-ramp Run real-user immediate-issue ramp test
   burst     Run standard burst integrity test
   restaurant-burst Run restaurant coupon burst integrity test
   overload  Run HOT_FCFS_ASYNC sustained overload test
   full      up -> check -> smoke -> burst
+  full-clean reset-data -> up -> check -> smoke -> burst
 
 Scenario examples:
   기본 burst
     사용자 1,000명 동시 발급 시도 / 쿠폰 수량 1,000개
+
+  clean smoke
+    RUNBOOK_ALLOW_VOLUME_RESET=1 \
+      ./load-test/k6/run-local-kafka-runbook.sh smoke-clean
 
   sustained overload
     ISSUE_OVERLOAD_VUS=200 ISSUE_OVERLOAD_DURATION=15m \
@@ -152,10 +187,22 @@ main() {
     up)
       start_stack
       ;;
+    down)
+      stop_stack
+      ;;
     check)
       check_stack
       ;;
+    reset-data)
+      wipe_stack
+      ;;
     smoke)
+      run_scenario smoke
+      ;;
+    smoke-clean)
+      wipe_stack
+      start_stack
+      check_stack
       run_scenario smoke
       ;;
     ramp)
@@ -174,6 +221,13 @@ main() {
       run_scenario issue-overload
       ;;
     full)
+      start_stack
+      check_stack
+      run_scenario smoke
+      run_scenario issue-burst
+      ;;
+    full-clean)
+      wipe_stack
       start_stack
       check_stack
       run_scenario smoke

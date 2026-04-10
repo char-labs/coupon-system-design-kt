@@ -107,6 +107,13 @@ curl -X POST http://127.0.0.1:18080/signin \
 ./load-test/k6/run-local-kafka-runbook.sh restaurant-burst
 ```
 
+`smoke`는 worker가 이전 Kafka backlog 없이 바로 새 발급을 처리할 수 있다는 전제에서만 유효합니다. 이전 `burst`나 `overload` 흔적이 남아 있으면 `GET /coupon-issues/my` 대기에서 false negative가 날 수 있으니, 로컬 스택을 완전히 비우고 다시 확인할 때는 아래처럼 실행합니다.
+
+```bash
+RUNBOOK_ALLOW_VOLUME_RESET=1 ./load-test/k6/run-local-kafka-runbook.sh smoke-clean
+RUNBOOK_ALLOW_VOLUME_RESET=1 ./load-test/k6/run-local-kafka-runbook.sh full-clean
+```
+
 쿠폰 1개에 대해 재고만 바꿔 보고 싶으면 아래 런북을 사용합니다.
 
 ```bash
@@ -123,6 +130,12 @@ curl -X POST http://127.0.0.1:18080/signin \
 node load-test/k6/run-with-slack.mjs smoke --profile local -- \
   --out influxdb=http://localhost:8086/myk6db \
   -e BASE_URL=http://127.0.0.1:18080
+```
+
+로컬 재현용으로는 아래 런북 진입점을 권장합니다.
+
+```bash
+RUNBOOK_ALLOW_VOLUME_RESET=1 ./load-test/k6/run-local-kafka-runbook.sh smoke-clean
 ```
 
 ### Burst
@@ -188,6 +201,8 @@ node load-test/k6/run-with-slack.mjs issue-ramp --profile local -- \
   - ramp 단계별 duration/target입니다.
 - `ISSUE_REAL_RAMP_USER_POOL_SIZE`
   - real-ramp에서 미리 준비할 실제 사용자 세션 수입니다.
+- `RUNBOOK_ALLOW_VOLUME_RESET`
+  - `smoke-clean`, `full-clean`, `reset-data`에서 Docker volume 삭제를 허용할 때만 `1`로 둡니다.
 
 ## Slack 보고
 

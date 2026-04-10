@@ -1,5 +1,5 @@
 import { check, fail, sleep } from 'k6';
-import { authHeaders, get, post, postDataWithStatuses, postVoid, postWithNumericFields } from './api.js';
+import { authHeaders, get, getJson, post, postDataWithStatuses, postJson, postVoid, postWithNumericFields } from './api.js';
 import { config } from './config.js';
 
 function formatLocalDateTime(date) {
@@ -106,6 +106,34 @@ export function acceptIssueCoupon(accessToken, couponId) {
   };
 }
 
+export function acceptIssueCouponSafely(accessToken, couponId) {
+  const response = postJson(
+    '/coupon-issues',
+    { couponId },
+    {
+      headers: authHeaders(accessToken),
+      tags: {
+        request_group: 'business',
+        request_name: 'issue_coupon',
+      },
+      slowRequestSample: {
+        requestGroup: 'business',
+        requestName: 'issue_coupon',
+      },
+    },
+    'issue_coupon',
+  );
+
+  return {
+    result: response.body?.data?.result || null,
+    message: response.body?.data?.message || null,
+    errorClassName: response.body?.data?.errorClassName || null,
+    status: response.status,
+    successEnvelope: response.body?.success === true,
+    rawBody: response.rawBody,
+  };
+}
+
 export function acceptIssueRestaurantCoupon(accessToken, restaurantId) {
   const response = postDataWithStatuses(
     '/restaurant-coupons/issue',
@@ -129,6 +157,34 @@ export function acceptIssueRestaurantCoupon(accessToken, restaurantId) {
     result: response.data?.result,
     message: response.data?.message,
     status: response.status,
+  };
+}
+
+export function acceptIssueRestaurantCouponSafely(accessToken, restaurantId) {
+  const response = postJson(
+    '/restaurant-coupons/issue',
+    { restaurantId },
+    {
+      headers: authHeaders(accessToken),
+      tags: {
+        request_group: 'business',
+        request_name: 'issue_restaurant_coupon',
+      },
+      slowRequestSample: {
+        requestGroup: 'business',
+        requestName: 'issue_restaurant_coupon',
+      },
+    },
+    'issue_restaurant_coupon',
+  );
+
+  return {
+    result: response.body?.data?.result || null,
+    message: response.body?.data?.message || null,
+    errorClassName: response.body?.data?.errorClassName || null,
+    status: response.status,
+    successEnvelope: response.body?.success === true,
+    rawBody: response.rawBody,
   };
 }
 
@@ -157,7 +213,16 @@ export function tryIssueCoupon(
     label = 'issue_coupon',
   } = {},
 ) {
-  const issueResult = acceptIssueCoupon(accessToken, couponId);
+  const issueResult = acceptIssueCouponSafely(accessToken, couponId);
+
+  if (!issueResult.successEnvelope || ![200, 202].includes(issueResult.status)) {
+    return {
+      outcome: 'UNEXPECTED_ERROR',
+      status: issueResult.status,
+      errorClassName: issueResult.errorClassName || 'UNEXPECTED_RESPONSE',
+      message: issueResult.message || issueResult.rawBody || '<empty>',
+    };
+  }
 
   if (issueResult.result === 'SUCCESS') {
     return {
@@ -209,7 +274,16 @@ export function tryIssueRestaurantCoupon(
     allowRetryableLockFailure = false,
   } = {},
 ) {
-  const issueResult = acceptIssueRestaurantCoupon(accessToken, restaurantId);
+  const issueResult = acceptIssueRestaurantCouponSafely(accessToken, restaurantId);
+
+  if (!issueResult.successEnvelope || ![200, 202].includes(issueResult.status)) {
+    return {
+      outcome: 'UNEXPECTED_ERROR',
+      status: issueResult.status,
+      errorClassName: issueResult.errorClassName || 'UNEXPECTED_RESPONSE',
+      message: issueResult.message || issueResult.rawBody || '<empty>',
+    };
+  }
 
   if (issueResult.result === 'SUCCESS') {
     return {
@@ -328,6 +402,43 @@ export function getMyCoupons(accessToken, size = 20) {
   );
 }
 
+function getMyCouponsResponse(accessToken, size = 20) {
+  return getJson(
+    `/coupon-issues/my?page=0&size=${size}`,
+    {
+      headers: authHeaders(accessToken),
+      tags: {
+        request_group: 'business',
+        request_name: 'get_my_coupons',
+      },
+      slowRequestSample: {
+        requestGroup: 'business',
+        requestName: 'get_my_coupons',
+      },
+    },
+    'get_my_coupons',
+  );
+}
+
+function escapeRegExp(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function findCouponIssueInRawBody(rawBody, expectedCouponId) {
+  const match = rawBody.match(
+    new RegExp(`\\{"id":(\\d+),"couponId":${escapeRegExp(expectedCouponId)}(?:,|})`),
+  );
+
+  if (!match) {
+    return null;
+  }
+
+  return {
+    id: match[1],
+    couponId: expectedCouponId,
+  };
+}
+
 function waitForIssuedCouponInMyCoupons(
   accessToken,
   couponId,
@@ -340,8 +451,8 @@ function waitForIssuedCouponInMyCoupons(
   const expectedCouponId = `${couponId}`;
 
   while (Date.now() < deadline) {
-    const page = getMyCoupons(accessToken, 100);
-    const issue = (page.content || []).find((item) => `${item.couponId}` === expectedCouponId);
+    const pageResponse = getMyCouponsResponse(accessToken, 100);
+    const issue = findCouponIssueInRawBody(pageResponse.rawBody, expectedCouponId);
     if (issue) {
       return issue;
     }

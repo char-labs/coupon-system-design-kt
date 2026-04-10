@@ -79,6 +79,17 @@ function request(method, path, payload, params = {}, label = path) {
   };
 }
 
+export function requestJson(method, path, payload, params = {}, label = path) {
+  const { response, slowRequestSample } = request(method, path, payload, params, label);
+  maybeRecordSlowRequestSample(response, slowRequestSample);
+
+  return {
+    status: response.status,
+    body: parseJsonIfPresent(response),
+    rawBody: response.body || '',
+  };
+}
+
 function extractNumericField(body, field) {
   if (!body) {
     return null;
@@ -112,6 +123,10 @@ export function post(path, payload, params = {}, expectedStatus = 200, label = p
   maybeRecordSlowRequestSample(response, slowRequestSample);
 
   return unwrapData(response, label, expectedStatus);
+}
+
+export function postJson(path, payload, params = {}, label = path) {
+  return requestJson('POST', path, payload, params, label);
 }
 
 export function postWithNumericFields(
@@ -217,6 +232,10 @@ export function get(path, params = {}, expectedStatus = 200, label = path) {
   maybeRecordSlowRequestSample(response, slowRequestSample);
 
   return unwrapData(response, label, expectedStatus);
+}
+
+export function getJson(path, params = {}, label = path) {
+  return requestJson('GET', path, undefined, params, label);
 }
 
 export function authHeaders(accessToken) {

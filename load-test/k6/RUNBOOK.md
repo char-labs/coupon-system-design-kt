@@ -22,6 +22,13 @@ Promtail 대신 Alloy를 기본 collector로 두는 이유는 [loki-log-collecto
 ./load-test/k6/run-single-coupon-stock-runbook.sh full
 ```
 
+다만 `local-kafka` runbook의 `smoke`는 worker backlog가 없는 깨끗한 로컬 스택을 전제로 합니다. 이전 `burst`나 `overload` 이후 Kafka topic과 DB 상태가 남아 있으면 새 발급이 늦게 반영되어 false negative가 날 수 있으니, 그때는 아래처럼 volume까지 비우고 다시 올리는 진입점을 사용합니다.
+
+```bash
+RUNBOOK_ALLOW_VOLUME_RESET=1 ./load-test/k6/run-local-kafka-runbook.sh smoke-clean
+RUNBOOK_ALLOW_VOLUME_RESET=1 ./load-test/k6/run-local-kafka-runbook.sh full-clean
+```
+
 `full` 순서는 아래입니다.
 
 - local-kafka runbook: `up -> check -> smoke -> issue-burst`
@@ -44,6 +51,18 @@ docker compose \
 - `docker-compose.runtime.yml`: `coupon-app`, `coupon-worker`
 - `docker-compose.observability.yml`: Grafana, Loki, Alloy
 - `docker-compose.load-test.yml`: InfluxDB
+
+기존 local 상태를 유지한 채 내릴 때는 아래를 사용합니다.
+
+```bash
+./load-test/k6/run-local-kafka-runbook.sh down
+```
+
+Kafka, MySQL, Redis, InfluxDB volume까지 모두 비워서 clean rerun을 만들려면 아래를 사용합니다.
+
+```bash
+RUNBOOK_ALLOW_VOLUME_RESET=1 ./load-test/k6/run-local-kafka-runbook.sh reset-data
+```
 
 기존 두 파일 조합이 필요하면 아래 호환 진입점도 유지됩니다.
 
@@ -130,6 +149,12 @@ node load-test/k6/run-with-slack.mjs smoke --profile local -- \
 - immediate issue result (`data.result`)
 - 내 쿠폰 조회 기반 발급 완료 확인
 - coupon use
+
+주의:
+
+- `smoke`는 새 발급 메시지가 worker에 바로 도달하는지 보는 최소 회귀 시나리오입니다.
+- 이전 테스트 backlog가 남아 있으면 `POST /coupon-issues`는 `SUCCESS`여도 `GET /coupon-issues/my` 대기에서 실패할 수 있습니다.
+- 이 경우 `smoke` 자체를 의심하기보다 `smoke-clean`으로 clean stack에서 다시 확인하는 편이 맞습니다.
 
 ### Burst
 
