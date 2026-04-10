@@ -49,6 +49,17 @@ For automatic specialist fan-out on non-trivial work, prefer `$coupon-specialist
 - Observability:
   `Spawn observability-engineer to add or review Prometheus, Grafana, and actuator coverage for this coupon-system flow. Wait for it and summarize the concrete gaps or changes in Korean.`
 
+## Technical Writing
+
+- Planner:
+  `Spawn technical-writing-planner to restate this backend blog topic in repo-accurate terms, gather local and external references, choose benchmark writing patterns, and return 제목 후보 / 독자 / 한 줄 주장 / 대안 / 개요 / 이미지 제안 / references 초안 in Korean.`
+- Drafter:
+  `Spawn technical-writing-drafter to write the backend blog post from the approved outline and reference pack. Always return 개요 / 초안 / 이미지 제안 / References in Korean.`
+- Reviewer:
+  `Spawn technical-writing-reviewer to review the draft for repo-fact correctness, reference quality, image suggestion quality, and writing flow. Return only concrete corrections in Korean.`
+- Full writing chain:
+  `For a backend blog writing request, fan out to technical-writing-planner -> technical-writing-drafter -> technical-writing-reviewer in that order and synthesize one final answer with 개요 / 초안 / 이미지 제안 / References in Korean.`
+
 ## Storage, CI, Commit
 
 - Feature mapping:
