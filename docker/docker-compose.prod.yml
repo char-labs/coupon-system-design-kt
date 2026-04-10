@@ -1,0 +1,192 @@
+services:
+  coupon-app:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: coupon-prod-app
+    restart: unless-stopped
+    ports:
+      - "${APP_HOST_PORT:-18080}:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      LOGGING_CONFIG: classpath:logback/logback-docker.xml
+      JAVA_OPTS: '${APP_JAVA_OPTS:--Xms256m -Xmx768m -XX:+UseG1GC -XX:MaxGCPauseMillis=200 -XX:+UseStringDeduplication -XX:+ExitOnOutOfMemoryError -Dspring.backgroundpreinitializer.ignore=true}'
+      DATASOURCE_DB_CORE_JDBC_URL: jdbc:mysql://mysql:3306/${MYSQL_DATABASE:-coupon-db}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Seoul&characterEncoding=UTF-8
+      DATASOURCE_DB_CORE_USERNAME: ${MYSQL_USER:-coupon-admin}
+      DATASOURCE_DB_CORE_PASSWORD: ${MYSQL_PASSWORD:-change-me-db-password}
+      DATASOURCE_DB_CORE_MAXIMUM_POOL_SIZE: ${APP_DB_POOL_MAX:-12}
+      DATASOURCE_DB_CORE_MINIMUM_IDLE: ${APP_DB_POOL_MIN_IDLE:-4}
+      DATASOURCE_DB_CORE_CONNECTION_TIMEOUT_MS: 1500
+      DATASOURCE_DB_CORE_KEEPALIVE_TIME_MS: 30000
+      DATASOURCE_DB_CORE_VALIDATION_TIMEOUT_MS: 1000
+      DATASOURCE_DB_CORE_MAX_LIFETIME_MS: 600000
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-change-me-jwt-secret}
+      ACCESS_TOKEN_EXPIRATION_SECONDS: ${ACCESS_TOKEN_EXPIRATION_SECONDS:-2880}
+      REFRESH_TOKEN_EXPIRATION_SECONDS: ${REFRESH_TOKEN_EXPIRATION_SECONDS:-43200}
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      API_KAFKA_COUPON_ISSUE_ACK_TIMEOUT: ${API_KAFKA_COUPON_ISSUE_ACK_TIMEOUT:-10s}
+      API_KAFKA_COUPON_ISSUE_TOPIC_PARTITIONS: ${COUPON_ISSUE_TOPIC_PARTITIONS:-3}
+      API_KAFKA_COUPON_ISSUE_TOPIC_REPLICAS: ${COUPON_ISSUE_TOPIC_REPLICAS:-1}
+      SERVER_TOMCAT_THREADS_MAX: ${APP_TOMCAT_THREADS_MAX:-80}
+      SERVER_TOMCAT_THREADS_MIN_SPARE: ${APP_TOMCAT_THREADS_MIN_SPARE:-10}
+      SERVER_TOMCAT_MAX_CONNECTIONS: ${APP_TOMCAT_MAX_CONNECTIONS:-4096}
+      SPRING_TASK_EXECUTION_POOL_CORE_SIZE: ${APP_ASYNC_CORE_SIZE:-4}
+      SPRING_TASK_EXECUTION_POOL_MAX_SIZE: ${APP_ASYNC_MAX_SIZE:-4}
+      SPRING_TASK_EXECUTION_POOL_QUEUE_CAPACITY: ${APP_ASYNC_QUEUE_CAPACITY:-1000}
+      SENTRY_DSN: ${SENTRY_DSN:-}
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+    networks:
+      - backend
+    mem_limit: 1536m
+    mem_reservation: 768m
+    cpus: 1.00
+
+  coupon-worker:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+      args:
+        APP_MODULE: :coupon:coupon-worker
+        APP_JAR_DIR: coupon/coupon-worker
+    container_name: coupon-prod-worker
+    restart: unless-stopped
+    ports:
+      - "${WORKER_HOST_PORT:-18081}:8081"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      LOGGING_CONFIG: classpath:logback/logback-docker.xml
+      WORKER_SERVER_PORT: 8081
+      JAVA_OPTS: '${WORKER_JAVA_OPTS:--Xms192m -Xmx384m -XX:+UseG1GC -XX:MaxGCPauseMillis=200 -XX:+UseStringDeduplication -XX:+ExitOnOutOfMemoryError -Dspring.backgroundpreinitializer.ignore=true}'
+      DATASOURCE_DB_CORE_JDBC_URL: jdbc:mysql://mysql:3306/${MYSQL_DATABASE:-coupon-db}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Seoul&characterEncoding=UTF-8
+      DATASOURCE_DB_CORE_USERNAME: ${MYSQL_USER:-coupon-admin}
+      DATASOURCE_DB_CORE_PASSWORD: ${MYSQL_PASSWORD:-change-me-db-password}
+      DATASOURCE_DB_CORE_MAXIMUM_POOL_SIZE: ${WORKER_DB_POOL_MAX:-8}
+      DATASOURCE_DB_CORE_MINIMUM_IDLE: ${WORKER_DB_POOL_MIN_IDLE:-2}
+      DATASOURCE_DB_CORE_CONNECTION_TIMEOUT_MS: 1500
+      DATASOURCE_DB_CORE_KEEPALIVE_TIME_MS: 30000
+      DATASOURCE_DB_CORE_VALIDATION_TIMEOUT_MS: 1000
+      DATASOURCE_DB_CORE_MAX_LIFETIME_MS: 600000
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      WORKER_KAFKA_COUPON_ISSUE_CONCURRENCY: ${WORKER_KAFKA_CONCURRENCY:-1}
+      WORKER_KAFKA_COUPON_ISSUE_TOPIC_PARTITIONS: ${COUPON_ISSUE_TOPIC_PARTITIONS:-3}
+      WORKER_KAFKA_COUPON_ISSUE_TOPIC_REPLICAS: ${COUPON_ISSUE_TOPIC_REPLICAS:-1}
+      WORKER_KAFKA_COUPON_ISSUE_PROCESSING_LIMIT_PERMITS_PER_SECOND: ${WORKER_KAFKA_PERMITS_PER_SECOND:-60}
+      WORKER_OUTBOX_DEAD_SLACK_ENABLED: ${WORKER_OUTBOX_DEAD_SLACK_ENABLED:-false}
+      WORKER_OUTBOX_DEAD_SLACK_WEBHOOK_URL: ${WORKER_OUTBOX_DEAD_SLACK_WEBHOOK_URL:-}
+      SENTRY_DSN: ${SENTRY_DSN:-}
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+    networks:
+      - backend
+    mem_limit: 896m
+    mem_reservation: 384m
+    cpus: 0.50
+
+  mysql:
+    image: mysql:8.0
+    container_name: coupon-prod-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-coupon-db}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-change-me-root-password}
+      MYSQL_USER: ${MYSQL_USER:-coupon-admin}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-change-me-db-password}
+      TZ: Asia/Seoul
+    command:
+      - mysqld
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_general_ci
+      - --skip-name-resolve
+      - --max-connections=50
+      - --innodb-buffer-pool-size=768M
+      - --table-open-cache=256
+      - --performance-schema=OFF
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p$${MYSQL_ROOT_PASSWORD} --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - backend
+    mem_limit: 2048m
+    mem_reservation: 1024m
+    cpus: 0.50
+
+  redis:
+    image: redis:7-alpine
+    container_name: coupon-prod-redis
+    restart: unless-stopped
+    command:
+      - redis-server
+      - --appendonly
+      - yes
+      - --maxmemory
+      - 128mb
+      - --maxmemory-policy
+      - noeviction
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+    volumes:
+      - redis_data:/data
+    networks:
+      - backend
+    mem_limit: 192m
+    mem_reservation: 64m
+    cpus: 0.10
+
+  kafka:
+    image: apache/kafka:3.9.1
+    container_name: coupon-prod-kafka
+    restart: unless-stopped
+    environment:
+      CLUSTER_ID: 4L6g3nShT-eMCtK--X86sw
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_HEAP_OPTS: '${KAFKA_HEAP_OPTS:--Xms512m -Xmx768m}'
+    volumes:
+      - kafka_data:/var/lib/kafka/data
+    networks:
+      - backend
+    mem_limit: 1536m
+    mem_reservation: 768m
+    cpus: 0.40
+
+networks:
+  backend:
+    internal: true
+
+volumes:
+  mysql_data:
+  redis_data:
+  kafka_data:
