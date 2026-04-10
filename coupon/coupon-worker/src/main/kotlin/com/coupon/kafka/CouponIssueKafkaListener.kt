@@ -121,5 +121,4 @@ class CouponIssueKafkaListener(
         }
         acknowledgment.acknowledge()
     }
-
 }

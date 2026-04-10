@@ -1,7 +1,7 @@
 package com.coupon.kafka
 
-import com.coupon.coupon.CouponIssueService
 import com.coupon.coupon.CouponIssueRedisRepository
+import com.coupon.coupon.CouponIssueService
 import com.coupon.coupon.CouponService
 import com.coupon.coupon.execution.CouponIssueExecutionFacade
 import com.coupon.coupon.execution.CouponIssueExecutionResult
