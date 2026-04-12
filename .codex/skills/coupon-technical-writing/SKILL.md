@@ -1,6 +1,6 @@
 ---
 name: coupon-technical-writing
-description: Use when writing backend blog posts or technical articles grounded in this coupon system, especially question-driven prompts like 왜 outbox 패턴을 사용하는가?, Lua 스크립트는 왜 쓰는가?, 왜 Kafka 로 intake 와 execution 을 분리했는가?, 블로그 글 써줘, or 이 구조를 설명하는 기술 글 써줘. For actual article drafting, automatically fan out to planner -> drafter -> reviewer.
+description: Use when writing backend blog posts or technical articles grounded in this coupon system, especially question-driven prompts like 왜 outbox 패턴을 사용하는가?, Lua 스크립트는 왜 쓰는가?, 왜 Kafka 로 intake 와 execution 을 분리했는가?, 블로그 글 써줘, or 이 구조를 설명하는 기술 글 써줘. For actual article drafting, automatically fan out to planner -> drafter -> reviewer with a bounded revision loop.
 metadata:
   short-description: Auto-orchestrate reference-backed backend blog writing for the coupon system
 ---
@@ -29,8 +29,12 @@ technical explanations based on this repository.
    - `technical-writing-planner`
    - `technical-writing-drafter`
    - `technical-writing-reviewer`
-5. Use planner output as the contract for drafter and reviewer.
-6. Read only the nearest supporting runtime doc or code slice needed to defend the main claim.
+5. If reviewer finds material issues, run one bounded refinement loop:
+   - send the reviewer delta back to `technical-writing-drafter`
+   - rerun `technical-writing-reviewer` for confirmation
+   - cap this loop at one extra redraft unless the user explicitly asks for more iteration
+6. Use planner output as the contract for drafter and reviewer.
+7. Read only the nearest supporting runtime doc or code slice needed to defend the main claim.
 
 ## Rules
 
@@ -46,14 +50,28 @@ technical explanations based on this repository.
   - pattern authorities
   - benchmark blogs for writing structure
 - Use benchmark blogs for structure only, not for factual proof.
-- For full drafts, always include `개요`, `초안`, `이미지 제안`, and `References`.
-- `References` must list at least `Local References` and `External References`.
+- For full drafts, always include `개요`, `초안`, `이미지 제안`, and `근거 팩`.
+- `초안` is the publishable MDX by default.
+- The publishable `초안` must not expose a raw `Local References` section unless the user explicitly asks for an internal memo format.
+- Keep `Local References`, `External References`, and optional `Writing Benchmarks` in `근거 팩`, not in the article body by default.
+- Translate repo-local grounding into one of these publishable forms:
+  - short code excerpts
+  - `코드 컨텍스트` blocks
+  - inline file or flow explanations
+  - section-level captions or notes tied to the current code path
 - Add `Writing Benchmarks` only when a benchmark article materially influenced the structure.
+- Default to omitting `Writing Benchmarks`.
+- Never include a benchmark link merely because it was loaded or mentioned during planning.
+- If a benchmark article's topic is unrelated to the current article, omit it unless the structural borrowing is explicit and visible in the draft.
+- When `Writing Benchmarks` is included, every item must state the specific structural reason it appears, such as `목차 선제시`, `비교표 구성`, or `최종 결정 섹션`.
+- If you cannot explain the benchmark's concrete influence in one short phrase, remove it from the final output and keep it out of the `근거 팩`.
 - Blend the user's own writing pattern lightly:
   - warm first-person framing
   - practical pain-point focus
   - one or two short analogies when they improve readability
   - no forced humor or excessive metaphors
+- Prefer direct-experience first-person phrasing such as `이번 프로젝트에서 제가...`, `구현하면서 제가...`, `제가 중요하게 봤던 포인트는...`.
+- Avoid meta audience-framing phrases like `백엔드 개발자 관점에서`, `독자 관점에서` unless the contrast itself is the point.
 - Default to polished Korean `합니다체` for article prose.
 - Avoid `한다체` narration unless it is a quote, label, code-adjacent explanation, or compact note.
 - Prefer titles that make the tech topic and scope obvious:
@@ -69,6 +87,13 @@ technical explanations based on this repository.
   - code or architecture behavior that readers can easily misunderstand
 - Short paragraphs are good, but the article can be long when the topic genuinely needs more context.
 - When text alone is weak, insert an `이미지 제안:` block with the section, image type, why it helps, and a caption draft.
+- In Mermaid diagrams, default to reader-friendly Korean semantic labels.
+- Do not use raw command names such as `EXPIRE occupied-count`, `SADD usersKey userId`, or `SISMEMBER ...` as node labels unless the exact command itself is the teaching point.
+- Keep low-level command names in code blocks, tables, or surrounding explanation, and let the diagram communicate business meaning first.
+- When the topic is Redis Lua in this repository, explain `reserve`, `release`, and `rebuild` as concrete functions:
+  - when each function is called
+  - what state each function changes
+  - why the three functions should be understood as one state-management set
 - Write in Korean unless the user explicitly asks for another language.
 
 ## Output Guidance
@@ -76,9 +101,9 @@ technical explanations based on this repository.
 - For topic ideation:
   include `제목 후보 / 독자 / 한 줄 주장 / 비교할 대안 / 근거 문서 / 외부 reference pack`
 - For a planner result:
-  include `제목 후보 / 독자 / 한 줄 주장 / 비교할 대안 / 개요 / 섹션별 근거 / 이미지 제안 / references 초안`
+  include `제목 후보 / 독자 / 한 줄 주장 / 비교할 대안 / 개요 / 섹션별 근거 / 이미지 제안 / 근거 팩 초안 / publish 메모`
 - For a full draft:
-  return `개요 / 초안 / 이미지 제안 / References`
+  return `개요 / 초안 / 이미지 제안 / 근거 팩`
 
 ## References
 
