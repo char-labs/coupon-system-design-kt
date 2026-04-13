@@ -18,8 +18,8 @@ jobs:
     runs-on: ubuntu-latest
     environment: PROD
     outputs:
-      app_image: ${{ steps.image-tags.outputs.app_image }}
-      worker_image: ${{ steps.image-tags.outputs.worker_image }}
+      app_image: ${{ steps.image-refs.outputs.app_image }}
+      worker_image: ${{ steps.image-refs.outputs.worker_image }}
 
     steps:
       - name: Checkout code
@@ -75,11 +75,33 @@ jobs:
           username: ${{ env.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Set image tags
-        id: image-tags
+      - name: Extract app metadata
+        id: app-meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.DOCKERHUB_USERNAME }}/${{ env.DOCKERHUB_APP_IMAGE_NAME }}
+          tags: |
+            type=sha,format=long,priority=1000
+            type=raw,value=main-latest,enable={{is_default_branch}}
+          flavor: |
+            latest=false
+
+      - name: Extract worker metadata
+        id: worker-meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.DOCKERHUB_USERNAME }}/${{ env.DOCKERHUB_WORKER_IMAGE_NAME }}
+          tags: |
+            type=sha,format=long,priority=1000
+            type=raw,value=main-latest,enable={{is_default_branch}}
+          flavor: |
+            latest=false
+
+      - name: Set deploy image refs
+        id: image-refs
         run: |
-          echo "app_image=${{ env.DOCKERHUB_USERNAME }}/${{ env.DOCKERHUB_APP_IMAGE_NAME }}:${{ github.sha }}" >> "$GITHUB_OUTPUT"
-          echo "worker_image=${{ env.DOCKERHUB_USERNAME }}/${{ env.DOCKERHUB_WORKER_IMAGE_NAME }}:${{ github.sha }}" >> "$GITHUB_OUTPUT"
+          echo "app_image=${{ env.DOCKERHUB_USERNAME }}/${{ env.DOCKERHUB_APP_IMAGE_NAME }}:${{ steps.app-meta.outputs.version }}" >> "$GITHUB_OUTPUT"
+          echo "worker_image=${{ env.DOCKERHUB_USERNAME }}/${{ env.DOCKERHUB_WORKER_IMAGE_NAME }}:${{ steps.worker-meta.outputs.version }}" >> "$GITHUB_OUTPUT"
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -92,9 +114,8 @@ jobs:
           push: true
           build-args: |
             JAR_FILE=coupon/coupon-api/build/libs/*.jar
-          tags: |
-            ${{ steps.image-tags.outputs.app_image }}
-            ${{ env.DOCKERHUB_USERNAME }}/${{ env.DOCKERHUB_APP_IMAGE_NAME }}:main-latest
+          tags: ${{ steps.app-meta.outputs.tags }}
+          labels: ${{ steps.app-meta.outputs.labels }}
           platforms: linux/amd64
 
       - name: Build and push worker image
@@ -105,9 +126,8 @@ jobs:
           push: true
           build-args: |
             JAR_FILE=coupon/coupon-worker/build/libs/*.jar
-          tags: |
-            ${{ steps.image-tags.outputs.worker_image }}
-            ${{ env.DOCKERHUB_USERNAME }}/${{ env.DOCKERHUB_WORKER_IMAGE_NAME }}:main-latest
+          tags: ${{ steps.worker-meta.outputs.tags }}
+          labels: ${{ steps.worker-meta.outputs.labels }}
           platforms: linux/amd64
 
   deploy:
@@ -160,6 +180,37 @@ jobs:
             WORKER_IMAGE="${{ needs.build.outputs.worker_image }}"
             export APP_IMAGE WORKER_IMAGE
 
+            ensure_compose() {
+              if docker compose version >/dev/null 2>&1; then
+                return 0
+              fi
+
+              if command -v docker-compose >/dev/null 2>&1; then
+                return 0
+              fi
+
+              case "$(uname -m)" in
+                x86_64|amd64) compose_arch="x86_64" ;;
+                aarch64|arm64) compose_arch="aarch64" ;;
+                *)
+                  echo "Unsupported architecture for Docker Compose: $(uname -m)" >&2
+                  exit 1
+                  ;;
+              esac
+
+              echo "Docker Compose not found. Installing plugin to user Docker config..."
+              export DOCKER_CONFIG="${DOCKER_CONFIG:-$HOME/.docker}"
+              mkdir -p "$DOCKER_CONFIG/cli-plugins"
+              curl -fL "https://github.com/docker/compose/releases/latest/download/docker-compose-linux-${compose_arch}" \
+                -o "$DOCKER_CONFIG/cli-plugins/docker-compose"
+              chmod +x "$DOCKER_CONFIG/cli-plugins/docker-compose"
+
+              docker compose version >/dev/null 2>&1 || {
+                echo "Failed to install Docker Compose plugin" >&2
+                exit 1
+              }
+            }
+
             compose() {
               if docker compose version >/dev/null 2>&1; then
                 docker compose "$@"
@@ -177,6 +228,7 @@ jobs:
 
             cd "${{ env.REMOTE_APP_DIR }}"
 
+            ensure_compose
             compose version
             compose -f docker/docker-compose.prod.yml pull coupon-app coupon-worker
 
