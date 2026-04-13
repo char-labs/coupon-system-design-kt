@@ -55,8 +55,6 @@
   - 캡션 초안: ...
 
 근거 팩 초안:
-- Local References
-  - [R1] ...
 - External References
   - [R2] ...
 - Writing Benchmarks
@@ -65,6 +63,8 @@
 publish 메모:
 - 로컬 근거를 본문 어디에 어떤 코드 컨텍스트 블록이나 스니펫으로 녹일지
 - publish용 초안에 남길 외부 References 범위
+- frontmatter와 대표 이미지 적용 여부
+- inline citation anchor를 쓸지, plain 링크를 쓸지
 ```
 
 ## 2. Drafter 출력 템플릿
@@ -80,16 +80,29 @@ publish 메모:
 - 후기 또는 결론
 
 초안:
+---
+title: "..."
+description: "..."
+date: "YYYY-MM-DD"
+tags:
+  - ...
+  - ...
+---
+
+<img src="..." width="100%" />
+
 # 제목
-## 부제
-## 목차
-## 서론 또는 계기
-## 현재 구조
-## 왜 이 선택을 했는가
-## 예상치 못한 이슈 또는 헷갈리기 쉬운 지점
-## 실패와 운영에서 무엇이 달라지는가
-## 한계와 다음 단계
-## 후기 또는 마무리
+## 서론
+## 왜 이 글을 쓰게 되었는가
+## 개념 설명
+## 구조 고정
+## 핵심 함수 설명
+## 기본 대안 비교
+## 현재 코드 설명
+## 실패와 복구
+## 헷갈리기 쉬운 지점
+## 최종 결정
+## 결론
 
 이미지 제안:
 - 구간: ...
@@ -98,9 +111,6 @@ publish 메모:
   - 캡션 초안: ...
 
 근거 팩:
-### Local References
-- [R1] ...
-
 ### External References
 - [R2] ...
 - [R3] ...
@@ -126,6 +136,24 @@ val issueResult = couponIssueRedisCoreRepository.reserve(couponId, userId, quant
 if (issueResult == CouponIssueResult.SUCCESS) {
     couponIssueProducer.publish(command)
 }
+```
+
+외부 근거를 본문 중간에 연결해야 하면 아래처럼 anchor 기반 표기를 허용한다.
+
+```md
+Redis에서 Lua 스크립트는 Redis 서버 안에서 실행되는 짧은 사용자 정의 로직입니다.
+<a href="#ref-e1">[E1]</a> <a href="#ref-e2">[E2]</a>
+```
+
+최종 `References` 는 아래처럼 맞춘다.
+
+```md
+## References
+
+### External References
+
+- <span id="ref-e1">[E1]</span> [Redis Docs: Scripting with Lua](https://redis.io/docs/latest/develop/programmability/eval-intro/)
+- <span id="ref-e2">[E2]</span> [Redis Docs: Redis programmability](https://redis.io/docs/latest/develop/programmability/)
 ```
 
 ## 3. 본문 내 이미지 제안 블록
@@ -162,6 +190,11 @@ if (issueResult == CouponIssueResult.SUCCESS) {
 - `현재 구현 사실` 과 `미래 TODO` 를 섞지 않는다
 - `SUCCESS` 의미와 outbox 범위를 항상 현재 계약 기준으로 쓴다
 - 일반론보다 현재 코드와 문서를 먼저 설명한다
+- publish용 MDX라면 frontmatter를 기본 포함한다
+- frontmatter의 `description` 은 글의 핵심 선택 이유와 현재 프로젝트 맥락이 한 문장에 드러나게 쓴다
+- 대표 이미지가 있다면 frontmatter 바로 아래에 둔다
+- 대표 이미지는 글의 주제를 바로 인지시키는 용도여야 하고, 장식용이면 생략한다
+- `## 서론` 섹션을 명시적으로 두는 패턴을 허용한다
 - 본문 서술 기본형은 `합니다체` 입니다
 - 직접 인용이나 정의문이 아니면 `한다체` 는 피한다
 - 서론 한두 문단은 친근한 1인칭 또는 문제 공감 톤을 허용한다
@@ -175,5 +208,6 @@ if (issueResult == CouponIssueResult.SUCCESS) {
 - Mermaid 다이어그램은 기본적으로 한국어 의미 라벨을 쓰고, raw 명령명은 코드 블록이나 본문에서 설명한다
 - 비유는 글당 1~2개 이하로 제한한다
 - 비유 다음 문단에서는 반드시 기술 설명으로 바로 회수한다
-- 내부 `근거 팩` 은 필수다
+- 외부 `근거 팩` 은 필수다
 - factual claim 이 많은 문단은 필요하면 `[R1]`, `[R2]` 를 붙여도 된다
+- publish 플랫폼이 anchor 링크를 잘 지원하면 `<a href="#ref-e1">[E1]</a>` 와 `<span id="ref-e1">[E1]</span>` 패턴을 사용할 수 있다
