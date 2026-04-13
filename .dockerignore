@@ -15,6 +15,12 @@
 **/target/
 **/out/
 **/.gradle/
+!coupon/coupon-api/build/
+!coupon/coupon-api/build/libs/
+!coupon/coupon-api/build/libs/*.jar
+!coupon/coupon-worker/build/
+!coupon/coupon-worker/build/libs/
+!coupon/coupon-worker/build/libs/*.jar
 
 # Logs
 *.log

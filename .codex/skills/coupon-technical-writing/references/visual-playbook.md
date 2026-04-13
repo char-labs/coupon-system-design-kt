@@ -10,6 +10,7 @@
 - 이미지는 `설명 압축` 용도로 쓴다
 - 같은 내용을 그림과 글로 중복해서 길게 반복하지 않는다
 - 이미지가 없다면 이해가 어렵거나 비교가 느린 구간에만 넣는다
+- 대표 이미지가 있다면 frontmatter 바로 아래에 두고, 글 주제를 한눈에 인지시키는 역할만 맡긴다
 - Mermaid 노드와 화살표는 기본적으로 독자 친화적인 한국어 의미 라벨로 쓴다
 - raw 명령명이나 구현 세부는 코드 블록이나 본문에서 설명하고, 다이어그램은 `의미 전달` 을 우선한다
 - 명령명이 꼭 필요할 때만 괄호나 캡션 보조 설명으로 제한적으로 붙인다
@@ -24,6 +25,7 @@
 | flowchart | 상태 전이, retry, DLQ, release 조건을 설명할 때 | outbox 상태, reserve release 보상 규칙 |
 | metric graph | 운영 지표와 병목을 설명할 때 | `worker.limit`, lag, write latency 조합 |
 | before/after diagram | 현재와 대안 또는 현재와 미래를 비교할 때 | direct sync write vs async intake / future durable acceptance |
+| hero image | 글 주제와 첫 인상을 빠르게 맞출 때 | Redis / Lua / coupon issue 키워드를 먼저 환기하는 상단 이미지 |
 
 ## 토픽별 기본 추천
 

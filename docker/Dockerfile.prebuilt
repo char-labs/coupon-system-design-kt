@@ -1,0 +1,19 @@
+FROM amazoncorretto:25-alpine
+WORKDIR /app
+
+ARG JAR_FILE=coupon/coupon-api/build/libs/*.jar
+
+RUN addgroup -S spring && adduser -S spring -G spring
+USER spring:spring
+
+COPY ${JAR_FILE} app.jar
+
+ENV JAVA_OPTS="-Xmx1024m -Xms512m \
+    -XX:+UseG1GC \
+    -XX:MaxGCPauseMillis=200 \
+    -XX:+UseStringDeduplication \
+    -XX:+OptimizeStringConcat \
+    -Djava.security.egd=file:/dev/./urandom \
+    -Dspring.backgroundpreinitializer.ignore=true"
+
+ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar"]

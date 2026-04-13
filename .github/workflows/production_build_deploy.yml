@@ -1,0 +1,252 @@
+name: Production Build and Deploy
+
+on:
+  push:
+    branches: [ "main" ]
+
+permissions:
+  contents: read
+
+env:
+  DOCKERHUB_USERNAME: yogieat
+  DOCKERHUB_APP_IMAGE_NAME: coupon-system-app
+  DOCKERHUB_WORKER_IMAGE_NAME: coupon-system-worker
+  REMOTE_APP_DIR: /home/ubuntu/coupon-system-design-kt
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    environment: PROD
+    outputs:
+      app_image: ${{ steps.image-refs.outputs.app_image }}
+      worker_image: ${{ steps.image-refs.outputs.worker_image }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Set up JDK 25
+        uses: actions/setup-java@v5
+        with:
+          java-version: "25"
+          distribution: corretto
+          cache: gradle
+          cache-dependency-path: |
+            **/*.gradle*
+            **/gradle-wrapper.properties
+
+      - name: Setup Gradle Build
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          cache-read-only: ${{ github.ref != 'refs/heads/main' }}
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x ./gradlew
+
+      - name: Start test containers
+        run: docker compose -f ./docker-compose-test.yaml up -d
+
+      - name: Wait for Redis
+        run: |
+          set -euo pipefail
+          container_id="$(docker compose -f ./docker-compose-test.yaml ps -q redis)"
+
+          for _ in $(seq 1 30); do
+            status="$(docker inspect -f '{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}' "$container_id")"
+            if [ "$status" = "healthy" ]; then
+              exit 0
+            fi
+            sleep 2
+          done
+
+          docker compose -f ./docker-compose-test.yaml logs redis
+          exit 1
+
+      - name: Build with Gradle
+        run: ./gradlew build --no-daemon
+
+      - name: Stop test containers
+        if: always()
+        run: docker compose -f ./docker-compose-test.yaml down -v
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ env.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Extract app metadata
+        id: app-meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.DOCKERHUB_USERNAME }}/${{ env.DOCKERHUB_APP_IMAGE_NAME }}
+          tags: |
+            type=sha,format=long,priority=1000
+            type=raw,value=main-latest,enable={{is_default_branch}}
+          flavor: |
+            latest=false
+
+      - name: Extract worker metadata
+        id: worker-meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.DOCKERHUB_USERNAME }}/${{ env.DOCKERHUB_WORKER_IMAGE_NAME }}
+          tags: |
+            type=sha,format=long,priority=1000
+            type=raw,value=main-latest,enable={{is_default_branch}}
+          flavor: |
+            latest=false
+
+      - name: Set deploy image refs
+        id: image-refs
+        run: |
+          echo "app_image=${{ env.DOCKERHUB_USERNAME }}/${{ env.DOCKERHUB_APP_IMAGE_NAME }}:${{ steps.app-meta.outputs.version }}" >> "$GITHUB_OUTPUT"
+          echo "worker_image=${{ env.DOCKERHUB_USERNAME }}/${{ env.DOCKERHUB_WORKER_IMAGE_NAME }}:${{ steps.worker-meta.outputs.version }}" >> "$GITHUB_OUTPUT"
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push app image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./docker/Dockerfile.prebuilt
+          push: true
+          build-args: |
+            JAR_FILE=coupon/coupon-api/build/libs/*.jar
+          tags: ${{ steps.app-meta.outputs.tags }}
+          labels: ${{ steps.app-meta.outputs.labels }}
+          platforms: linux/amd64
+
+      - name: Build and push worker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./docker/Dockerfile.prebuilt
+          push: true
+          build-args: |
+            JAR_FILE=coupon/coupon-worker/build/libs/*.jar
+          tags: ${{ steps.worker-meta.outputs.tags }}
+          labels: ${{ steps.worker-meta.outputs.labels }}
+          platforms: linux/amd64
+
+  deploy:
+    runs-on: ubuntu-latest
+    environment: PROD
+    needs: build
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Prepare remote directories
+        uses: appleboy/ssh-action@v1.2.2
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USERNAME }}
+          key: ${{ secrets.SERVER_PRIVATE_KEY }}
+          script: |
+            mkdir -p "${{ env.REMOTE_APP_DIR }}/docker"
+
+      - name: Copy docker directory to Server
+        uses: burnett01/rsync-deployments@7.1.0
+        with:
+          switches: -rlvz --delete --omit-dir-times --no-perms --no-owner --no-group
+          remote_host: ${{ secrets.SERVER_HOST }}
+          remote_user: ${{ secrets.SERVER_USERNAME }}
+          remote_key: ${{ secrets.SERVER_PRIVATE_KEY }}
+          path: ./docker/
+          remote_path: ${{ env.REMOTE_APP_DIR }}/docker/
+
+      - name: Copy production compose file to Server
+        uses: burnett01/rsync-deployments@7.1.0
+        with:
+          switches: -rlvz --omit-dir-times --no-perms --no-owner --no-group
+          remote_host: ${{ secrets.SERVER_HOST }}
+          remote_user: ${{ secrets.SERVER_USERNAME }}
+          remote_key: ${{ secrets.SERVER_PRIVATE_KEY }}
+          path: ./docker/docker-compose.prod.yml
+          remote_path: ${{ env.REMOTE_APP_DIR }}/docker/docker-compose.prod.yml
+
+      - name: Deploy to Instance Server
+        uses: appleboy/ssh-action@v1.2.2
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USERNAME }}
+          key: ${{ secrets.SERVER_PRIVATE_KEY }}
+          script: |
+            set -euo pipefail
+            ENV_FILE="${HOME}/.env"
+
+            if [ ! -f "$ENV_FILE" ]; then
+              echo "Deployment env file not found at ${ENV_FILE}" >&2
+              exit 1
+            fi
+
+            echo "Loading deployment environment from ${ENV_FILE}"
+
+            APP_IMAGE="${{ needs.build.outputs.app_image }}"
+            WORKER_IMAGE="${{ needs.build.outputs.worker_image }}"
+            export APP_IMAGE WORKER_IMAGE
+
+            ensure_compose() {
+              if docker compose version >/dev/null 2>&1; then
+                return 0
+              fi
+
+              if command -v docker-compose >/dev/null 2>&1; then
+                return 0
+              fi
+
+              case "$(uname -m)" in
+                x86_64|amd64) compose_arch="x86_64" ;;
+                aarch64|arm64) compose_arch="aarch64" ;;
+                *)
+                  echo "Unsupported architecture for Docker Compose: $(uname -m)" >&2
+                  exit 1
+                  ;;
+              esac
+
+              echo "Docker Compose not found. Installing plugin to user Docker config..."
+              export DOCKER_CONFIG="${DOCKER_CONFIG:-$HOME/.docker}"
+              mkdir -p "$DOCKER_CONFIG/cli-plugins"
+              curl -fL "https://github.com/docker/compose/releases/latest/download/docker-compose-linux-${compose_arch}" \
+                -o "$DOCKER_CONFIG/cli-plugins/docker-compose"
+              chmod +x "$DOCKER_CONFIG/cli-plugins/docker-compose"
+
+              docker compose version >/dev/null 2>&1 || {
+                echo "Failed to install Docker Compose plugin" >&2
+                exit 1
+              }
+            }
+
+            compose() {
+              if docker compose version >/dev/null 2>&1; then
+                docker compose --env-file "$ENV_FILE" "$@"
+              elif command -v docker-compose >/dev/null 2>&1; then
+                docker-compose --env-file "$ENV_FILE" "$@"
+              else
+                echo "Docker Compose is not installed on remote server" >&2
+                exit 1
+              fi
+            }
+
+            echo "${{ secrets.DOCKERHUB_ACCESS_TOKEN }}" | docker login -u "${{ env.DOCKERHUB_USERNAME }}" --password-stdin
+            echo "Deploying APP image: ${APP_IMAGE}"
+            echo "Deploying WORKER image: ${WORKER_IMAGE}"
+
+            cd "${{ env.REMOTE_APP_DIR }}"
+
+            ensure_compose
+            compose version
+            compose -f docker/docker-compose.prod.yml pull coupon-app coupon-worker
+
+            compose -f docker/docker-compose.prod.yml up -d --remove-orphans --no-build
+
+            ACTUAL_APP_IMAGE="$(docker inspect --format '{{.Config.Image}}' coupon-prod-app)"
+            ACTUAL_WORKER_IMAGE="$(docker inspect --format '{{.Config.Image}}' coupon-prod-worker)"
+
+            [ "${ACTUAL_APP_IMAGE}" = "${APP_IMAGE}" ] || { echo "APP image mismatch: expected=${APP_IMAGE}, actual=${ACTUAL_APP_IMAGE}"; exit 1; }
+            [ "${ACTUAL_WORKER_IMAGE}" = "${WORKER_IMAGE}" ] || { echo "WORKER image mismatch: expected=${WORKER_IMAGE}, actual=${ACTUAL_WORKER_IMAGE}"; exit 1; }
+
+            docker image prune -f

@@ -1,4 +1,4 @@
 interface:
   display_name: "Coupon Technical Writing"
-  short_description: "Auto-orchestrate publishable coupon-system MDX drafts with code-context grounding, visuals, concrete headlines, and a reviewer-driven refinement loop"
-  default_prompt: "Use $coupon-technical-writing to write a publishable backend blog post grounded in this coupon-system repository, with code-context blocks instead of raw Local References, image suggestions, concrete headlines, and polished Korean 합니다체."
+  short_description: "Auto-orchestrate publishable coupon-system MDX drafts with frontmatter, hero-image/citation harness, code-context grounding, and a reviewer-driven refinement loop"
+  default_prompt: "Use $coupon-technical-writing to write a publishable backend blog post grounded in this coupon-system repository, with frontmatter, optional hero image, inline citation anchors when useful, code-context blocks and short code excerpts instead of any raw Local References section, and polished Korean 합니다체."

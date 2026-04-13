@@ -13,12 +13,20 @@ discovery.relabel "coupon_logs" {
   rule {
     source_labels = ["__meta_docker_container_name"]
     action        = "keep"
-    regex         = "/(coupon-app|coupon-worker)"
+    regex         = "/(coupon-app|coupon-worker|coupon-prod-app|coupon-prod-worker)"
   }
 
   rule {
     source_labels = ["__meta_docker_container_name"]
-    regex         = "/(.*)"
+    regex         = "/(coupon-app|coupon-prod-app)"
+    replacement   = "coupon-app"
+    target_label  = "service_name"
+  }
+
+  rule {
+    source_labels = ["__meta_docker_container_name"]
+    regex         = "/(coupon-worker|coupon-prod-worker)"
+    replacement   = "coupon-worker"
     target_label  = "service_name"
   }
 
