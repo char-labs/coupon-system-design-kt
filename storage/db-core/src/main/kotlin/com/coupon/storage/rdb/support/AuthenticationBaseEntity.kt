@@ -27,7 +27,7 @@ abstract class AuthenticationBaseEntity {
 
     @CreationTimestamp
     @Column(updatable = false)
-    val createdAt: LocalDateTime = LocalDateTime.now()
+    var createdAt: LocalDateTime = LocalDateTime.now()
 
     @UpdateTimestamp
     @Column
