@@ -2,7 +2,7 @@ name: Production Build and Deploy
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "chore/deploy" ]
 
 permissions:
   contents: read
