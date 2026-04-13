@@ -226,12 +226,6 @@ class CouponIssueServiceTest :
 
                 then("상태 변경 후 상세 정보를 반환한다") {
                     result shouldBe detail
-                    context.recordedLockExecutions.single() shouldBe
-                        LockExecution(
-                            key = "COUPON_ISSUE_STATUS:${command.couponIssueId}",
-                            timeoutMillis = 5_000L,
-                            timeoutException = ErrorType.LOCK_ACQUISITION_FAILED,
-                        )
                     verifySequence {
                         context.couponIssueRepository.findById(command.couponIssueId)
                         context.couponIssueValidator.validateOwnedCouponIssue(couponIssue, command.userId)
@@ -322,19 +316,24 @@ class CouponIssueServiceTest :
                     .LockExecutor(lockRepository, tx),
             )
         private val distributedLockAspect = DistributedLockAspect(lock)
-        val couponIssueService: CouponIssueService =
+        private val couponIssueStateInitializationExecutor: CouponIssueStateInitializationExecutor =
             AspectJProxyFactory(
-                CouponIssueService(
+                CouponIssueStateInitializationExecutor(
                     couponIssueRepository = couponIssueRepository,
-                    couponIssueValidator = couponIssueValidator,
                     couponIssueRedisRepository = couponIssueRedisRepository,
-                    applicationEventPublisher = applicationEventPublisher,
-                    clock = Clock.systemUTC(),
                 ),
             ).apply {
-                setExposeProxy(true)
                 addAspect(distributedLockAspect)
-            }.getProxy() as CouponIssueService
+            }.getProxy() as CouponIssueStateInitializationExecutor
+        val couponIssueService: CouponIssueService =
+            CouponIssueService(
+                couponIssueRepository = couponIssueRepository,
+                couponIssueValidator = couponIssueValidator,
+                couponIssueRedisRepository = couponIssueRedisRepository,
+                couponIssueStateInitializationExecutor = couponIssueStateInitializationExecutor,
+                applicationEventPublisher = applicationEventPublisher,
+                clock = Clock.systemUTC(),
+            )
 
         val recordedLockExecutions get() = lockRepository.executions
     }

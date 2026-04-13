@@ -4,6 +4,7 @@ import com.coupon.coupon.execution.CouponIssueCancellationExecutor
 import com.coupon.coupon.execution.CouponIssueExecutionFacade
 import com.coupon.coupon.execution.CouponIssueExecutionResult.Rejected
 import com.coupon.coupon.execution.CouponIssueLockingExecutor
+import com.coupon.coupon.execution.CouponIssueUsageExecutor
 import com.coupon.coupon.fixture.CouponIssueFixtures
 import com.coupon.coupon.fixture.FixedCouponFixtures
 import com.coupon.coupon.intake.CouponIssueIntakeFacade
@@ -223,6 +224,37 @@ class CouponIssueExecutionFacadeTest :
                 }
             }
         }
+
+        given("CouponIssueExecutionFacade로 쿠폰을 사용하면") {
+            `when`("사용 가능한 쿠폰이면") {
+                val context = CouponIssueExecutionFacadeTestContext()
+                val command = CouponIssueFixtures.useCommand(couponIssueId = 15L, userId = 200L)
+                val usedDetail =
+                    CouponIssueFixtures.detail(
+                        id = command.couponIssueId,
+                        couponId = 77L,
+                        userId = command.userId,
+                        status = CouponIssueStatus.USED,
+                    )
+
+                every { context.couponIssueService.useCoupon(command) } returns usedDetail
+
+                val result = context.couponIssueExecutionFacade.useCoupon(command)
+
+                then("락 안에서 사용 상태 전이를 수행한다") {
+                    result shouldBe usedDetail
+                    context.recordedLockExecutions.single() shouldBe
+                        LockExecution(
+                            key = "COUPON_ISSUE_STATUS:${command.couponIssueId}",
+                            timeoutMillis = 5_000L,
+                            timeoutException = ErrorType.LOCK_ACQUISITION_FAILED,
+                        )
+                    verifySequence {
+                        context.couponIssueService.useCoupon(command)
+                    }
+                }
+            }
+        }
     }) {
     private class CouponIssueExecutionFacadeTestContext {
         private val lockRepository = RecordingLockRepository()
@@ -265,11 +297,20 @@ class CouponIssueExecutionFacadeTest :
             ).apply {
                 addAspect(distributedLockAspect)
             }.getProxy() as CouponIssueCancellationExecutor
+        private val couponIssueUsageExecutor: CouponIssueUsageExecutor =
+            AspectJProxyFactory(
+                CouponIssueUsageExecutor(
+                    couponIssueService = couponIssueService,
+                ),
+            ).apply {
+                addAspect(distributedLockAspect)
+            }.getProxy() as CouponIssueUsageExecutor
         val couponIssueExecutionFacade: CouponIssueExecutionFacade =
             CouponIssueExecutionFacade(
                 couponIssueService = couponIssueService,
                 couponIssueLockingExecutor = couponIssueLockingExecutor,
                 couponIssueCancellationExecutor = couponIssueCancellationExecutor,
+                couponIssueUsageExecutor = couponIssueUsageExecutor,
             )
 
         val recordedLockExecutions get() = lockRepository.executions
