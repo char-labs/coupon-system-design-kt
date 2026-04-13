@@ -46,6 +46,7 @@ services:
         condition: service_started
     networks:
       - backend
+      - edge
     mem_limit: 1536m
     mem_reservation: 768m
     cpus: 1.00
@@ -95,6 +96,7 @@ services:
         condition: service_started
     networks:
       - backend
+      - edge
     mem_limit: 896m
     mem_reservation: 384m
     cpus: 0.50
@@ -198,6 +200,7 @@ services:
         condition: service_started
     networks:
       - backend
+      - edge
     mem_limit: 256m
     mem_reservation: 64m
     cpus: 0.10
@@ -216,6 +219,7 @@ services:
       - k6_influxdb_data:/var/lib/influxdb
     networks:
       - backend
+      - edge
     mem_limit: 256m
     mem_reservation: 128m
     cpus: 0.15
@@ -230,6 +234,7 @@ services:
       - loki_data:/loki
     networks:
       - backend
+      - edge
     mem_limit: 384m
     mem_reservation: 128m
     cpus: 0.15
@@ -256,6 +261,7 @@ services:
       - ./grafana/dashboards:/etc/grafana/dashboards:ro
     networks:
       - backend
+      - edge
     mem_limit: 384m
     mem_reservation: 128m
     cpus: 0.15
@@ -280,6 +286,7 @@ services:
       - alloy_data:/var/lib/alloy
     networks:
       - backend
+      - edge
     mem_limit: 128m
     mem_reservation: 64m
     cpus: 0.10
@@ -287,6 +294,7 @@ services:
 networks:
   backend:
     internal: true
+  edge:
 
 volumes:
   mysql_data:
