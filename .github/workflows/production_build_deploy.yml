@@ -88,11 +88,10 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
-          file: ./docker/Dockerfile
+          file: ./docker/Dockerfile.prebuilt
           push: true
           build-args: |
-            APP_MODULE=:coupon:coupon-api
-            APP_JAR_DIR=coupon/coupon-api
+            JAR_FILE=coupon/coupon-api/build/libs/*.jar
           tags: |
             ${{ steps.image-tags.outputs.app_image }}
             ${{ env.DOCKERHUB_USERNAME }}/${{ env.DOCKERHUB_APP_IMAGE_NAME }}:main-latest
@@ -102,11 +101,10 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
-          file: ./docker/Dockerfile
+          file: ./docker/Dockerfile.prebuilt
           push: true
           build-args: |
-            APP_MODULE=:coupon:coupon-worker
-            APP_JAR_DIR=coupon/coupon-worker
+            JAR_FILE=coupon/coupon-worker/build/libs/*.jar
           tags: |
             ${{ steps.image-tags.outputs.worker_image }}
             ${{ env.DOCKERHUB_USERNAME }}/${{ env.DOCKERHUB_WORKER_IMAGE_NAME }}:main-latest
@@ -160,6 +158,18 @@ jobs:
             set -euo pipefail
             APP_IMAGE="${{ needs.build.outputs.app_image }}"
             WORKER_IMAGE="${{ needs.build.outputs.worker_image }}"
+            export APP_IMAGE WORKER_IMAGE
+
+            compose() {
+              if docker compose version >/dev/null 2>&1; then
+                docker compose "$@"
+              elif command -v docker-compose >/dev/null 2>&1; then
+                docker-compose "$@"
+              else
+                echo "Docker Compose is not installed on remote server" >&2
+                exit 1
+              fi
+            }
 
             echo "${{ secrets.DOCKERHUB_ACCESS_TOKEN }}" | docker login -u "${{ env.DOCKERHUB_USERNAME }}" --password-stdin
             echo "Deploying APP image: ${APP_IMAGE}"
@@ -167,11 +177,10 @@ jobs:
 
             cd "${{ env.REMOTE_APP_DIR }}"
 
-            APP_IMAGE="${APP_IMAGE}" WORKER_IMAGE="${WORKER_IMAGE}" \
-            docker compose -f docker/docker-compose.prod.yml pull coupon-app coupon-worker
+            compose version
+            compose -f docker/docker-compose.prod.yml pull coupon-app coupon-worker
 
-            APP_IMAGE="${APP_IMAGE}" WORKER_IMAGE="${WORKER_IMAGE}" \
-            docker compose -f docker/docker-compose.prod.yml up -d --remove-orphans --no-build
+            compose -f docker/docker-compose.prod.yml up -d --remove-orphans --no-build
 
             ACTUAL_APP_IMAGE="$(docker inspect --format '{{.Config.Image}}' coupon-prod-app)"
             ACTUAL_WORKER_IMAGE="$(docker inspect --format '{{.Config.Image}}' coupon-prod-worker)"
