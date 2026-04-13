@@ -6,10 +6,8 @@ import com.coupon.coupon.event.CouponLifecycleDomainEvent
 import com.coupon.enums.coupon.CouponIssueResult
 import com.coupon.enums.error.ErrorType
 import com.coupon.error.ErrorException
-import com.coupon.shared.lock.WithDistributedLock
 import com.coupon.shared.page.OffsetPageRequest
 import com.coupon.shared.page.Page
-import org.springframework.aop.framework.AopContext
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -24,6 +22,7 @@ class CouponIssueService(
     private val couponIssueRepository: CouponIssueRepository,
     private val couponIssueValidator: CouponIssueValidator,
     private val couponIssueRedisRepository: CouponIssueRedisRepository,
+    private val couponIssueStateInitializationExecutor: CouponIssueStateInitializationExecutor,
     private val applicationEventPublisher: ApplicationEventPublisher,
     private val clock: Clock,
 ) {
@@ -35,7 +34,7 @@ class CouponIssueService(
         val ttl = stateTtl(coupon.endAt)
         if (!couponIssueRedisRepository.hasState(coupon.id)) {
             try {
-                (AopContext.currentProxy() as CouponIssueService).initializeStateIfAbsent(coupon, ttl)
+                couponIssueStateInitializationExecutor.initializeStateIfAbsent(coupon, ttl)
             } catch (e: ErrorException) {
                 if (e.errorType != ErrorType.LOCK_ACQUISITION_FAILED) {
                     throw e
@@ -94,36 +93,10 @@ class CouponIssueService(
         couponIssueRedisRepository.releaseStockSlot(couponId)
     }
 
-    @WithDistributedLock(
-        key = "'COUPON_ISSUE_STATE_INIT:' + #coupon.id",
-        timeoutMillis = 1_000L,
-    )
-    fun initializeStateIfAbsent(
-        coupon: CouponDetail,
-        ttl: Duration,
-    ) {
-        if (couponIssueRedisRepository.hasState(coupon.id)) {
-            return
-        }
-
-        val issuedUsers = couponIssueRepository.findUserIdsByCouponId(coupon.id)
-        val occupiedCount = coupon.totalQuantity - coupon.remainingQuantity
-        couponIssueRedisRepository.rebuild(
-            couponId = coupon.id,
-            occupiedCount = occupiedCount,
-            userIds = issuedUsers,
-            ttl = ttl,
-        )
-    }
-
     /**
      * 쿠폰 사용은 지금도 동기식 원본 상태 변경이다.
      * outbox 이벤트는 후속 projection을 위한 것이지, 상태 전이 자체를 대신하지 않는다.
      */
-    @WithDistributedLock(
-        key = "'COUPON_ISSUE_STATUS:' + #command.couponIssueId",
-        requiresNew = true,
-    )
     fun useCoupon(command: CouponIssueCommand.Use): CouponIssue.Detail {
         val couponIssue = couponIssueRepository.findById(command.couponIssueId)
         couponIssueValidator.validateOwnedCouponIssue(couponIssue, command.userId)

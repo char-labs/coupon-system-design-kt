@@ -10,6 +10,7 @@ Use this directory as the agent-facing table of contents. The root `AGENTS.md` s
 4. [orchestration.md](./orchestration.md)
 5. [validation.md](./validation.md)
 6. [adoption-rubric.md](./adoption-rubric.md)
+7. [technical-writing-workflow.md](./technical-writing-workflow.md)
 
 ## Task Routing
 
@@ -18,6 +19,7 @@ Use this directory as the agent-facing table of contents. The root `AGENTS.md` s
 - Need to decide which specialists to call: read [orchestration.md](./orchestration.md).
 - Need a build, test, lint, or compile command: read [validation.md](./validation.md).
 - Need to evaluate a new dependency, SDK, or architecture direction: read [adoption-rubric.md](./adoption-rubric.md).
+- Need backend blog topics, article outlines, or drafts with external references and image suggestions: read [technical-writing-workflow.md](./technical-writing-workflow.md).
 
 ## Notes
 

@@ -98,7 +98,7 @@ open class CouponIssueConcurrencyTest(
                             actions =
                                 List(10) {
                                     {
-                                        couponIssueService.useCoupon(
+                                        couponIssueExecutionFacade.useCoupon(
                                             CouponIssueCommand.Use(
                                                 couponIssueId = fixture.couponIssue.id,
                                                 userId = fixture.user.id,
@@ -152,7 +152,7 @@ open class CouponIssueConcurrencyTest(
                             actions =
                                 listOf(
                                     {
-                                        couponIssueService.useCoupon(
+                                        couponIssueExecutionFacade.useCoupon(
                                             CouponIssueCommand.Use(
                                                 couponIssueId = fixture.couponIssue.id,
                                                 userId = fixture.user.id,

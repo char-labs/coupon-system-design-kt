@@ -13,6 +13,7 @@ class CouponIssueExecutionFacade(
     private val couponIssueService: CouponIssueService,
     private val couponIssueLockingExecutor: CouponIssueLockingExecutor,
     private val couponIssueCancellationExecutor: CouponIssueCancellationExecutor,
+    private val couponIssueUsageExecutor: CouponIssueUsageExecutor,
 ) {
     fun executeIssue(command: CouponIssueCommand.Issue): CouponIssue = couponIssueLockingExecutor.executeIssue(command)
 
@@ -73,4 +74,6 @@ class CouponIssueExecutionFacade(
         val couponIssue = couponIssueService.getCouponIssue(command.couponIssueId)
         return couponIssueCancellationExecutor.cancelCoupon(couponIssue, command)
     }
+
+    fun useCoupon(command: CouponIssueCommand.Use): CouponIssue.Detail = couponIssueUsageExecutor.useCoupon(command)
 }

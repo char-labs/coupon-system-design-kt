@@ -89,7 +89,7 @@ class CouponIssueController(
         @PathVariable couponIssueId: Long,
     ): CouponIssueResponse.Detail =
         CouponIssueResponse.Detail.from(
-            couponIssueService.useCoupon(
+            couponIssueExecutionFacade.useCoupon(
                 CouponIssueCommand.Use(couponIssueId, user.id),
             ),
         )
