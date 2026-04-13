@@ -178,16 +178,12 @@ jobs:
             set -euo pipefail
             ENV_FILE="${HOME}/.env"
 
-            if [ -f "$ENV_FILE" ]; then
-              echo "Loading deployment environment from ${ENV_FILE}"
-              set -a
-              # shellcheck disable=SC1090
-              . "$ENV_FILE"
-              set +a
-            else
+            if [ ! -f "$ENV_FILE" ]; then
               echo "Deployment env file not found at ${ENV_FILE}" >&2
               exit 1
             fi
+
+            echo "Loading deployment environment from ${ENV_FILE}"
 
             APP_IMAGE="${{ needs.build.outputs.app_image }}"
             WORKER_IMAGE="${{ needs.build.outputs.worker_image }}"
@@ -226,9 +222,9 @@ jobs:
 
             compose() {
               if docker compose version >/dev/null 2>&1; then
-                docker compose "$@"
+                docker compose --env-file "$ENV_FILE" "$@"
               elif command -v docker-compose >/dev/null 2>&1; then
-                docker-compose "$@"
+                docker-compose --env-file "$ENV_FILE" "$@"
               else
                 echo "Docker Compose is not installed on remote server" >&2
                 exit 1
