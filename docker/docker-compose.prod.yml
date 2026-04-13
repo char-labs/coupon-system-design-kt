@@ -1,6 +1,6 @@
 services:
   coupon-app:
-    image: ${APP_IMAGE:-coupon-system-app:local}
+    image: ${APP_IMAGE:-yogieat/coupon-system-app:main-latest}
     build:
       context: ..
       dockerfile: docker/Dockerfile
@@ -51,7 +51,7 @@ services:
     cpus: 1.00
 
   coupon-worker:
-    image: ${WORKER_IMAGE:-coupon-system-worker:local}
+    image: ${WORKER_IMAGE:-yogieat/coupon-system-worker:main-latest}
     build:
       context: ..
       dockerfile: docker/Dockerfile
