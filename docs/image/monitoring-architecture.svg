@@ -1,103 +1,84 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 560" font-family="'Segoe UI', 'Apple SD Gothic Neo', Arial, sans-serif">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1360 580" font-family="'Segoe UI', 'Apple SD Gothic Neo', Arial, sans-serif">
   <defs>
     <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#0d1117"/>
+      <stop offset="0%" stop-color="#0b1220"/>
       <stop offset="100%" stop-color="#0f172a"/>
     </linearGradient>
-    <linearGradient id="src1" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#1e1b4b"/><stop offset="100%" stop-color="#1a1a2e"/></linearGradient>
-    <linearGradient id="src2" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#1c1107"/><stop offset="100%" stop-color="#1a0f05"/></linearGradient>
-    <linearGradient id="p1" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#1a1a2e"/><stop offset="100%" stop-color="#0f172a"/></linearGradient>
-    <linearGradient id="p2" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#052e16"/><stop offset="100%" stop-color="#071a15"/></linearGradient>
-    <linearGradient id="p3" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#1c0a0a"/><stop offset="100%" stop-color="#190808"/></linearGradient>
-    <marker id="arrGray" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
-      <path d="M 0 0 L 10 5 L 0 10 z" fill="#334155"/>
+    <linearGradient id="src1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2563eb"/>
+      <stop offset="100%" stop-color="#1e3a8a"/>
+    </linearGradient>
+    <linearGradient id="src2" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ea580c"/>
+      <stop offset="100%" stop-color="#9a3412"/>
+    </linearGradient>
+    <linearGradient id="m1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1d4ed8"/>
+      <stop offset="100%" stop-color="#1e293b"/>
+    </linearGradient>
+    <linearGradient id="m2" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#059669"/>
+      <stop offset="100%" stop-color="#065f46"/>
+    </linearGradient>
+    <linearGradient id="m3" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#dc2626"/>
+      <stop offset="100%" stop-color="#7f1d1d"/>
+    </linearGradient>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#64748b"/>
     </marker>
-    <filter id="glow"><feGaussianBlur stdDeviation="7" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
-    <filter id="shadow"><feDropShadow dx="0" dy="4" stdDeviation="14" flood-color="#000" flood-opacity="0.5"/></filter>
+    <filter id="shadow">
+      <feDropShadow dx="0" dy="6" stdDeviation="16" flood-color="#000" flood-opacity="0.4"/>
+    </filter>
     <style>
-      .title { fill: #f8fafc; font-size: 32px; font-weight: 700; }
-      .subtitle { fill: #64748b; font-size: 15px; }
-      .label { font-size: 19px; font-weight: 700; }
-      .body { fill: #cbd5e1; font-size: 14px; }
-      .tech { fill: #475569; font-size: 12px; }
-      .note { fill: #64748b; font-size: 13px; }
+      .title { fill: #f8fafc; font-size: 34px; font-weight: 700; }
+      .subtitle { fill: #94a3b8; font-size: 16px; }
+      .label { font-size: 20px; font-weight: 700; }
+      .body { fill: #dbe4f0; font-size: 14px; }
+      .meta { fill: #cbd5e1; font-size: 12px; }
     </style>
   </defs>
 
-  <rect width="1280" height="560" rx="28" fill="url(#bg)"/>
+  <rect width="1360" height="580" rx="28" fill="url(#bg)"/>
 
-  <!-- Grid -->
-  <line x1="0" y1="200" x2="1280" y2="200" stroke="#fff" stroke-width="0.3" opacity="0.04"/>
-  <line x1="0" y1="380" x2="1280" y2="380" stroke="#fff" stroke-width="0.3" opacity="0.04"/>
-  <line x1="426" y1="0" x2="426" y2="560" stroke="#fff" stroke-width="0.3" opacity="0.04"/>
-  <line x1="852" y1="0" x2="852" y2="560" stroke="#fff" stroke-width="0.3" opacity="0.04"/>
+  <text x="72" y="72" class="title">모니터링 아키텍처</text>
+  <rect x="72" y="82" width="210" height="3" rx="2" fill="#34d399" opacity="0.8"/>
+  <text x="72" y="112" class="subtitle">메트릭, 로그, 오류 추적을 따로 보고, 운영 대응이 필요한 알림은 별도로 받는 구성을 보여줍니다.</text>
 
-  <!-- Title -->
-  <text x="72" y="66" class="title">모니터링 아키텍처</text>
-  <rect x="72" y="74" width="180" height="3" rx="2" fill="#10b981" opacity="0.7"/>
-  <text x="72" y="100" class="subtitle">상태 확인 → 원인 추적 → 알림 대응. 세 갈래 관측 파이프라인으로 운영 가시성을 확보한다.</text>
-
-  <!-- Source: API Server -->
   <g filter="url(#shadow)">
-    <rect x="140" y="148" width="280" height="104" rx="22" fill="url(#src1)" stroke="#6366f1" stroke-width="1.8"/>
+    <rect x="184" y="156" width="250" height="100" rx="22" fill="url(#src1)" stroke="#93c5fd" stroke-width="1.6"/>
+    <rect x="926" y="156" width="250" height="100" rx="22" fill="url(#src2)" stroke="#fdba74" stroke-width="1.6"/>
+    <rect x="72" y="336" width="360" height="150" rx="24" fill="url(#m1)" stroke="#93c5fd" stroke-width="1.6"/>
+    <rect x="500" y="336" width="360" height="150" rx="24" fill="url(#m2)" stroke="#6ee7b7" stroke-width="1.6"/>
+    <rect x="928" y="336" width="360" height="150" rx="24" fill="url(#m3)" stroke="#fca5a5" stroke-width="1.6"/>
   </g>
-  <circle cx="168" cy="188" r="5" fill="#818cf8" filter="url(#glow)" opacity="0.9"/>
-  <text x="280" y="195" text-anchor="middle" fill="#818cf8" class="label">API Server</text>
-  <text x="280" y="230" text-anchor="middle" class="tech">요청 처리 · 메트릭 노출 · 로그 생성</text>
 
-  <!-- Source: Worker -->
-  <g filter="url(#shadow)">
-    <rect x="860" y="148" width="280" height="104" rx="22" fill="url(#src2)" stroke="#f97316" stroke-width="1.8"/>
-  </g>
-  <circle cx="888" cy="188" r="5" fill="#fb923c" filter="url(#glow)" opacity="0.9"/>
-  <text x="1000" y="195" text-anchor="middle" fill="#fb923c" class="label">Worker</text>
-  <text x="1000" y="230" text-anchor="middle" class="tech">비동기 처리 · 재시도 상태 · 실패 신호</text>
+  <text x="309" y="196" text-anchor="middle" fill="#dbeafe" class="label">API Server</text>
+  <text x="309" y="226" text-anchor="middle" class="meta">요청 처리와 상태 노출</text>
 
-  <!-- Vertical downward arrows from sources to pipelines -->
-  <!-- API → Metrics -->
-  <line x1="230" y1="252" x2="195" y2="326" stroke="#334155" stroke-width="1.8" stroke-dasharray="5,3" marker-end="url(#arrGray)"/>
-  <!-- API → Logs -->
-  <line x1="280" y1="252" x2="640" y2="326" stroke="#334155" stroke-width="1.8" stroke-dasharray="5,3" marker-end="url(#arrGray)"/>
-  <!-- API → Errors -->
-  <line x1="330" y1="252" x2="1070" y2="326" stroke="#334155" stroke-width="1.8" stroke-dasharray="5,3" marker-end="url(#arrGray)"/>
-  <!-- Worker → Metrics -->
-  <line x1="940" y1="252" x2="225" y2="326" stroke="#334155" stroke-width="1.8" stroke-dasharray="5,3" marker-end="url(#arrGray)"/>
-  <!-- Worker → Logs -->
-  <line x1="1000" y1="252" x2="660" y2="326" stroke="#334155" stroke-width="1.8" stroke-dasharray="5,3" marker-end="url(#arrGray)"/>
-  <!-- Worker → Errors -->
-  <line x1="1060" y1="252" x2="1085" y2="326" stroke="#334155" stroke-width="1.8" stroke-dasharray="5,3" marker-end="url(#arrGray)"/>
+  <text x="1051" y="196" text-anchor="middle" fill="#ffedd5" class="label">Worker</text>
+  <text x="1051" y="226" text-anchor="middle" class="meta">백그라운드 처리와 작업 상태</text>
 
-  <!-- Pipeline 1: Metrics -->
-  <g filter="url(#shadow)">
-    <rect x="72" y="330" width="370" height="168" rx="24" fill="url(#p1)" stroke="#3b82f6" stroke-width="1.8"/>
-  </g>
-  <circle cx="100" cy="368" r="5" fill="#60a5fa" filter="url(#glow)" opacity="0.9"/>
-  <text x="257" y="375" text-anchor="middle" fill="#60a5fa" class="label">Metrics Pipeline</text>
-  <line x1="92" y1="390" x2="418" y2="390" stroke="#3b82f6" stroke-width="0.6" opacity="0.3"/>
-  <text x="257" y="420" text-anchor="middle" class="body">Actuator → Prometheus → Grafana</text>
-  <text x="257" y="448" text-anchor="middle" class="body">HTTP 처리량, Kafka Lag, Redis 응답</text>
-  <text x="257" y="472" text-anchor="middle" class="tech">JVM 메모리 · HikariCP Pool · Outbox Worker 메트릭</text>
+  <text x="252" y="384" text-anchor="middle" fill="#dbeafe" class="label">메트릭</text>
+  <text x="252" y="420" text-anchor="middle" class="body">애플리케이션 상태와 처리량을</text>
+  <text x="252" y="448" text-anchor="middle" class="body">대시보드로 확인합니다.</text>
+  <text x="252" y="472" text-anchor="middle" class="meta">Actuator / Prometheus / Grafana</text>
 
-  <!-- Pipeline 2: Logs -->
-  <g filter="url(#shadow)">
-    <rect x="455" y="330" width="370" height="168" rx="24" fill="url(#p2)" stroke="#10b981" stroke-width="1.8"/>
-  </g>
-  <circle cx="483" cy="368" r="5" fill="#34d399" filter="url(#glow)" opacity="0.9"/>
-  <text x="640" y="375" text-anchor="middle" fill="#34d399" class="label">Log Pipeline</text>
-  <line x1="475" y1="390" x2="801" y2="390" stroke="#10b981" stroke-width="0.6" opacity="0.3"/>
-  <text x="640" y="420" text-anchor="middle" class="body">JSON Structured Logging</text>
-  <text x="640" y="448" text-anchor="middle" class="body">OpenTelemetry Trace ID 연동</text>
-  <text x="640" y="472" text-anchor="middle" class="tech">요청 흐름 추적 가능한 구조</text>
+  <text x="680" y="384" text-anchor="middle" fill="#d1fae5" class="label">로그</text>
+  <text x="680" y="420" text-anchor="middle" class="body">애플리케이션 로그를 모아서</text>
+  <text x="680" y="448" text-anchor="middle" class="body">검색 가능한 형태로 봅니다.</text>
+  <text x="680" y="472" text-anchor="middle" class="meta">Alloy / Loki / Grafana</text>
 
-  <!-- Pipeline 3: Errors & Alerts -->
-  <g filter="url(#shadow)">
-    <rect x="838" y="330" width="370" height="168" rx="24" fill="url(#p3)" stroke="#ef4444" stroke-width="1.8"/>
-  </g>
-  <circle cx="866" cy="368" r="5" fill="#f87171" filter="url(#glow)" opacity="0.9"/>
-  <text x="1023" y="375" text-anchor="middle" fill="#f87171" class="label">Error / Alert Pipeline</text>
-  <line x1="858" y1="390" x2="1184" y2="390" stroke="#ef4444" stroke-width="0.6" opacity="0.3"/>
-  <text x="1023" y="420" text-anchor="middle" class="body">Sentry SDK → Sentry Cloud</text>
-  <text x="1023" y="448" text-anchor="middle" class="body">Dead Event → Slack Webhook</text>
-  <text x="1023" y="472" text-anchor="middle" class="tech">치명적 실패를 빠르게 감지·통보</text>
+  <text x="1108" y="384" text-anchor="middle" fill="#fee2e2" class="label">오류 추적과 알림</text>
+  <text x="1108" y="420" text-anchor="middle" class="body">예외는 추적하고, 필요한 경우</text>
+  <text x="1108" y="448" text-anchor="middle" class="body">운영 알림으로 빠르게 대응합니다.</text>
+  <text x="1108" y="472" text-anchor="middle" class="meta">Sentry / Slack</text>
 
+  <line x1="309" y1="256" x2="252" y2="332" stroke="#64748b" stroke-width="2.4" stroke-dasharray="7,5" marker-end="url(#arrow)"/>
+  <line x1="309" y1="256" x2="680" y2="332" stroke="#64748b" stroke-width="2.4" stroke-dasharray="7,5" marker-end="url(#arrow)"/>
+  <line x1="309" y1="256" x2="1030" y2="332" stroke="#64748b" stroke-width="2.4" stroke-dasharray="7,5" marker-end="url(#arrow)"/>
+
+  <line x1="1051" y1="256" x2="252" y2="332" stroke="#64748b" stroke-width="2.4" stroke-dasharray="7,5" marker-end="url(#arrow)"/>
+  <line x1="1051" y1="256" x2="680" y2="332" stroke="#64748b" stroke-width="2.4" stroke-dasharray="7,5" marker-end="url(#arrow)"/>
+  <line x1="1051" y1="256" x2="1108" y2="332" stroke="#64748b" stroke-width="2.4" stroke-dasharray="7,5" marker-end="url(#arrow)"/>
 </svg>

@@ -1,149 +1,95 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 600" font-family="'Segoe UI', 'Apple SD Gothic Neo', Arial, sans-serif">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1360 560" font-family="'Segoe UI', 'Apple SD Gothic Neo', Arial, sans-serif">
   <defs>
     <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#0d1117"/>
+      <stop offset="0%" stop-color="#0b1220"/>
       <stop offset="100%" stop-color="#0f172a"/>
     </linearGradient>
-    <linearGradient id="s1" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#1e1b4b"/><stop offset="100%" stop-color="#1a1a2e"/></linearGradient>
-    <linearGradient id="s2" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#052e16"/><stop offset="100%" stop-color="#071a15"/></linearGradient>
-    <linearGradient id="s3" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#1c1107"/><stop offset="100%" stop-color="#1a1207"/></linearGradient>
-    <linearGradient id="s4" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#1c1107"/><stop offset="100%" stop-color="#1a0f05"/></linearGradient>
-    <linearGradient id="s5" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#1a1a2e"/><stop offset="100%" stop-color="#0f172a"/></linearGradient>
-    <!-- Step accent top bars -->
-    <marker id="arrGray" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
-      <path d="M 0 0 L 10 5 L 0 10 z" fill="#475569"/>
+    <linearGradient id="c1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2563eb"/>
+      <stop offset="100%" stop-color="#1e3a8a"/>
+    </linearGradient>
+    <linearGradient id="c2" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#059669"/>
+      <stop offset="100%" stop-color="#065f46"/>
+    </linearGradient>
+    <linearGradient id="c3" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#d97706"/>
+      <stop offset="100%" stop-color="#92400e"/>
+    </linearGradient>
+    <linearGradient id="c4" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ea580c"/>
+      <stop offset="100%" stop-color="#9a3412"/>
+    </linearGradient>
+    <linearGradient id="c5" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#7c3aed"/>
+      <stop offset="100%" stop-color="#5b21b6"/>
+    </linearGradient>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#64748b"/>
     </marker>
-    <filter id="glow"><feGaussianBlur stdDeviation="6" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
-    <filter id="shadow"><feDropShadow dx="0" dy="4" stdDeviation="14" flood-color="#000" flood-opacity="0.5"/></filter>
+    <filter id="shadow">
+      <feDropShadow dx="0" dy="6" stdDeviation="16" flood-color="#000" flood-opacity="0.4"/>
+    </filter>
     <style>
-      .title { fill: #f8fafc; font-size: 32px; font-weight: 700; }
-      .subtitle { fill: #64748b; font-size: 15px; }
-      .step { font-size: 17px; font-weight: 700; }
-      .body { fill: #cbd5e1; font-size: 14px; }
-      .tech { fill: #475569; font-size: 12px; }
-      .note { fill: #64748b; font-size: 13px; }
+      .title { fill: #f8fafc; font-size: 34px; font-weight: 700; }
+      .subtitle { fill: #94a3b8; font-size: 16px; }
+      .label { font-size: 20px; font-weight: 700; }
+      .body { fill: #dbe4f0; font-size: 14px; }
+      .meta { fill: #cbd5e1; font-size: 12px; }
+      .chip { fill: #e2e8f0; font-size: 12px; font-weight: 700; }
     </style>
   </defs>
 
-  <rect width="1280" height="600" rx="28" fill="url(#bg)"/>
+  <rect width="1360" height="560" rx="28" fill="url(#bg)"/>
 
-  <!-- Grid -->
-  <line x1="256" y1="0" x2="256" y2="600" stroke="#fff" stroke-width="0.3" opacity="0.04"/>
-  <line x1="512" y1="0" x2="512" y2="600" stroke="#fff" stroke-width="0.3" opacity="0.04"/>
-  <line x1="768" y1="0" x2="768" y2="600" stroke="#fff" stroke-width="0.3" opacity="0.04"/>
-  <line x1="1024" y1="0" x2="1024" y2="600" stroke="#fff" stroke-width="0.3" opacity="0.04"/>
+  <text x="72" y="72" class="title">쿠폰 발급 흐름</text>
+  <rect x="72" y="82" width="190" height="3" rx="2" fill="#60a5fa" opacity="0.8"/>
+  <text x="72" y="112" class="subtitle">요청을 빠르게 받고, 중간 완충 구간을 거쳐, 백그라운드에서 최종 저장까지 이어지는 큰 흐름입니다.</text>
 
-  <!-- Title -->
-  <text x="72" y="66" class="title">쿠폰 발급 흐름도</text>
-  <rect x="72" y="74" width="160" height="3" rx="2" fill="#6366f1" opacity="0.7"/>
-  <text x="72" y="100" class="subtitle">빠른 수락 → 비동기 처리 → DB 반영을 분리하고, 동시성 제어를 4단계 레이어로 보장한다.</text>
-
-  <!-- === Step Cards === -->
-  <!-- Step 1 -->
   <g filter="url(#shadow)">
-    <rect x="52" y="140" width="212" height="284" rx="24" fill="url(#s1)" stroke="#6366f1" stroke-width="1.8"/>
+    <rect x="48" y="176" width="220" height="210" rx="24" fill="url(#c1)" stroke="#93c5fd" stroke-width="1.6"/>
+    <rect x="304" y="176" width="220" height="210" rx="24" fill="url(#c2)" stroke="#6ee7b7" stroke-width="1.6"/>
+    <rect x="560" y="176" width="220" height="210" rx="24" fill="url(#c3)" stroke="#fcd34d" stroke-width="1.6"/>
+    <rect x="816" y="176" width="220" height="210" rx="24" fill="url(#c4)" stroke="#fdba74" stroke-width="1.6"/>
+    <rect x="1072" y="176" width="240" height="210" rx="24" fill="url(#c5)" stroke="#c4b5fd" stroke-width="1.6"/>
   </g>
-  <circle cx="52" cy="282" r="10" fill="#6366f1" opacity="0.15"/>
-  <!-- Number badge -->
-  <circle cx="80" cy="172" r="14" fill="#1e1b4b" stroke="#6366f1" stroke-width="1.5"/>
-  <text x="80" y="177" text-anchor="middle" fill="#818cf8" font-size="13px" font-weight="700">1</text>
-  <text x="158" y="178" text-anchor="middle" fill="#818cf8" class="step">요청 수신</text>
-  <line x1="72" y1="193" x2="240" y2="193" stroke="#6366f1" stroke-width="0.6" opacity="0.3"/>
-  <text x="158" y="224" text-anchor="middle" class="body">사용자가 쿠폰</text>
-  <text x="158" y="248" text-anchor="middle" class="body">발급을 요청</text>
-  <text x="158" y="284" text-anchor="middle" class="body">JWT 인증 확인 후</text>
-  <text x="158" y="308" text-anchor="middle" class="body">빠른 수락이 목표</text>
-  <line x1="72" y1="332" x2="240" y2="332" stroke="#6366f1" stroke-width="0.6" opacity="0.25"/>
-  <text x="158" y="358" text-anchor="middle" class="tech">Spring Security</text>
-  <text x="158" y="376" text-anchor="middle" class="tech">HTTP 202 Accepted</text>
 
-  <!-- Step 2 -->
-  <g filter="url(#shadow)">
-    <rect x="290" y="140" width="212" height="284" rx="24" fill="url(#s2)" stroke="#10b981" stroke-width="1.8"/>
-  </g>
-  <circle cx="318" cy="172" r="14" fill="#052e16" stroke="#10b981" stroke-width="1.5"/>
-  <text x="318" y="177" text-anchor="middle" fill="#34d399" font-size="13px" font-weight="700">2</text>
-  <text x="396" y="178" text-anchor="middle" fill="#34d399" class="step">Redis 검증</text>
-  <line x1="310" y1="193" x2="478" y2="193" stroke="#10b981" stroke-width="0.6" opacity="0.3"/>
-  <text x="396" y="224" text-anchor="middle" class="body">중복 요청 체크</text>
-  <text x="396" y="248" text-anchor="middle" class="body">+ 재고 가드</text>
-  <text x="396" y="284" text-anchor="middle" class="body">Lua Script로</text>
-  <text x="396" y="308" text-anchor="middle" class="body">원자적 예약 처리</text>
-  <line x1="310" y1="332" x2="478" y2="332" stroke="#10b981" stroke-width="0.6" opacity="0.25"/>
-  <text x="396" y="358" text-anchor="middle" class="tech">Redis Lua Script</text>
-  <text x="396" y="376" text-anchor="middle" class="tech">SISMEMBER + INCR</text>
+  <text x="158" y="228" text-anchor="middle" fill="#dbeafe" class="label">1. 사용자 요청</text>
+  <text x="158" y="270" text-anchor="middle" class="body">API 서버가 쿠폰 발급 요청을 받습니다.</text>
+  <text x="158" y="300" text-anchor="middle" class="body">사용자에게는 빠른 응답 경험을 주는 구간입니다.</text>
+  <text x="158" y="338" text-anchor="middle" class="meta">Client → API Server</text>
 
-  <!-- Step 3 -->
-  <g filter="url(#shadow)">
-    <rect x="528" y="140" width="212" height="284" rx="24" fill="url(#s3)" stroke="#f59e0b" stroke-width="1.8"/>
-  </g>
-  <circle cx="556" cy="172" r="14" fill="#1c1107" stroke="#f59e0b" stroke-width="1.5"/>
-  <text x="556" y="177" text-anchor="middle" fill="#fbbf24" font-size="13px" font-weight="700">3</text>
-  <text x="634" y="178" text-anchor="middle" fill="#fbbf24" class="step">Kafka 큐잉</text>
-  <line x1="548" y1="193" x2="716" y2="193" stroke="#f59e0b" stroke-width="0.6" opacity="0.3"/>
-  <text x="634" y="224" text-anchor="middle" class="body">요청을 비동기</text>
-  <text x="634" y="248" text-anchor="middle" class="body">큐에 넣어 평탄화</text>
-  <text x="634" y="284" text-anchor="middle" class="body">API와 Worker</text>
-  <text x="634" y="308" text-anchor="middle" class="body">처리를 분리</text>
-  <line x1="548" y1="332" x2="716" y2="332" stroke="#f59e0b" stroke-width="0.6" opacity="0.25"/>
-  <text x="634" y="358" text-anchor="middle" class="tech">Kafka · 3 Partitions</text>
-  <text x="634" y="376" text-anchor="middle" class="tech">Idempotent Producer</text>
+  <text x="414" y="228" text-anchor="middle" fill="#d1fae5" class="label">2. Redis 확인</text>
+  <text x="414" y="270" text-anchor="middle" class="body">중복 요청이나 수량 상태를</text>
+  <text x="414" y="300" text-anchor="middle" class="body">빠르게 확인하는 단계입니다.</text>
+  <text x="414" y="338" text-anchor="middle" class="meta">빠른 상태 확인</text>
 
-  <!-- Step 4 -->
-  <g filter="url(#shadow)">
-    <rect x="766" y="140" width="212" height="284" rx="24" fill="url(#s4)" stroke="#f97316" stroke-width="1.8"/>
-  </g>
-  <circle cx="794" cy="172" r="14" fill="#1c1107" stroke="#f97316" stroke-width="1.5"/>
-  <text x="794" y="177" text-anchor="middle" fill="#fb923c" font-size="13px" font-weight="700">4</text>
-  <text x="872" y="178" text-anchor="middle" fill="#fb923c" class="step">Worker 실행</text>
-  <line x1="786" y1="193" x2="954" y2="193" stroke="#f97316" stroke-width="0.6" opacity="0.3"/>
-  <text x="872" y="224" text-anchor="middle" class="body">분산 락 획득 후</text>
-  <text x="872" y="248" text-anchor="middle" class="body">실제 발급 수행</text>
-  <text x="872" y="284" text-anchor="middle" class="body">결과별 분기 처리</text>
-  <text x="872" y="308" text-anchor="middle" class="body">(성공/재시도/거절)</text>
-  <line x1="786" y1="332" x2="954" y2="332" stroke="#f97316" stroke-width="0.6" opacity="0.25"/>
-  <text x="872" y="358" text-anchor="middle" class="tech">Redisson Lock</text>
-  <text x="872" y="376" text-anchor="middle" class="tech">Sealed Result Routing</text>
+  <text x="670" y="228" text-anchor="middle" fill="#fde68a" class="label">3. Kafka 전달</text>
+  <text x="670" y="270" text-anchor="middle" class="body">요청을 메시지 큐로 넘겨</text>
+  <text x="670" y="300" text-anchor="middle" class="body">갑작스러운 트래픽을 완충합니다.</text>
+  <text x="670" y="338" text-anchor="middle" class="meta">비동기 버퍼</text>
 
-  <!-- Step 5 -->
-  <g filter="url(#shadow)">
-    <rect x="1004" y="140" width="224" height="284" rx="24" fill="url(#s5)" stroke="#3b82f6" stroke-width="1.8"/>
-  </g>
-  <circle cx="1032" cy="172" r="14" fill="#1a1a2e" stroke="#3b82f6" stroke-width="1.5"/>
-  <text x="1032" y="177" text-anchor="middle" fill="#60a5fa" font-size="13px" font-weight="700">5</text>
-  <text x="1116" y="178" text-anchor="middle" fill="#60a5fa" class="step">DB 저장</text>
-  <line x1="1024" y1="193" x2="1204" y2="193" stroke="#3b82f6" stroke-width="0.6" opacity="0.3"/>
-  <text x="1116" y="224" text-anchor="middle" class="body">수량 차감 +</text>
-  <text x="1116" y="248" text-anchor="middle" class="body">발급 레코드 INSERT</text>
-  <text x="1116" y="284" text-anchor="middle" class="body">Outbox 이벤트를</text>
-  <text x="1116" y="308" text-anchor="middle" class="body">같은 트랜잭션에 저장</text>
-  <line x1="1024" y1="332" x2="1204" y2="332" stroke="#3b82f6" stroke-width="0.6" opacity="0.25"/>
-  <text x="1116" y="358" text-anchor="middle" class="tech">MySQL · UK(user, coupon)</text>
-  <text x="1116" y="376" text-anchor="middle" class="tech">TSID · Flyway</text>
+  <text x="926" y="228" text-anchor="middle" fill="#ffedd5" class="label">4. Worker 처리</text>
+  <text x="926" y="270" text-anchor="middle" class="body">백그라운드 워커가</text>
+  <text x="926" y="300" text-anchor="middle" class="body">실제 발급 작업을 차례대로 처리합니다.</text>
+  <text x="926" y="338" text-anchor="middle" class="meta">비동기 실행</text>
 
-  <!-- Flow Arrows -->
-  <line x1="264" y1="282" x2="286" y2="282" stroke="#475569" stroke-width="2.2" marker-end="url(#arrGray)"/>
-  <line x1="502" y1="282" x2="524" y2="282" stroke="#475569" stroke-width="2.2" marker-end="url(#arrGray)"/>
-  <line x1="740" y1="282" x2="762" y2="282" stroke="#475569" stroke-width="2.2" marker-end="url(#arrGray)"/>
-  <line x1="978" y1="282" x2="1000" y2="282" stroke="#475569" stroke-width="2.2" marker-end="url(#arrGray)"/>
+  <text x="1192" y="228" text-anchor="middle" fill="#ede9fe" class="label">5. 결과 저장</text>
+  <text x="1192" y="270" text-anchor="middle" class="body">최종 발급 결과를</text>
+  <text x="1192" y="300" text-anchor="middle" class="body">데이터베이스에 저장합니다.</text>
+  <text x="1192" y="338" text-anchor="middle" class="meta">Worker → Database</text>
 
-  <!-- Concurrency Layer Bar -->
-  <rect x="52" y="460" width="1176" height="112" rx="22" fill="#161b27" stroke="#1e293b" stroke-width="1.2"/>
-  <text x="72" y="492" fill="#94a3b8" font-size="14px" font-weight="700">동시성 제어 4-Layer</text>
+  <line x1="268" y1="282" x2="300" y2="282" stroke="#64748b" stroke-width="2.4" marker-end="url(#arrow)"/>
+  <line x1="524" y1="282" x2="556" y2="282" stroke="#64748b" stroke-width="2.4" marker-end="url(#arrow)"/>
+  <line x1="780" y1="282" x2="812" y2="282" stroke="#64748b" stroke-width="2.4" marker-end="url(#arrow)"/>
+  <line x1="1036" y1="282" x2="1068" y2="282" stroke="#64748b" stroke-width="2.4" marker-end="url(#arrow)"/>
 
-  <rect x="72" y="506" width="260" height="42" rx="14" fill="#1e1b4b" stroke="#6366f1" stroke-width="1.2"/>
-  <circle cx="96" cy="527" r="5" fill="#818cf8" filter="url(#glow)" opacity="0.8"/>
-  <text x="202" y="532" text-anchor="middle" fill="#818cf8" font-size="13px" font-weight="700">L1  Redis Lua (Optimistic)</text>
+  <rect x="72" y="442" width="1216" height="52" rx="18" fill="#111827" stroke="#1f2937" stroke-width="1.2"/>
+  <rect x="96" y="456" width="370" height="24" rx="12" fill="#172554" stroke="#60a5fa" stroke-width="1"/>
+  <rect x="494" y="456" width="370" height="24" rx="12" fill="#451a03" stroke="#fbbf24" stroke-width="1"/>
+  <rect x="892" y="456" width="372" height="24" rx="12" fill="#2e1065" stroke="#c4b5fd" stroke-width="1"/>
 
-  <rect x="356" y="506" width="260" height="42" rx="14" fill="#052e16" stroke="#10b981" stroke-width="1.2"/>
-  <circle cx="380" cy="527" r="5" fill="#34d399" filter="url(#glow)" opacity="0.8"/>
-  <text x="486" y="532" text-anchor="middle" fill="#34d399" font-size="13px" font-weight="700">L2  Distributed Lock</text>
-
-  <rect x="640" y="506" width="276" height="42" rx="14" fill="#1a1a2e" stroke="#3b82f6" stroke-width="1.2"/>
-  <circle cx="664" cy="527" r="5" fill="#60a5fa" filter="url(#glow)" opacity="0.8"/>
-  <text x="778" y="532" text-anchor="middle" fill="#60a5fa" font-size="13px" font-weight="700">L3  DB Unique + Row Lock</text>
-
-  <rect x="940" y="506" width="288" height="42" rx="14" fill="#1c1107" stroke="#f59e0b" stroke-width="1.2"/>
-  <circle cx="964" cy="527" r="5" fill="#fbbf24" filter="url(#glow)" opacity="0.8"/>
-  <text x="1084" y="532" text-anchor="middle" fill="#fbbf24" font-size="13px" font-weight="700">L4  Kafka Partition + Rate Limit</text>
+  <text x="281" y="473" text-anchor="middle" class="chip">빠른 요청 수락</text>
+  <text x="679" y="473" text-anchor="middle" class="chip">메시지 큐로 트래픽 완충</text>
+  <text x="1078" y="473" text-anchor="middle" class="chip">백그라운드에서 안정적으로 처리</text>
 </svg>

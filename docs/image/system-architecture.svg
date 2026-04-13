@@ -1,135 +1,103 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 580" font-family="'Segoe UI', 'Apple SD Gothic Neo', Arial, sans-serif">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1360 620" font-family="'Segoe UI', 'Apple SD Gothic Neo', Arial, sans-serif">
   <defs>
     <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#0d1117"/>
+      <stop offset="0%" stop-color="#0b1220"/>
       <stop offset="100%" stop-color="#0f172a"/>
     </linearGradient>
-    <!-- Card fills -->
-    <linearGradient id="cg0" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#1a1a2e"/><stop offset="100%" stop-color="#16213e"/></linearGradient>
-    <linearGradient id="cg1" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#1e1b4b"/><stop offset="100%" stop-color="#1a1a2e"/></linearGradient>
-    <linearGradient id="cg2" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#052e16"/><stop offset="100%" stop-color="#071a15"/></linearGradient>
-    <linearGradient id="cg3" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#1c1107"/><stop offset="100%" stop-color="#1a1207"/></linearGradient>
-    <linearGradient id="cg4" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#1c1107"/><stop offset="100%" stop-color="#1a0f05"/></linearGradient>
-    <linearGradient id="cg5" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#1a1a2e"/><stop offset="100%" stop-color="#0f172a"/></linearGradient>
-    <!-- Arrow markers -->
-    <marker id="arrGray" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
-      <path d="M 0 0 L 10 5 L 0 10 z" fill="#475569"/>
+    <linearGradient id="api" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2563eb"/>
+      <stop offset="100%" stop-color="#1e3a8a"/>
+    </linearGradient>
+    <linearGradient id="redis" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#059669"/>
+      <stop offset="100%" stop-color="#065f46"/>
+    </linearGradient>
+    <linearGradient id="kafka" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#d97706"/>
+      <stop offset="100%" stop-color="#92400e"/>
+    </linearGradient>
+    <linearGradient id="worker" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ea580c"/>
+      <stop offset="100%" stop-color="#9a3412"/>
+    </linearGradient>
+    <linearGradient id="db" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#7c3aed"/>
+      <stop offset="100%" stop-color="#5b21b6"/>
+    </linearGradient>
+    <linearGradient id="monitor" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f766e"/>
+      <stop offset="100%" stop-color="#115e59"/>
+    </linearGradient>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#64748b"/>
     </marker>
-    <marker id="arrOrange" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
-      <path d="M 0 0 L 10 5 L 0 10 z" fill="#f97316"/>
-    </marker>
-    <marker id="arrGreen" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
-      <path d="M 0 0 L 10 5 L 0 10 z" fill="#10b981"/>
-    </marker>
-    <filter id="glow"><feGaussianBlur stdDeviation="7" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
-    <filter id="shadow"><feDropShadow dx="0" dy="4" stdDeviation="14" flood-color="#000" flood-opacity="0.5"/></filter>
+    <filter id="shadow">
+      <feDropShadow dx="0" dy="6" stdDeviation="16" flood-color="#000" flood-opacity="0.4"/>
+    </filter>
     <style>
-      .title { fill: #f8fafc; font-size: 32px; font-weight: 700; }
-      .subtitle { fill: #64748b; font-size: 15px; }
-      .label { font-size: 19px; font-weight: 700; }
-      .body { fill: #cbd5e1; font-size: 14px; }
-      .tech { fill: #475569; font-size: 12px; }
-      .note { fill: #64748b; font-size: 13px; }
+      .title { fill: #f8fafc; font-size: 34px; font-weight: 700; }
+      .subtitle { fill: #94a3b8; font-size: 16px; }
+      .label { font-size: 20px; font-weight: 700; }
+      .body { fill: #dbe4f0; font-size: 14px; }
+      .meta { fill: #cbd5e1; font-size: 12px; }
+      .chip { fill: #e2e8f0; font-size: 12px; font-weight: 700; }
     </style>
   </defs>
 
-  <rect width="1280" height="580" rx="28" fill="url(#bg)"/>
+  <rect width="1360" height="620" rx="28" fill="url(#bg)"/>
 
-  <!-- Subtle grid -->
-  <line x1="0" y1="190" x2="1280" y2="190" stroke="#fff" stroke-width="0.3" opacity="0.04"/>
-  <line x1="0" y1="380" x2="1280" y2="380" stroke="#fff" stroke-width="0.3" opacity="0.04"/>
-  <line x1="426" y1="0" x2="426" y2="580" stroke="#fff" stroke-width="0.3" opacity="0.04"/>
-  <line x1="852" y1="0" x2="852" y2="580" stroke="#fff" stroke-width="0.3" opacity="0.04"/>
+  <text x="72" y="72" class="title">시스템 아키텍처</text>
+  <rect x="72" y="82" width="180" height="3" rx="2" fill="#60a5fa" opacity="0.8"/>
+  <text x="72" y="112" class="subtitle">사용자 요청을 API, Redis, Kafka, Worker, Database가 나눠 맡는 구조를 단순하게 보여주는 그림입니다.</text>
 
-  <!-- Title -->
-  <text x="72" y="66" class="title">시스템 아키텍처</text>
-  <rect x="72" y="74" width="140" height="3" rx="2" fill="#6366f1" opacity="0.7"/>
-  <text x="72" y="100" class="subtitle">요청 수락은 빠르게, 처리는 안정적으로. API와 Worker를 분리해 트래픽 급증에도 DB 부하를 통제한다.</text>
-
-  <!-- Client -->
   <g filter="url(#shadow)">
-    <rect x="52" y="188" width="152" height="104" rx="22" fill="url(#cg0)" stroke="#334155" stroke-width="1.5"/>
+    <rect x="72" y="248" width="150" height="96" rx="22" fill="#111827" stroke="#475569" stroke-width="1.4"/>
+    <rect x="272" y="222" width="240" height="150" rx="24" fill="url(#api)" stroke="#93c5fd" stroke-width="1.6"/>
+    <rect x="584" y="138" width="220" height="120" rx="22" fill="url(#redis)" stroke="#6ee7b7" stroke-width="1.6"/>
+    <rect x="584" y="336" width="220" height="120" rx="22" fill="url(#kafka)" stroke="#fcd34d" stroke-width="1.6"/>
+    <rect x="874" y="222" width="240" height="150" rx="24" fill="url(#worker)" stroke="#fdba74" stroke-width="1.6"/>
+    <rect x="1170" y="222" width="140" height="150" rx="22" fill="url(#db)" stroke="#c4b5fd" stroke-width="1.6"/>
+    <rect x="874" y="446" width="436" height="96" rx="22" fill="url(#monitor)" stroke="#5eead4" stroke-width="1.6"/>
   </g>
-  <circle cx="88" cy="226" r="5" fill="#94a3b8" opacity="0.6"/>
-  <text x="128" y="232" text-anchor="middle" fill="#94a3b8" class="label">Client</text>
-  <text x="128" y="272" text-anchor="middle" class="tech">쿠폰 발급 요청</text>
 
-  <!-- API Server -->
-  <g filter="url(#shadow)">
-    <rect x="262" y="160" width="268" height="160" rx="24" fill="url(#cg1)" stroke="#6366f1" stroke-width="1.8"/>
-  </g>
-  <circle cx="290" cy="200" r="5" fill="#818cf8" filter="url(#glow)" opacity="0.9"/>
-  <text x="396" y="207" text-anchor="middle" fill="#818cf8" class="label">API Server</text>
-  <line x1="286" y1="220" x2="506" y2="220" stroke="#6366f1" stroke-width="0.6" opacity="0.35"/>
-  <text x="396" y="248" text-anchor="middle" class="body">인증, 요청 검증</text>
-  <text x="396" y="272" text-anchor="middle" class="body">Redis 예약 → Kafka 발행</text>
-  <text x="396" y="300" text-anchor="middle" class="tech">Spring Boot · JWT · Kafka Producer</text>
+  <text x="147" y="287" text-anchor="middle" fill="#cbd5e1" class="label">Client</text>
+  <text x="147" y="316" text-anchor="middle" class="meta">사용자 요청</text>
 
-  <!-- Redis (upper right) -->
-  <g filter="url(#shadow)">
-    <rect x="598" y="148" width="220" height="120" rx="22" fill="url(#cg2)" stroke="#10b981" stroke-width="1.8"/>
-  </g>
-  <circle cx="626" cy="188" r="5" fill="#34d399" filter="url(#glow)" opacity="0.9"/>
-  <text x="708" y="195" text-anchor="middle" fill="#34d399" class="label">Redis</text>
-  <text x="708" y="224" text-anchor="middle" class="body">재고 가드 + 중복 체크</text>
-  <text x="708" y="248" text-anchor="middle" class="tech">Lua Script · Redisson Lock</text>
+  <text x="392" y="272" text-anchor="middle" fill="#dbeafe" class="label">API Server</text>
+  <text x="392" y="312" text-anchor="middle" class="body">요청을 받고</text>
+  <text x="392" y="338" text-anchor="middle" class="body">다음 처리 단계로 전달합니다.</text>
 
-  <!-- Kafka (lower right of center) -->
-  <g filter="url(#shadow)">
-    <rect x="598" y="316" width="220" height="120" rx="22" fill="url(#cg3)" stroke="#f59e0b" stroke-width="1.8"/>
-  </g>
-  <circle cx="626" cy="356" r="5" fill="#fbbf24" filter="url(#glow)" opacity="0.9"/>
-  <text x="708" y="363" text-anchor="middle" fill="#fbbf24" class="label">Kafka</text>
-  <text x="708" y="392" text-anchor="middle" class="body">트래픽 버퍼링 + 순서 보장</text>
-  <text x="708" y="416" text-anchor="middle" class="tech">KRaft · 3 Partitions · Idempotent</text>
+  <text x="694" y="184" text-anchor="middle" fill="#d1fae5" class="label">Redis</text>
+  <text x="694" y="220" text-anchor="middle" class="body">빠른 상태 확인</text>
 
-  <!-- Worker -->
-  <g filter="url(#shadow)">
-    <rect x="886" y="160" width="268" height="160" rx="24" fill="url(#cg4)" stroke="#f97316" stroke-width="1.8"/>
-  </g>
-  <circle cx="914" cy="200" r="5" fill="#fb923c" filter="url(#glow)" opacity="0.9"/>
-  <text x="1020" y="207" text-anchor="middle" fill="#fb923c" class="label">Worker</text>
-  <line x1="910" y1="220" x2="1130" y2="220" stroke="#f97316" stroke-width="0.6" opacity="0.35"/>
-  <text x="1020" y="248" text-anchor="middle" class="body">분산 락으로 수량 보호</text>
-  <text x="1020" y="272" text-anchor="middle" class="body">발급 실행 + 재시도 / DLQ</text>
-  <text x="1020" y="300" text-anchor="middle" class="tech">Kafka Consumer · Redisson Lock</text>
+  <text x="694" y="382" text-anchor="middle" fill="#fde68a" class="label">Kafka</text>
+  <text x="694" y="418" text-anchor="middle" class="body">요청 완충과 비동기 전달</text>
 
-  <!-- MySQL -->
-  <g filter="url(#shadow)">
-    <rect x="886" y="368" width="268" height="108" rx="22" fill="url(#cg5)" stroke="#3b82f6" stroke-width="1.8"/>
-  </g>
-  <circle cx="914" cy="408" r="5" fill="#60a5fa" filter="url(#glow)" opacity="0.9"/>
-  <text x="1020" y="415" text-anchor="middle" fill="#60a5fa" class="label">MySQL</text>
-  <text x="1020" y="444" text-anchor="middle" class="body">최종 발급 결과 저장</text>
-  <text x="1020" y="462" text-anchor="middle" class="tech">Unique 제약 · TSID · Flyway</text>
+  <text x="994" y="272" text-anchor="middle" fill="#ffedd5" class="label">Worker</text>
+  <text x="994" y="312" text-anchor="middle" class="body">백그라운드에서</text>
+  <text x="994" y="338" text-anchor="middle" class="body">실제 발급 작업을 처리합니다.</text>
 
-  <!-- Arrows -->
-  <line x1="204" y1="240" x2="258" y2="240" stroke="#475569" stroke-width="2.2" marker-end="url(#arrGray)"/>
+  <text x="1240" y="286" text-anchor="middle" fill="#ede9fe" class="label">Database</text>
+  <text x="1240" y="316" text-anchor="middle" class="meta">최종 결과 저장</text>
 
-  <!-- API → Redis -->
-  <line x1="530" y1="220" x2="594" y2="208" stroke="#10b981" stroke-width="2.2" marker-end="url(#arrGreen)"/>
+  <text x="1092" y="484" text-anchor="middle" fill="#ccfbf1" class="label">Monitoring</text>
+  <text x="1092" y="518" text-anchor="middle" class="body">로그, 메트릭, 오류 추적, 운영 알림</text>
 
-  <!-- API → Kafka (dashed, async) -->
-  <line x1="530" y1="280" x2="594" y2="356" stroke="#f59e0b" stroke-width="2.2" stroke-dasharray="7,4" marker-end="url(#arrOrange)"/>
-  <text x="542" y="320" fill="#f59e0b" font-size="11px" font-weight="700">async</text>
+  <line x1="222" y1="296" x2="268" y2="296" stroke="#64748b" stroke-width="2.4" marker-end="url(#arrow)"/>
+  <line x1="512" y1="264" x2="580" y2="214" stroke="#64748b" stroke-width="2.4" marker-end="url(#arrow)"/>
+  <line x1="512" y1="330" x2="580" y2="386" stroke="#64748b" stroke-width="2.4" marker-end="url(#arrow)"/>
+  <line x1="804" y1="396" x2="870" y2="316" stroke="#64748b" stroke-width="2.4" marker-end="url(#arrow)"/>
+  <line x1="1114" y1="296" x2="1166" y2="296" stroke="#64748b" stroke-width="2.4" marker-end="url(#arrow)"/>
+  <line x1="994" y1="372" x2="994" y2="442" stroke="#64748b" stroke-width="2.4" marker-end="url(#arrow)"/>
 
-  <!-- Kafka → Worker -->
-  <line x1="818" y1="376" x2="882" y2="276" stroke="#475569" stroke-width="2.2" marker-end="url(#arrGray)"/>
-
-  <!-- Worker → MySQL -->
-  <line x1="1020" y1="320" x2="1020" y2="364" stroke="#475569" stroke-width="2.2" marker-end="url(#arrGray)"/>
-
-  <!-- Bottom bar -->
-  <rect x="72" y="508" width="1136" height="46" rx="16" fill="#161b27" stroke="#1e293b" stroke-width="1.2"/>
-  <circle cx="112" cy="531" r="4" fill="#6366f1" opacity="0.8"/>
-  <text x="128" y="535" fill="#94a3b8" font-size="13px">API는 DB write 없이 빠르게 응답</text>
-  <line x1="360" y1="516" x2="360" y2="546" stroke="#1e293b" stroke-width="1"/>
-  <circle cx="392" cy="531" r="4" fill="#f59e0b" opacity="0.8"/>
-  <text x="408" y="535" fill="#94a3b8" font-size="13px">Kafka로 트래픽을 평탄화</text>
-  <line x1="620" y1="516" x2="620" y2="546" stroke="#1e293b" stroke-width="1"/>
-  <circle cx="652" cy="531" r="4" fill="#f97316" opacity="0.8"/>
-  <text x="668" y="535" fill="#94a3b8" font-size="13px">Worker가 락 + DB write를 책임</text>
-  <line x1="920" y1="516" x2="920" y2="546" stroke="#1e293b" stroke-width="1"/>
-  <circle cx="952" cy="531" r="4" fill="#ef4444" opacity="0.8"/>
-  <text x="968" y="535" fill="#94a3b8" font-size="13px">실패 시 DLQ + Slack 알림</text>
+  <rect x="72" y="570" width="1238" height="28" rx="14" fill="#111827" stroke="#1f2937" stroke-width="1"/>
+  <text x="124" y="589" class="chip">빠른 요청 수락</text>
+  <line x1="264" y1="576" x2="264" y2="592" stroke="#1f2937" stroke-width="1"/>
+  <text x="290" y="589" class="chip">중간 완충 구간</text>
+  <line x1="454" y1="576" x2="454" y2="592" stroke="#1f2937" stroke-width="1"/>
+  <text x="480" y="589" class="chip">백그라운드 처리</text>
+  <line x1="674" y1="576" x2="674" y2="592" stroke="#1f2937" stroke-width="1"/>
+  <text x="700" y="589" class="chip">최종 저장</text>
+  <line x1="824" y1="576" x2="824" y2="592" stroke="#1f2937" stroke-width="1"/>
+  <text x="850" y="589" class="chip">운영 가시성</text>
 </svg>
