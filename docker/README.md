@@ -25,7 +25,7 @@ Docker Compose는 역할 기준으로 아래처럼 분리합니다.
 - `docker-compose.k6-observability.yml`
   - `observability + load-test`
 
-로컬 compose는 기본적으로 `.env`를 `env_file`로 읽습니다.
+로컬 compose는 기본적으로 `${HOME}/.env`(보통 `~/.env`)를 `env_file`로 읽습니다.
 
 - 예시 파일: [home.env.example](/Users/yunbeom/ybcha/coupon-system-design-kt/docker/home.env.example)
 - 필수 키:

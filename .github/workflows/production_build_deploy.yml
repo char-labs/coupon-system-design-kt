@@ -176,7 +176,10 @@ jobs:
           key: ${{ secrets.SERVER_PRIVATE_KEY }}
           script: |
             set -euo pipefail
-            ENV_FILE=".env"
+            APP_DIR="${{ env.REMOTE_APP_DIR }}"
+            ENV_FILE="${APP_DIR}/.env"
+
+            cd "${APP_DIR}"
 
             if [ ! -f "$ENV_FILE" ]; then
               echo "Deployment env file not found at ${ENV_FILE}" >&2
@@ -234,8 +237,6 @@ jobs:
             echo "${{ secrets.DOCKERHUB_ACCESS_TOKEN }}" | docker login -u "${{ env.DOCKERHUB_USERNAME }}" --password-stdin
             echo "Deploying APP image: ${APP_IMAGE}"
             echo "Deploying WORKER image: ${WORKER_IMAGE}"
-
-            cd "${{ env.REMOTE_APP_DIR }}"
 
             ensure_compose
             compose version
