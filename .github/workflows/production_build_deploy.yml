@@ -176,7 +176,7 @@ jobs:
           key: ${{ secrets.SERVER_PRIVATE_KEY }}
           script: |
             set -euo pipefail
-            ENV_FILE="${HOME}/.env"
+            ENV_FILE="~/.env"
 
             if [ ! -f "$ENV_FILE" ]; then
               echo "Deployment env file not found at ${ENV_FILE}" >&2

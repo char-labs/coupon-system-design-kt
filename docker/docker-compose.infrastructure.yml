@@ -5,8 +5,7 @@ services:
     container_name: coupon-system-mysql
     restart: always
     env_file:
-      - path: ${HOME}/.env
-        required: false
+      - ~/.env
     environment:
       TZ: Asia/Seoul
     command: ["mysqld", "--character-set-server=utf8mb4", "--collation-server=utf8mb4_general_ci", "--max-connections=200"]
