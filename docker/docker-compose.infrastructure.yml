@@ -4,15 +4,14 @@ services:
     image: mysql:8.0
     container_name: coupon-system-mysql
     restart: always
+    env_file:
+      - path: ${HOME}/.env
+        required: false
     environment:
-      MYSQL_DATABASE: coupon-db
-      MYSQL_ROOT_PASSWORD: root
-      MYSQL_USER: coupon-admin
-      MYSQL_PASSWORD: coupon!@#
       TZ: Asia/Seoul
     command: ["mysqld", "--character-set-server=utf8mb4", "--collation-server=utf8mb4_general_ci", "--max-connections=200"]
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-proot", "--silent"]
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p$${MYSQL_ROOT_PASSWORD} --silent"]
       interval: 5s
       timeout: 3s
       retries: 20
