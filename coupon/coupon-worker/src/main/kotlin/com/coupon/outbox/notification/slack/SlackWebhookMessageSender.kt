@@ -14,13 +14,13 @@ import java.net.http.HttpClient
 @ConditionalOnProperty(prefix = "worker.outbox.dead-alert.slack", name = ["enabled"], havingValue = "true")
 class SlackWebhookMessageSender(
     private val outboxWorkerProperties: OutboxWorkerProperties,
-    restClientBuilder: RestClient.Builder,
 ) : SlackMessageSender {
     override val enabled: Boolean = true
 
     private val slackProperties = outboxWorkerProperties.deadAlert.slack
     private val restClient: RestClient =
-        restClientBuilder
+        RestClient
+            .builder()
             .requestFactory(
                 JdkClientHttpRequestFactory(
                     HttpClient

@@ -6,7 +6,6 @@ import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
-import org.springframework.web.client.RestClient
 import tools.jackson.module.kotlin.jacksonObjectMapper
 import tools.jackson.module.kotlin.readValue
 import java.net.InetSocketAddress
@@ -65,7 +64,6 @@ private fun slackWebhookClient(webhookUrl: String): SlackWebhookMessageSender =
                             ),
                     ),
             ),
-        restClientBuilder = RestClient.builder(),
     )
 
 private class SlackWebhookTestServer(

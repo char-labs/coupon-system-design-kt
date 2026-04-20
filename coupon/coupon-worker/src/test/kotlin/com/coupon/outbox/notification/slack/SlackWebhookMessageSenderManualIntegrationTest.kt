@@ -3,7 +3,6 @@ package com.coupon.outbox.notification.slack
 import com.coupon.config.OutboxWorkerProperties
 import org.junit.jupiter.api.Assumptions.assumeTrue
 import org.junit.jupiter.api.Test
-import org.springframework.web.client.RestClient
 import java.time.Duration
 import java.time.OffsetDateTime
 
@@ -37,7 +36,6 @@ class SlackWebhookMessageSenderManualIntegrationTest {
                                 ),
                         ),
                 ),
-            restClientBuilder = RestClient.builder(),
         )
 
     companion object {
