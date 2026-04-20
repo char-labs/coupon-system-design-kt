@@ -136,6 +136,9 @@ prod compose는 이 값을 2Core 8GB에 맞게 낮춰서 시작한다.
   - `mysql:3306`
   - `redis:6379`
   - `kafka:9092`
+- 호스트 로컬 관리 포트:
+  - `127.0.0.1:${MYSQL_HOST_PORT:-3306} -> mysql:3306`
+  - 필요하면 SSH 터널로 접속하고, 인터넷에 직접 공개하지 않는다
 - 부가 서비스 포트:
   - `kafka-ui:8080`
   - `grafana:3000`
@@ -156,7 +159,7 @@ prod compose는 이 값을 2Core 8GB에 맞게 낮춰서 시작한다.
 즉, 인스턴스에서도 저장소 루트에 `.env`만 두고 아래 명령을 실행하면 된다.
 
 1. [.env.example](/Users/yunbeom/ybcha/coupon-system-design-kt/.env.example)를 참고해 저장소 루트에 `.env`를 만든다.
-2. `APP_HOST_PORT`, `WORKER_HOST_PORT`, `KAFKA_UI_HOST_PORT`, `GRAFANA_HOST_PORT`, DB 비밀번호, JWT secret, Grafana 관리자 계정을 교체한다.
+2. `APP_HOST_PORT`, `WORKER_HOST_PORT`, `MYSQL_HOST_BIND`, `MYSQL_HOST_PORT`, `KAFKA_UI_HOST_PORT`, `GRAFANA_HOST_PORT`, DB 비밀번호, JWT secret, Grafana 관리자 계정을 교체한다.
 3. 호스트 Nginx가 각 호스트 포트를 원하는 도메인으로 reverse proxy 하게 설정한다.
 4. 아래 명령으로 기동한다.
 
