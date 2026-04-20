@@ -6,7 +6,7 @@ services:
       dockerfile: docker/Dockerfile
     container_name: coupon-app
     env_file:
-      - path: .env
+      - path: ${HOME}/.env
         required: false
     ports:
       - "${APP_HOST_PORT:-18080}:8080"
@@ -43,7 +43,7 @@ services:
         APP_JAR_DIR: coupon/coupon-worker
     container_name: coupon-worker
     env_file:
-      - path: .env
+      - path: ${HOME}/.env
         required: false
     ports:
       - "${WORKER_HOST_PORT:-18081}:8081"
