@@ -312,7 +312,7 @@ export function waitForAppReady() {
   }, 'app_ready');
 }
 
-export function waitForAdminSignin(email, password) {
+export function waitForAdminSignin(email, password, name = config.adminName) {
   waitForAppReady();
 
   return waitUntil(() => {
@@ -328,10 +328,30 @@ export function waitForAdminSignin(email, password) {
     const body = parseJsonIfPresent(signin.response);
     const token = body && body.success === true ? body.data : null;
 
+    if (signin.response.status === 200 && token && token.accessToken) {
+      return {
+        ready: true,
+        data: token,
+        response: signin.response,
+      };
+    }
+
+    const signup = request(
+      'POST',
+      '/signup',
+      { name, email, password },
+      {
+        responseCallback: http.expectedStatuses(201, 400, 409, 503),
+      },
+      'admin_signup_ready',
+    );
+    const signupBody = parseJsonIfPresent(signup.response);
+    const signupToken = signupBody && signupBody.success === true ? signupBody.data : null;
+
     return {
-      ready: signin.response.status === 200 && token && token.accessToken,
-      data: token,
-      response: signin.response,
+      ready: signup.response.status === 201 && signupToken && signupToken.accessToken,
+      data: signupToken,
+      response: signup.response.status === 201 ? signup.response : signin.response,
     };
   }, 'admin_signin_ready');
 }
