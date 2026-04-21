@@ -241,11 +241,33 @@ services:
     mem_reservation: 128m
     cpus: 0.15
 
+  prometheus:
+    image: prom/prometheus:v3.5.0
+    container_name: coupon-prod-prometheus
+    restart: unless-stopped
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --web.enable-lifecycle
+    ports:
+      - "${PROMETHEUS_HOST_PORT:-9090}:9090"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    networks:
+      - backend
+      - edge
+    mem_limit: 512m
+    mem_reservation: 192m
+    cpus: 0.20
+
   grafana:
     image: grafana/grafana:12.4.0
     container_name: coupon-prod-grafana
     restart: unless-stopped
     depends_on:
+      prometheus:
+        condition: service_started
       loki:
         condition: service_started
       influxdb:
@@ -303,6 +325,7 @@ volumes:
   redis_data:
   kafka_data:
   k6_influxdb_data:
+  prometheus_data:
   grafana_data:
   loki_data:
   alloy_data:

@@ -1,0 +1,25 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: prometheus
+    static_configs:
+      - targets:
+          - prometheus:9090
+
+  - job_name: coupon-app
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets:
+          - coupon-app:8080
+        labels:
+          service_name: coupon-app
+
+  - job_name: coupon-worker
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets:
+          - coupon-worker:8081
+        labels:
+          service_name: coupon-worker
