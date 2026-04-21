@@ -7,7 +7,7 @@ Docker Compose는 역할 기준으로 아래처럼 분리합니다.
 - `docker-compose.runtime.yml`
   - `coupon-app`, `coupon-worker`
 - `docker-compose.observability.yml`
-  - Grafana, Loki, Alloy
+  - Prometheus, Grafana, Loki, Alloy
 - `docker-compose.load-test.yml`
   - InfluxDB
 - `docker-compose.prod.yml`
@@ -58,6 +58,12 @@ docker compose \
   -f docker/docker-compose.load-test.yml \
   up --build
 ```
+
+기본 관측 엔드포인트:
+
+- Grafana: `http://localhost:3000`
+- Prometheus: `http://localhost:9090`
+- Loki: `http://localhost:3100`
 
 단일 호스트 운영 예시:
 

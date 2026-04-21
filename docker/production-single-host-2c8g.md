@@ -34,6 +34,8 @@
   - 토픽, lag, consumer 상태 확인
 - `grafana`
   - 운영 대시보드
+- `prometheus`
+  - 앱 메트릭 scrape, Grafana metrics datasource
 - `loki`
   - 구조화 로그 저장소
 - `alloy`
@@ -43,9 +45,9 @@
 
 운영 기본 원칙은 단순하다.
 
-- `coupon-app`, `coupon-worker`, `kafka-ui`, `grafana`, `loki`, `alloy`, `influxdb`는 호스트 포트로 publish 하고, 필요하면 앞단 Nginx가 이를 reverse proxy 한다.
+- `coupon-app`, `coupon-worker`, `kafka-ui`, `grafana`, `prometheus`, `loki`, `alloy`, `influxdb`는 호스트 포트로 publish 하고, 필요하면 앞단 Nginx가 이를 reverse proxy 한다.
 - `MySQL`, `Redis`, `Kafka`는 private network 안에 둔다.
-- `prod` compose는 운영 편의를 위해 `kafka-ui + grafana + loki + alloy + influxdb`까지 함께 포함한다.
+- `prod` compose는 운영 편의를 위해 `kafka-ui + prometheus + grafana + loki + alloy + influxdb`까지 함께 포함한다.
 
 ## 2Core 8GB 권장 배분
 
@@ -57,13 +59,14 @@
 | `kafka` | `0.40` | `1536MB` | `768MB` | heap `768M` |
 | `redis` | `0.10` | `192MB` | `64MB` | `noeviction`, AOF on |
 | `kafka-ui` | `0.10` | `256MB` | `64MB` | 상태 확인용 UI |
+| `prometheus` | `0.20` | `512MB` | `192MB` | actuator scrape, metrics 저장 |
 | `grafana` | `0.15` | `384MB` | `128MB` | 운영 대시보드 |
 | `loki` | `0.15` | `384MB` | `128MB` | 로그 저장소 |
 | `alloy` | `0.10` | `128MB` | `64MB` | Docker 로그 collector |
 | `influxdb` | `0.15` | `256MB` | `128MB` | k6 datasource |
 
-전체 메모리 limit 합은 약 `7.6GB`다. 즉 `2Core 8GB`에서 전부 함께 올리면 디버깅 편의성은 높지만 headroom은 꽤 줄어든다.
-운영 안정성을 더 우선하면 `kafka-ui/grafana/loki/alloy/influxdb`를 별도 호스트로 분리하는 편이 낫다.
+전체 메모리 limit 합은 약 `8.1GB`다. 즉 `2Core 8GB`에서 전부 함께 올리면 디버깅 편의성은 높지만 headroom은 거의 없다.
+운영 안정성을 더 우선하면 `kafka-ui/prometheus/grafana/loki/alloy/influxdb`를 별도 호스트로 분리하는 편이 낫다.
 
 ## 현재 저장소 기준 운영 주의점
 
@@ -125,6 +128,7 @@ prod compose는 이 값을 2Core 8GB에 맞게 낮춰서 시작한다.
 - 추가 도메인 예시:
   - `kafka-ui.yogieat.com`
   - `grafana.yogieat.com`
+  - `prometheus.yogieat.com`
   - `loki.yogieat.com`
   - `alloy.yogieat.com`
   - `influxdb.yogieat.com`
@@ -136,12 +140,14 @@ prod compose는 이 값을 2Core 8GB에 맞게 낮춰서 시작한다.
   - `mysql:3306`
   - `redis:6379`
   - `kafka:9092`
+  - `prometheus:9090`
 - 호스트 로컬 관리 포트:
   - `127.0.0.1:${MYSQL_HOST_PORT:-3306} -> mysql:3306`
   - 필요하면 SSH 터널로 접속하고, 인터넷에 직접 공개하지 않는다
 - 부가 서비스 포트:
   - `kafka-ui:8080`
   - `grafana:3000`
+  - `prometheus:9090`
   - `loki:3100`
   - `alloy:12345`
   - `influxdb:8086`
