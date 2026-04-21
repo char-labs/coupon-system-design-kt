@@ -1,5 +1,6 @@
 package com.coupon.controller.coupon
 
+import com.coupon.config.LOAD_TEST_ADMIN_OR_USER
 import com.coupon.controller.coupon.request.CouponIssueRequest
 import com.coupon.controller.coupon.response.CouponIssueMessageResponse
 import com.coupon.controller.coupon.response.CouponIssuePageResponse
@@ -65,7 +66,7 @@ class CouponIssueController(
 
     @Operation(summary = "쿠폰별 발급 목록 조회", description = "특정 쿠폰의 발급 목록을 페이징하여 조회합니다. (관리자 전용)")
     @GetMapping("/coupons/{couponId}")
-    @PreAuthorize("hasAuthority('ADMIN')")
+    @PreAuthorize(LOAD_TEST_ADMIN_OR_USER)
     fun getCouponIssues(
         @Parameter(hidden = true) user: User,
         @PathVariable couponId: Long,

@@ -1,5 +1,6 @@
 package com.coupon.controller.coupon
 
+import com.coupon.config.LOAD_TEST_ADMIN_OR_USER
 import com.coupon.controller.coupon.request.CouponRequest
 import com.coupon.controller.coupon.response.CouponPageResponse
 import com.coupon.controller.coupon.response.CouponResponse
@@ -31,7 +32,7 @@ class CouponController(
     @Operation(summary = "쿠폰 생성", description = "새로운 쿠폰을 생성합니다. (관리자 전용)")
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    @PreAuthorize("hasAuthority('ADMIN')")
+    @PreAuthorize(LOAD_TEST_ADMIN_OR_USER)
     fun createCoupon(
         @Parameter(hidden = true) user: User,
         @RequestBody request: CouponRequest.Create,
@@ -69,7 +70,7 @@ class CouponController(
 
     @Operation(summary = "쿠폰 수정", description = "쿠폰 정보를 수정합니다. (관리자 전용)")
     @PutMapping("/{couponId}")
-    @PreAuthorize("hasAuthority('ADMIN')")
+    @PreAuthorize(LOAD_TEST_ADMIN_OR_USER)
     fun modifyCoupon(
         @Parameter(hidden = true) user: User,
         @PathVariable couponId: Long,
@@ -78,7 +79,7 @@ class CouponController(
 
     @Operation(summary = "쿠폰 활성화", description = "쿠폰을 활성화합니다. (관리자 전용)")
     @PostMapping("/{couponId}/activate")
-    @PreAuthorize("hasAuthority('ADMIN')")
+    @PreAuthorize(LOAD_TEST_ADMIN_OR_USER)
     fun activateCoupon(
         @Parameter(hidden = true) user: User,
         @PathVariable couponId: Long,
@@ -86,7 +87,7 @@ class CouponController(
 
     @Operation(summary = "쿠폰 비활성화", description = "쿠폰을 비활성화합니다. (관리자 전용)")
     @PostMapping("/{couponId}/deactivate")
-    @PreAuthorize("hasAuthority('ADMIN')")
+    @PreAuthorize(LOAD_TEST_ADMIN_OR_USER)
     fun deactivateCoupon(
         @Parameter(hidden = true) user: User,
         @PathVariable couponId: Long,
@@ -94,7 +95,7 @@ class CouponController(
 
     @Operation(summary = "쿠폰 삭제", description = "쿠폰을 삭제합니다. (관리자 전용)")
     @DeleteMapping("/{couponId}")
-    @PreAuthorize("hasAuthority('ADMIN')")
+    @PreAuthorize(LOAD_TEST_ADMIN_OR_USER)
     fun deleteCoupon(
         @Parameter(hidden = true) user: User,
         @PathVariable couponId: Long,
