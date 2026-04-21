@@ -16,6 +16,9 @@ import {
 
 const restaurantIssueBurstSuccessCount = new Counter('restaurant_issue_burst_success_count');
 const restaurantIssueBurstOutOfStockCount = new Counter('restaurant_issue_burst_out_of_stock_count');
+const restaurantIssueBurstTransportErrorCount = new Counter(
+  'restaurant_issue_burst_transport_error_count',
+);
 const restaurantIssueBurstUnexpectedClientErrorCount = new Counter(
   'restaurant_issue_burst_unexpected_client_error_count',
 );
@@ -45,6 +48,7 @@ export const options = {
   thresholds: {
     checks: ['rate>0.99'],
     http_req_failed: ['rate<0.01'],
+    restaurant_issue_burst_transport_error_count: ['count==0'],
     restaurant_issue_burst_unexpected_client_error_count: ['count==0'],
     restaurant_issue_burst_server_error_count: ['count==0'],
     restaurant_issue_burst_integrity_ok: ['rate==1'],
@@ -112,6 +116,8 @@ export default function (data) {
     default:
       if (outcome.status >= 500) {
         restaurantIssueBurstServerErrorCount.add(1);
+      } else if (outcome.status <= 0) {
+        restaurantIssueBurstTransportErrorCount.add(1);
       } else {
         restaurantIssueBurstUnexpectedClientErrorCount.add(1);
       }

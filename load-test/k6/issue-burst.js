@@ -14,6 +14,7 @@ import {
 
 const issueBurstSuccessCount = new Counter('issue_burst_success_count');
 const issueBurstOutOfStockCount = new Counter('issue_burst_out_of_stock_count');
+const issueBurstTransportErrorCount = new Counter('issue_burst_transport_error_count');
 const issueBurstUnexpectedClientErrorCount = new Counter(
   'issue_burst_unexpected_client_error_count',
 );
@@ -39,6 +40,7 @@ export const options = {
   thresholds: {
     checks: ['rate>0.99'],
     http_req_failed: ['rate<0.01'],
+    issue_burst_transport_error_count: ['count==0'],
     issue_burst_unexpected_client_error_count: ['count==0'],
     issue_burst_server_error_count: ['count==0'],
     issue_burst_integrity_ok: ['rate==1'],
@@ -102,6 +104,8 @@ export default function (data) {
     default:
       if (outcome.status >= 500) {
         issueBurstServerErrorCount.add(1);
+      } else if (outcome.status <= 0) {
+        issueBurstTransportErrorCount.add(1);
       } else {
         issueBurstUnexpectedClientErrorCount.add(1);
       }

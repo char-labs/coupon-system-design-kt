@@ -574,16 +574,24 @@ function formatThresholdFailure(threshold) {
     return '서버 오류 발생';
   }
 
+  if (threshold.startsWith('issue_burst_transport_error_count')) {
+    return '전송 계층 오류 발생';
+  }
+
   if (threshold.startsWith('restaurant_issue_burst_server_error_count')) {
     return '맛집 쿠폰 서버 오류 발생';
   }
 
+  if (threshold.startsWith('restaurant_issue_burst_transport_error_count')) {
+    return '맛집 쿠폰 전송 계층 오류 발생';
+  }
+
   if (threshold.startsWith('issue_burst_unexpected_client_error_count')) {
-    return '예상하지 못한 클라이언트 오류 발생';
+    return '예상하지 못한 응답 오류 발생';
   }
 
   if (threshold.startsWith('restaurant_issue_burst_unexpected_client_error_count')) {
-    return '맛집 쿠폰 예상하지 못한 클라이언트 오류 발생';
+    return '맛집 쿠폰 예상하지 못한 응답 오류 발생';
   }
 
   return threshold;
@@ -670,6 +678,17 @@ function explainFailure({ failureReason, scenario, parsedEnv, envSource, thresho
       summary: '예상한 맛집 쿠폰 발급 수량과 실제 최종 상태가 다르게 나왔습니다.',
       cause: '성공 발급 건수 또는 잔여 수량이 설정한 재고 기준과 맞지 않았습니다.',
       action: 'ISSUE_BURST_STOCK, 성공 발급 건수, 남은 재고 수치를 같이 비교해 주세요.',
+    };
+  }
+
+  if (
+    thresholdFailures.includes('issue_burst_transport_error_count count==0') ||
+    thresholdFailures.includes('restaurant_issue_burst_transport_error_count count==0')
+  ) {
+    return {
+      summary: '일부 요청이 응답을 받기 전에 연결이 끊기거나 시간 초과로 끝났습니다.',
+      cause: 'EOF, connection reset, request timeout 같은 전송 계층 오류가 발생했습니다.',
+      action: 'app 리소스, 프록시 timeout, hot path 로그량, Redis/Kafka 초기화 비용을 함께 확인해 주세요.',
     };
   }
 
@@ -773,7 +792,8 @@ function buildScenarioExtraMetrics(scenario, summary) {
     textLines: [
       `• *성공 발급 건수:* ${metricOrZero(`${metricPrefix}_success_count`, 'count')}`,
       `• *재고 부족 건수:* ${metricOrZero(`${metricPrefix}_out_of_stock_count`, 'count')}`,
-      `• *예상 밖 클라이언트 오류 건수:* ${metricOrZero(`${metricPrefix}_unexpected_client_error_count`, 'count')}`,
+      `• *전송 계층 오류 건수:* ${metricOrZero(`${metricPrefix}_transport_error_count`, 'count')}`,
+      `• *예상 밖 응답 오류 건수:* ${metricOrZero(`${metricPrefix}_unexpected_client_error_count`, 'count')}`,
       `• *서버 오류 건수:* ${metricOrZero(`${metricPrefix}_server_error_count`, 'count')}`,
       `• *최종 발급 건수:* ${metricValue(summary, `${metricPrefix}_final_issued_count`)}`,
       `• *최종 잔여 재고:* ${metricValue(summary, `${metricPrefix}_final_remaining_quantity`)}`,
@@ -791,7 +811,11 @@ function buildScenarioExtraMetrics(scenario, summary) {
       },
       {
         type: 'mrkdwn',
-        text: `*예상 밖 클라이언트 오류 건수*\n${metricOrZero(`${metricPrefix}_unexpected_client_error_count`, 'count')}`,
+        text: `*전송 계층 오류 건수*\n${metricOrZero(`${metricPrefix}_transport_error_count`, 'count')}`,
+      },
+      {
+        type: 'mrkdwn',
+        text: `*예상 밖 응답 오류 건수*\n${metricOrZero(`${metricPrefix}_unexpected_client_error_count`, 'count')}`,
       },
       {
         type: 'mrkdwn',

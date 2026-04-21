@@ -24,6 +24,7 @@ function buildExtraLines(name, data) {
       return [
         `issue_burst success count: ${metricOrZero('issue_burst_success_count', 'count')}`,
         `issue_burst out_of_stock count: ${metricOrZero('issue_burst_out_of_stock_count', 'count')}`,
+        `issue_burst transport error count: ${metricOrZero('issue_burst_transport_error_count', 'count')}`,
         `issue_burst unexpected client error count: ${metricOrZero('issue_burst_unexpected_client_error_count', 'count')}`,
         `issue_burst server error count: ${metricOrZero('issue_burst_server_error_count', 'count')}`,
         `issue_burst final issued count: ${metricValue(data, 'issue_burst_final_issued_count')}`,
@@ -35,6 +36,7 @@ function buildExtraLines(name, data) {
       return [
         `restaurant_issue_burst success count: ${metricOrZero('restaurant_issue_burst_success_count', 'count')}`,
         `restaurant_issue_burst out_of_stock count: ${metricOrZero('restaurant_issue_burst_out_of_stock_count', 'count')}`,
+        `restaurant_issue_burst transport error count: ${metricOrZero('restaurant_issue_burst_transport_error_count', 'count')}`,
         `restaurant_issue_burst unexpected client error count: ${metricOrZero('restaurant_issue_burst_unexpected_client_error_count', 'count')}`,
         `restaurant_issue_burst server error count: ${metricOrZero('restaurant_issue_burst_server_error_count', 'count')}`,
         `restaurant_issue_burst final issued count: ${metricValue(data, 'restaurant_issue_burst_final_issued_count')}`,
