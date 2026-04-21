@@ -20,6 +20,11 @@ class LoggingFilter(
 ) : OncePerRequestFilter() {
     companion object {
         private val log by lazy { LoggerFactory.getLogger(this::class.java) }
+        private val HOT_ISSUE_REQUEST_URIS =
+            setOf(
+                "/coupon-issues",
+                "/restaurant-coupons/issue",
+            )
     }
 
     @Throws(ServletException::class, IOException::class)
@@ -36,10 +41,25 @@ class LoggingFilter(
         try {
             filterChain.doFilter(wrapper, response)
         } finally {
-            if (!this.isAsyncStarted(wrapper)) {
+            if (!this.isAsyncStarted(wrapper) && shouldLogRequest(wrapper, response)) {
                 createMessage(wrapper)
             }
         }
+    }
+
+    private fun shouldLogRequest(
+        request: HttpServletRequest,
+        response: HttpServletResponse,
+    ): Boolean {
+        if (request.method != "POST") {
+            return true
+        }
+
+        if (request.requestURI !in HOT_ISSUE_REQUEST_URIS) {
+            return true
+        }
+
+        return response.status >= HttpServletResponse.SC_INTERNAL_SERVER_ERROR
     }
 
     @Throws(IOException::class)

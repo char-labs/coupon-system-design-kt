@@ -12,6 +12,7 @@ import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
 import io.mockk.every
 import io.mockk.mockk
+import java.time.Clock
 
 class CouponServicePreviewTest :
     BehaviorSpec({
@@ -124,6 +125,7 @@ class CouponServicePreviewTest :
         private val couponRepository = mockk<CouponRepository>()
         private val couponIssueRepository = mockk<CouponIssueRepository>()
         private val cache = mockk<Cache>(relaxed = true)
+        private val couponIssueStateInitializationExecutor = mockk<CouponIssueStateInitializationExecutor>()
         private val couponService =
             CouponService(
                 couponRepository = couponRepository,
@@ -133,6 +135,8 @@ class CouponServicePreviewTest :
                 couponEligibilityEvaluator = CouponEligibilityEvaluator(),
                 couponDiscountCalculator = CouponDiscountCalculator(),
                 cache = cache,
+                couponIssueStateInitializationExecutor = couponIssueStateInitializationExecutor,
+                clock = Clock.systemUTC(),
             )
 
         fun preview(

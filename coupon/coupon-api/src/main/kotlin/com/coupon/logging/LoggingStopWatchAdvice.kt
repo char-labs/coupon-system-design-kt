@@ -15,6 +15,11 @@ class LoggingStopWatchAdvice {
     companion object {
         val log: Logger = LoggerFactory.getLogger(this::class.java)
         const val MAX_AFFORDABLE_TIME: Long = 3000
+        private val HOT_ISSUE_REQUEST_URIS =
+            setOf(
+                "/coupon-issues",
+                "/restaurant-coupons/issue",
+            )
     }
 
     @Around("execution(* com.coupon.controller..*Controller.*(..))")
@@ -23,37 +28,54 @@ class LoggingStopWatchAdvice {
         val proceed = joinPoint.proceed()
         val endAt = System.currentTimeMillis()
         val timeMs = (endAt - startAt)
+        val request = currentRequestSnapshot()
 
         val className = joinPoint.signature.declaringType.simpleName
         val methodName = joinPoint.signature.name
 
         if (timeMs > MAX_AFFORDABLE_TIME) {
             log.warn(
-                "method=${getMethod()}, url=${getRequestURI()}, call: $className - $methodName - timeMs:${timeMs}ms",
+                "method=${request?.method ?: "n/a"}, url=${request?.url ?: "n/a"}, call: $className - $methodName - timeMs:${timeMs}ms",
             )
             return proceed
         }
 
+        if (shouldSkipInfoLog(request)) {
+            return proceed
+        }
+
         log.info(
-            "method=${getMethod()}, url=${getRequestURI()}, call: $className - $methodName - timeMs:${timeMs}ms",
+            "method=${request?.method ?: "n/a"}, url=${request?.url ?: "n/a"}, call: $className - $methodName - timeMs:${timeMs}ms",
         )
         return proceed
     }
 
-    private fun getMethod(): String {
-        val request = (RequestContextHolder.currentRequestAttributes() as ServletRequestAttributes).request
-        return request.method
+    private fun shouldSkipInfoLog(request: RequestSnapshot?): Boolean =
+        request?.method == "POST" &&
+            request.path in HOT_ISSUE_REQUEST_URIS
+
+    private fun currentRequestSnapshot(): RequestSnapshot? {
+        val request = (RequestContextHolder.getRequestAttributes() as? ServletRequestAttributes)?.request ?: return null
+
+        val url =
+            buildString(128) {
+                append(request.requestURL)
+                if (request.queryString != null) {
+                    append("?")
+                    append(request.queryString)
+                }
+            }
+
+        return RequestSnapshot(
+            method = request.method,
+            path = request.requestURI,
+            url = url,
+        )
     }
 
-    private fun getRequestURI(): String {
-        val request = (RequestContextHolder.currentRequestAttributes() as ServletRequestAttributes).request
-        val sb = StringBuilder(128)
-
-        sb.append(request.requestURL)
-        if (null != request.queryString) {
-            sb.append("?")
-            sb.append(request.queryString)
-        }
-        return sb.toString()
-    }
+    private data class RequestSnapshot(
+        val method: String,
+        val path: String,
+        val url: String,
+    )
 }

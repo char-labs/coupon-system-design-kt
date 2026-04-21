@@ -7,6 +7,7 @@ import com.coupon.coupon.fixture.FixedCouponFixtures
 import com.coupon.shared.cache.Cache
 import com.coupon.shared.page.OffsetPageRequest
 import com.coupon.shared.page.Page
+import io.kotest.assertions.throwables.shouldNotThrowAny
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.every
@@ -15,6 +16,7 @@ import io.mockk.mockk
 import io.mockk.slot
 import io.mockk.verify
 import io.mockk.verifySequence
+import java.time.Clock
 
 class CouponServiceTest :
     BehaviorSpec({
@@ -99,12 +101,58 @@ class CouponServiceTest :
             }
         }
 
+        given("CouponService로 쿠폰을 활성화하면") {
+            `when`("활성화 직후 발급 준비 상태를 미리 채우면") {
+                val context = CouponServiceTestContext()
+                val couponId = 55L
+                val couponDetail = FixedCouponFixtures.standard(id = couponId, totalQuantity = 100L, remainingQuantity = 100L)
+
+                justRun { context.couponRepository.activate(couponId) }
+                every { context.couponRepository.findDetailById(couponId) } returns couponDetail
+                justRun {
+                    context.couponIssueStateInitializationExecutor.initializeStateIfAbsent(
+                        couponDetail,
+                        any(),
+                    )
+                }
+
+                context.couponService.activateCoupon(couponId)
+
+                then("발급 캐시와 Redis 상태를 prewarm 한다") {
+                    verifySequence {
+                        context.couponRepository.activate(couponId)
+                        context.cache.evict("coupon:issue:detail:$couponId")
+                        context.couponRepository.findDetailById(couponId)
+                        context.cache.putValue("coupon:issue:detail:$couponId", couponDetail, 60L)
+                        context.couponIssueStateInitializationExecutor.initializeStateIfAbsent(couponDetail, any())
+                    }
+                }
+            }
+
+            `when`("prewarm 중 예외가 나면") {
+                val context = CouponServiceTestContext()
+                val couponId = 56L
+                val couponDetail = FixedCouponFixtures.standard(id = couponId)
+
+                justRun { context.couponRepository.activate(couponId) }
+                every { context.couponRepository.findDetailById(couponId) } returns couponDetail
+                every {
+                    context.couponIssueStateInitializationExecutor.initializeStateIfAbsent(
+                        couponDetail,
+                        any(),
+                    )
+                } throws IllegalStateException("boom")
+
+                then("활성화 자체는 실패시키지 않는다") {
+                    shouldNotThrowAny {
+                        context.couponService.activateCoupon(couponId)
+                    }
+                    verify(exactly = 1) { context.couponRepository.activate(couponId) }
+                }
+            }
+        }
+
         listOf(
-            CouponMutationCase(
-                description = "활성화 요청이 들어오면",
-                execute = { service, couponId -> service.activateCoupon(couponId) },
-                verify = { repository, couponId -> verify(exactly = 1) { repository.activate(couponId) } },
-            ),
             CouponMutationCase(
                 description = "비활성화 요청이 들어오면",
                 execute = { service, couponId -> service.deactivateCoupon(couponId) },
@@ -140,6 +188,7 @@ class CouponServiceTest :
         val couponCodeGenerator = mockk<CouponCodeGenerator>()
         val couponValidator = mockk<CouponValidator>(relaxed = true)
         val cache = mockk<Cache>(relaxed = true)
+        val couponIssueStateInitializationExecutor = mockk<CouponIssueStateInitializationExecutor>()
         val couponService =
             CouponService(
                 couponRepository = couponRepository,
@@ -149,6 +198,8 @@ class CouponServiceTest :
                 couponEligibilityEvaluator = CouponEligibilityEvaluator(),
                 couponDiscountCalculator = CouponDiscountCalculator(),
                 cache = cache,
+                couponIssueStateInitializationExecutor = couponIssueStateInitializationExecutor,
+                clock = Clock.systemUTC(),
             )
     }
 
