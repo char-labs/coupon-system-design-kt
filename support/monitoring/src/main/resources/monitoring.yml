@@ -1,4 +1,7 @@
 management:
+  metrics:
+    tags:
+      application: ${spring.application.name}
   tracing:
     enabled: true
     sampling:
