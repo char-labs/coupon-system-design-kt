@@ -35,9 +35,19 @@ api:
       observation-enabled: true
       topic-partitions: 3
       topic-replicas: 1
+      producer-max-in-flight-requests-per-connection: 5
+      producer-linger: 5ms
+      producer-batch-size-bytes: 65536
+      producer-compression-type: lz4
+      producer-request-timeout: 5s
+      producer-delivery-timeout: 9s
+      producer-max-block: 1s
+      producer-buffer-memory-bytes: 33554432
 
 server:
   tomcat:
+    accept-count: ${SERVER_TOMCAT_ACCEPT_COUNT:1000}
+    connection-timeout: ${SERVER_TOMCAT_CONNECTION_TIMEOUT:30s}
     max-connections: 20000
     threads:
       max: 600

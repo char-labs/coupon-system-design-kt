@@ -44,7 +44,15 @@ class CouponIssueKafkaConfig(
                 ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG to JacksonJsonSerializer::class.java,
                 ProducerConfig.ACKS_CONFIG to "all",
                 ProducerConfig.ENABLE_IDEMPOTENCE_CONFIG to true,
-                ProducerConfig.MAX_IN_FLIGHT_REQUESTS_PER_CONNECTION to 1,
+                ProducerConfig.MAX_IN_FLIGHT_REQUESTS_PER_CONNECTION to
+                    couponIssueKafkaProperties.producerMaxInFlightRequestsPerConnection,
+                ProducerConfig.LINGER_MS_CONFIG to couponIssueKafkaProperties.producerLinger.toMillis().toInt(),
+                ProducerConfig.BATCH_SIZE_CONFIG to couponIssueKafkaProperties.producerBatchSizeBytes,
+                ProducerConfig.COMPRESSION_TYPE_CONFIG to couponIssueKafkaProperties.producerCompressionType,
+                ProducerConfig.REQUEST_TIMEOUT_MS_CONFIG to couponIssueKafkaProperties.producerRequestTimeout.toMillis().toInt(),
+                ProducerConfig.DELIVERY_TIMEOUT_MS_CONFIG to couponIssueKafkaProperties.producerDeliveryTimeout.toMillis().toInt(),
+                ProducerConfig.MAX_BLOCK_MS_CONFIG to couponIssueKafkaProperties.producerMaxBlock.toMillis(),
+                ProducerConfig.BUFFER_MEMORY_CONFIG to couponIssueKafkaProperties.producerBufferMemoryBytes,
             )
 
         return DefaultKafkaProducerFactory<String, CouponIssueMessage>(config).apply {
