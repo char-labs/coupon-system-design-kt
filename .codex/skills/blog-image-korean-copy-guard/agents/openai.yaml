@@ -1,0 +1,4 @@
+display_name: Blog Image Korean Copy Guard
+short_description: Keeps Korean infographic text short and render-safe.
+default_prompt: Review or rewrite Korean on-image copy so it stays short, front-loaded, and safe for image generation.
+

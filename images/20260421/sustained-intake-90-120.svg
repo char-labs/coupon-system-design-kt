@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 720" role="img" aria-labelledby="title desc">
+  <title id="title">sustained intake 90부터 120 VU까지 경계 탐색</title>
+  <desc id="desc">90, 100, 110 VU는 성공하고 120 VU에서 기준 미달이 발생한 흐름</desc>
+  <defs>
+    <style>
+      .bg { fill: #f7f9fc; }
+      .frame { fill: #fff; stroke: #c9d5e6; stroke-width: 2; }
+      .title { font: 700 30px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #25324a; }
+      .subtitle { font: 650 17px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #64748b; }
+      .card { fill: #fff; stroke: #d3deed; stroke-width: 2; }
+      .ok { fill: #ecfdf4; stroke: #7bc79a; }
+      .fail { fill: #fff3f1; stroke: #ed9085; }
+      .vu { font: 800 32px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #21314b; }
+      .label { font: 700 17px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #53647d; }
+      .metric { font: 700 19px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #2c3f5e; }
+      .chip-text { font: 800 18px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #fff; }
+      .summary { font: 800 22px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #34465f; }
+      .axis { stroke: #8da1bd; stroke-width: 5; stroke-linecap: round; }
+      .dot-ok { fill: #43b36b; }
+      .dot-fail { fill: #e45d4f; }
+    </style>
+  </defs>
+  <rect class="bg" width="1440" height="720"/>
+  <rect class="frame" x="42" y="36" width="1356" height="648" rx="26"/>
+  <text class="title" x="720" y="94" text-anchor="middle">sustained intake 경계 탐색</text>
+  <text class="subtitle" x="720" y="128" text-anchor="middle">90 VU부터 시작해 110 VU까지 통과, 120 VU에서 기준 미달</text>
+
+  <line class="axis" x1="180" y1="424" x2="1260" y2="424"/>
+  <circle class="dot-ok" cx="260" cy="424" r="12"/>
+  <circle class="dot-ok" cx="560" cy="424" r="12"/>
+  <circle class="dot-ok" cx="860" cy="424" r="12"/>
+  <circle class="dot-fail" cx="1160" cy="424" r="12"/>
+
+  <g transform="translate(130 192)">
+    <rect class="card ok" x="0" y="0" width="260" height="172" rx="18"/>
+    <text class="vu" x="130" y="58" text-anchor="middle">90 VU</text>
+    <rect x="72" y="78" width="116" height="40" rx="20" fill="#43b36b"/>
+    <text class="chip-text" x="130" y="104" text-anchor="middle">성공</text>
+    <text class="label" x="130" y="140" text-anchor="middle">p95</text>
+    <text class="metric" x="130" y="164" text-anchor="middle">462.83ms</text>
+  </g>
+
+  <g transform="translate(430 192)">
+    <rect class="card ok" x="0" y="0" width="260" height="172" rx="18"/>
+    <text class="vu" x="130" y="58" text-anchor="middle">100 VU</text>
+    <rect x="72" y="78" width="116" height="40" rx="20" fill="#43b36b"/>
+    <text class="chip-text" x="130" y="104" text-anchor="middle">성공</text>
+    <text class="label" x="130" y="140" text-anchor="middle">p95</text>
+    <text class="metric" x="130" y="164" text-anchor="middle">450.03ms</text>
+  </g>
+
+  <g transform="translate(730 192)">
+    <rect class="card ok" x="0" y="0" width="260" height="172" rx="18"/>
+    <text class="vu" x="130" y="58" text-anchor="middle">110 VU</text>
+    <rect x="72" y="78" width="116" height="40" rx="20" fill="#43b36b"/>
+    <text class="chip-text" x="130" y="104" text-anchor="middle">성공</text>
+    <text class="label" x="130" y="140" text-anchor="middle">p95</text>
+    <text class="metric" x="130" y="164" text-anchor="middle">485.58ms</text>
+  </g>
+
+  <g transform="translate(1030 192)">
+    <rect class="card fail" x="0" y="0" width="260" height="172" rx="18"/>
+    <text class="vu" x="130" y="58" text-anchor="middle">120 VU</text>
+    <rect x="72" y="78" width="116" height="40" rx="20" fill="#e45d4f"/>
+    <text class="chip-text" x="130" y="104" text-anchor="middle">실패</text>
+    <text class="label" x="130" y="140" text-anchor="middle">기준</text>
+    <text class="metric" x="130" y="164" text-anchor="middle">응답 품질 미달</text>
+  </g>
+
+  <g transform="translate(340 518)">
+    <rect x="0" y="0" width="760" height="66" rx="18" fill="#edf3fa"/>
+    <text class="summary" x="380" y="42" text-anchor="middle">지속 처리 경계: 110 VU와 120 VU 사이</text>
+  </g>
+</svg>

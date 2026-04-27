@@ -1,0 +1,113 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 780" role="img" aria-labelledby="title desc">
+  <title id="title">쿠폰 발급 단일 호스트 처리 흐름</title>
+  <desc id="desc">사용자 요청이 Nginx, coupon-api, Redis, Kafka, Worker를 거쳐 DB에 반영되는 흐름</desc>
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="10" refY="5" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L10,5 L0,10 Z" fill="#5b6f8c"/>
+    </marker>
+    <style>
+      .bg { fill: #f7f9fc; }
+      .frame { fill: #ffffff; stroke: #c9d5e6; stroke-width: 2; }
+      .title { font: 700 30px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #25324a; }
+      .section { font: 700 18px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #50627c; }
+      .card { fill: #ffffff; stroke: #d3deed; stroke-width: 2; }
+      .card-title { font: 700 21px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #24334d; }
+      .card-sub { font: 650 15px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #63738b; }
+      .chip { rx: 12; ry: 12; }
+      .chip-text { font: 700 15px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #ffffff; }
+      .note { font: 700 18px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #34465f; }
+      .tool-text { font: 700 16px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #26364f; }
+      .line { stroke: #5b6f8c; stroke-width: 5.5; stroke-linecap: butt; stroke-linejoin: round; marker-end: url(#arrow); }
+      .muted-line { stroke: #d8e1ee; stroke-width: 2; }
+    </style>
+  </defs>
+
+  <rect class="bg" width="1440" height="780"/>
+  <rect class="frame" x="32" y="36" width="1376" height="704" rx="26"/>
+  <text class="title" x="720" y="92" text-anchor="middle">쿠폰 발급 처리 흐름</text>
+
+  <g transform="translate(64 218)">
+    <rect class="card" x="0" y="0" width="168" height="164" rx="18"/>
+    <text class="card-title" x="84" y="54" text-anchor="middle">사용자 요청</text>
+    <text class="card-sub" x="84" y="84" text-anchor="middle">k6 부하 테스트</text>
+    <rect class="chip" x="34" y="112" width="100" height="34" fill="#6d94d4"/>
+    <text class="chip-text" x="84" y="135" text-anchor="middle">HTTP</text>
+  </g>
+  <line class="line" x1="248" y1="300" x2="306" y2="300"/>
+
+  <g transform="translate(324 218)">
+    <rect class="card" x="0" y="0" width="168" height="164" rx="18"/>
+    <text class="card-title" x="84" y="54" text-anchor="middle">Nginx</text>
+    <text class="card-sub" x="84" y="84" text-anchor="middle">공개 HTTPS</text>
+    <rect class="chip" x="34" y="112" width="100" height="34" fill="#6fc196"/>
+    <text class="chip-text" x="84" y="135" text-anchor="middle">Proxy</text>
+  </g>
+  <line class="line" x1="508" y1="300" x2="566" y2="300"/>
+
+  <g transform="translate(584 218)">
+    <rect class="card" x="0" y="0" width="168" height="164" rx="18"/>
+    <text class="card-title" x="84" y="54" text-anchor="middle">coupon-api</text>
+    <text class="card-sub" x="84" y="84" text-anchor="middle">발급 수락</text>
+    <rect class="chip" x="34" y="112" width="100" height="34" fill="#5a99dc"/>
+    <text class="chip-text" x="84" y="135" text-anchor="middle">API</text>
+  </g>
+  <line class="line" x1="768" y1="300" x2="826" y2="300"/>
+
+  <g transform="translate(844 218)">
+    <rect class="card" x="0" y="0" width="168" height="164" rx="18"/>
+    <text class="card-title" x="84" y="54" text-anchor="middle">Redis 선점</text>
+    <text class="card-sub" x="84" y="84" text-anchor="middle">재고 원자 처리</text>
+    <rect class="chip" x="34" y="112" width="100" height="34" fill="#e85f51"/>
+    <text class="chip-text" x="84" y="135" text-anchor="middle">Reserve</text>
+  </g>
+  <line class="line" x1="1028" y1="300" x2="1086" y2="300"/>
+
+  <g transform="translate(1104 218)">
+    <rect class="card" x="0" y="0" width="168" height="164" rx="18"/>
+    <text class="card-title" x="84" y="54" text-anchor="middle">Kafka 발행</text>
+    <text class="card-sub" x="84" y="84" text-anchor="middle">비동기 전달</text>
+    <rect class="chip" x="34" y="112" width="100" height="34" fill="#f3a032"/>
+    <text class="chip-text" x="84" y="135" text-anchor="middle">Publish</text>
+  </g>
+  <line class="line" x1="1288" y1="300" x2="1346" y2="300"/>
+
+  <g transform="translate(1228 430)">
+    <rect class="card" x="0" y="0" width="150" height="162" rx="18"/>
+    <text class="card-title" x="75" y="45" text-anchor="middle">Worker</text>
+    <text class="card-sub" x="75" y="75" text-anchor="middle">Kafka 소비</text>
+    <line class="muted-line" x1="28" y1="96" x2="122" y2="96"/>
+    <text class="tool-text" x="75" y="128" text-anchor="middle">DB 저장</text>
+  </g>
+  <line class="line" x1="1188" y1="392" x2="1224" y2="456"/>
+
+  <g transform="translate(438 462)">
+    <rect class="card" x="0" y="0" width="384" height="56" rx="14"/>
+    <text class="note" x="192" y="36" text-anchor="middle">성공 기준: Redis 선점 + Kafka 확인</text>
+  </g>
+  <g transform="translate(472 548)">
+    <rect x="0" y="0" width="334" height="56" rx="14" fill="#edf3fa"/>
+    <text class="note" x="167" y="36" text-anchor="middle">최종 반영은 비동기 처리</text>
+  </g>
+
+  <g transform="translate(884 520)">
+    <rect class="card" x="0" y="0" width="320" height="174" rx="18"/>
+    <rect x="52" y="-28" width="216" height="48" rx="12" fill="#5b6f8c"/>
+    <text class="chip-text" x="160" y="3" text-anchor="middle">모니터링 지원 도구</text>
+    <g transform="translate(30 52)">
+      <rect class="card" x="0" y="0" width="122" height="48" rx="10"/>
+      <text class="tool-text" x="61" y="31" text-anchor="middle">Grafana</text>
+    </g>
+    <g transform="translate(168 52)">
+      <rect class="card" x="0" y="0" width="122" height="48" rx="10"/>
+      <text class="tool-text" x="61" y="31" text-anchor="middle">Loki</text>
+    </g>
+    <g transform="translate(30 114)">
+      <rect class="card" x="0" y="0" width="122" height="48" rx="10"/>
+      <text class="tool-text" x="61" y="31" text-anchor="middle">InfluxDB</text>
+    </g>
+    <g transform="translate(168 114)">
+      <rect class="card" x="0" y="0" width="122" height="48" rx="10"/>
+      <text class="tool-text" x="61" y="31" text-anchor="middle">Kafka UI</text>
+    </g>
+  </g>
+</svg>

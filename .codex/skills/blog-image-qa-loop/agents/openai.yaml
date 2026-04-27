@@ -1,0 +1,3 @@
+display_name: Blog Image QA Loop
+short_description: Reviews generated Korean blog infographics and flags regenerate cases.
+default_prompt: Inspect generated Korean infographic images, decide approve or regenerate, and return corrected labels plus concise prompt fixes.

@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 760" role="img" aria-labelledby="title desc">
+  <title id="title">전송 오류와 DLQ 차이</title>
+  <desc id="desc">HTTP 요청 응답 구간의 전송 오류와 Kafka worker 처리 이후의 DLQ를 구분한 다이어그램</desc>
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="10" refY="5" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L10,5 L0,10 Z" fill="#5b6f8c"/>
+    </marker>
+    <style>
+      .bg { fill: #f7f9fc; }
+      .frame { fill: #fff; stroke: #c9d5e6; stroke-width: 2; }
+      .title { font: 700 30px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #25324a; }
+      .panel-title { font: 800 24px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #26364f; }
+      .card { fill: #fff; stroke: #d3deed; stroke-width: 2; }
+      .danger { fill: #fff3f1; stroke: #ed9085; }
+      .safe { fill: #ecfdf4; stroke: #7bc79a; }
+      .step { font: 800 19px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #25324a; }
+      .small { font: 700 15px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #60728a; }
+      .chip-text { font: 800 17px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #fff; }
+      .line { stroke: #5b6f8c; stroke-width: 5; stroke-linecap: butt; stroke-linejoin: round; marker-end: url(#arrow); }
+      .summary { font: 800 22px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #34465f; }
+    </style>
+  </defs>
+  <rect class="bg" width="1440" height="760"/>
+  <rect class="frame" x="42" y="36" width="1356" height="688" rx="26"/>
+  <text class="title" x="720" y="94" text-anchor="middle">전송 오류와 DLQ는 다른 구간</text>
+
+  <g transform="translate(92 150)">
+    <rect class="danger" x="0" y="0" width="580" height="380" rx="24"/>
+    <text class="panel-title" x="290" y="48" text-anchor="middle">HTTP 요청-응답 구간</text>
+    <g transform="translate(50 104)">
+      <rect class="card" x="0" y="0" width="140" height="96" rx="16"/>
+      <text class="step" x="70" y="43" text-anchor="middle">클라이언트</text>
+      <text class="small" x="70" y="70" text-anchor="middle">발급 요청</text>
+    </g>
+    <line class="line" x1="214" y1="152" x2="284" y2="152"/>
+    <g transform="translate(310 104)">
+      <rect class="card" x="0" y="0" width="140" height="96" rx="16"/>
+      <text class="step" x="70" y="43" text-anchor="middle">API</text>
+      <text class="small" x="70" y="70" text-anchor="middle">응답 반환</text>
+    </g>
+    <g transform="translate(82 246)">
+      <rect x="0" y="0" width="416" height="54" rx="16" fill="#e45d4f"/>
+      <text class="chip-text" x="208" y="35" text-anchor="middle">EOF · reset · timeout</text>
+    </g>
+    <text class="small" x="290" y="342" text-anchor="middle">DLQ 이전에 보이는 전송 문제</text>
+  </g>
+
+  <g transform="translate(768 150)">
+    <rect class="safe" x="0" y="0" width="580" height="380" rx="24"/>
+    <text class="panel-title" x="290" y="48" text-anchor="middle">Kafka 처리 구간</text>
+    <g transform="translate(50 104)">
+      <rect class="card" x="0" y="0" width="140" height="96" rx="16"/>
+      <text class="step" x="70" y="43" text-anchor="middle">Kafka</text>
+      <text class="small" x="70" y="70" text-anchor="middle">메시지 존재</text>
+    </g>
+    <line class="line" x1="214" y1="152" x2="284" y2="152"/>
+    <g transform="translate(310 104)">
+      <rect class="card" x="0" y="0" width="140" height="96" rx="16"/>
+      <text class="step" x="70" y="43" text-anchor="middle">Worker</text>
+      <text class="small" x="70" y="70" text-anchor="middle">재시도 처리</text>
+    </g>
+    <g transform="translate(152 246)">
+      <rect x="0" y="0" width="276" height="54" rx="16" fill="#43b36b"/>
+      <text class="chip-text" x="138" y="35" text-anchor="middle">retry 소진 후 DLQ</text>
+    </g>
+    <text class="small" x="290" y="342" text-anchor="middle">메시지 발행 이후의 복구 경로</text>
+  </g>
+
+  <g transform="translate(360 606)">
+    <rect x="0" y="0" width="720" height="66" rx="18" fill="#edf3fa"/>
+    <text class="summary" x="360" y="42" text-anchor="middle">핵심은 재처리보다 수락 상태 재확인</text>
+  </g>
+</svg>

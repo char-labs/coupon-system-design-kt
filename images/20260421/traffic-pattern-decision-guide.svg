@@ -1,0 +1,77 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 840" role="img" aria-labelledby="title desc">
+  <title id="title">트래픽 패턴별 운영 판단</title>
+  <desc id="desc">일상 트래픽, 지속 발급 집중, 대량 경합, 캠페인 트래픽별 우선 고려 구성을 정리한 표</desc>
+  <defs>
+    <style>
+      .bg { fill: #f7f9fc; }
+      .frame { fill: #fff; stroke: #c9d5e6; stroke-width: 2; }
+      .title { font: 700 30px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #25324a; }
+      .head { font: 800 18px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #fff; }
+      .cell { fill: #fff; stroke: #d3deed; stroke-width: 2; }
+      .row-alt { fill: #f8fbff; }
+      .label { font: 800 18px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #24334d; }
+      .text { font: 700 15px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #51637c; }
+      .summary { font: 800 22px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #34465f; }
+    </style>
+  </defs>
+  <rect class="bg" width="1440" height="840"/>
+  <rect class="frame" x="42" y="36" width="1356" height="768" rx="26"/>
+  <text class="title" x="720" y="94" text-anchor="middle">트래픽 패턴별 운영 판단</text>
+
+  <g transform="translate(92 142)">
+    <rect x="0" y="0" width="1256" height="58" rx="16" fill="#5b6f8c"/>
+    <text class="head" x="170" y="37" text-anchor="middle">트래픽 패턴</text>
+    <text class="head" x="492" y="37" text-anchor="middle">측정 신호</text>
+    <text class="head" x="826" y="37" text-anchor="middle">먼저 볼 구성</text>
+    <text class="head" x="1110" y="37" text-anchor="middle">판단 이유</text>
+
+    <g transform="translate(0 76)">
+      <rect class="cell row-alt" x="0" y="0" width="1256" height="116" rx="14"/>
+      <text class="label" x="170" y="42" text-anchor="middle">일상 트래픽</text>
+      <text class="text" x="492" y="36" text-anchor="middle">baseline 안정 통과</text>
+      <text class="text" x="492" y="62" text-anchor="middle">15 VU / 10m</text>
+      <text class="text" x="826" y="36" text-anchor="middle">단일 API 출발 가능</text>
+      <text class="text" x="826" y="62" text-anchor="middle">데이터 계층 분리 권장</text>
+      <text class="text" x="1110" y="36" text-anchor="middle">완만한 요청은 안정</text>
+      <text class="text" x="1110" y="62" text-anchor="middle">기능 회귀 기준선</text>
+    </g>
+
+    <g transform="translate(0 208)">
+      <rect class="cell" x="0" y="0" width="1256" height="116" rx="14"/>
+      <text class="label" x="170" y="42" text-anchor="middle">지속 발급 집중</text>
+      <text class="text" x="492" y="36" text-anchor="middle">90~110 VU 통과</text>
+      <text class="text" x="492" y="62" text-anchor="middle">120 VU 기준 미달</text>
+      <text class="text" x="826" y="36" text-anchor="middle">API replica 검토</text>
+      <text class="text" x="826" y="62" text-anchor="middle">worker 분리 운영</text>
+      <text class="text" x="1110" y="36" text-anchor="middle">경계가 가까움</text>
+      <text class="text" x="1110" y="62" text-anchor="middle">지속 부하 대응 필요</text>
+    </g>
+
+    <g transform="translate(0 340)">
+      <rect class="cell row-alt" x="0" y="0" width="1256" height="116" rx="14"/>
+      <text class="label" x="170" y="42" text-anchor="middle">대량 경합</text>
+      <text class="text" x="492" y="36" text-anchor="middle">900명 성공</text>
+      <text class="text" x="492" y="62" text-anchor="middle">1000명 실패</text>
+      <text class="text" x="826" y="36" text-anchor="middle">hot path 축소</text>
+      <text class="text" x="826" y="62" text-anchor="middle">사전 준비</text>
+      <text class="text" x="1110" y="36" text-anchor="middle">응답 품질 경계</text>
+      <text class="text" x="1110" y="62" text-anchor="middle">정합성은 유지</text>
+    </g>
+
+    <g transform="translate(0 472)">
+      <rect class="cell" x="0" y="0" width="1256" height="116" rx="14"/>
+      <text class="label" x="170" y="42" text-anchor="middle">캠페인 반복</text>
+      <text class="text" x="492" y="36" text-anchor="middle">서버 오류 40건</text>
+      <text class="text" x="492" y="62" text-anchor="middle">오류율 1.99%</text>
+      <text class="text" x="826" y="36" text-anchor="middle">API 다중 replica</text>
+      <text class="text" x="826" y="62" text-anchor="middle">관리형 Redis/Kafka</text>
+      <text class="text" x="1110" y="36" text-anchor="middle">한계 바깥 대응</text>
+      <text class="text" x="1110" y="62" text-anchor="middle">구조 확장 필요</text>
+    </g>
+  </g>
+
+  <g transform="translate(310 736)">
+    <rect x="0" y="0" width="820" height="58" rx="18" fill="#edf3fa"/>
+    <text class="summary" x="410" y="37" text-anchor="middle">핵심 기준: 트래픽 패턴이 먼저, 스펙은 그 다음</text>
+  </g>
+</svg>

@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 760" role="img" aria-labelledby="title desc">
+  <title id="title">requestId와 Idempotency-Key 복구 흐름</title>
+  <desc id="desc">응답을 놓친 클라이언트가 같은 요청을 식별하고 상태를 다시 확인하는 흐름</desc>
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="10" refY="5" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L10,5 L0,10 Z" fill="#5b6f8c"/>
+    </marker>
+    <style>
+      .bg { fill: #f7f9fc; }
+      .frame { fill: #fff; stroke: #c9d5e6; stroke-width: 2; }
+      .title { font: 700 30px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #25324a; }
+      .card { fill: #fff; stroke: #d3deed; stroke-width: 2; }
+      .step { font: 800 19px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #24334d; }
+      .small { font: 700 15px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #60728a; }
+      .line { stroke: #5b6f8c; stroke-width: 5; stroke-linecap: butt; stroke-linejoin: round; marker-end: url(#arrow); }
+      .summary { font: 800 22px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #34465f; }
+      .accent { fill: #5a99dc; }
+      .ok { fill: #43b36b; }
+      .warn { fill: #f3a032; }
+      .chip-text { font: 800 16px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #fff; }
+    </style>
+  </defs>
+  <rect class="bg" width="1440" height="760"/>
+  <rect class="frame" x="42" y="36" width="1356" height="688" rx="26"/>
+  <text class="title" x="720" y="94" text-anchor="middle">응답을 놓쳐도 같은 요청을 식별</text>
+
+  <g transform="translate(82 190)">
+    <rect class="card" x="0" y="0" width="210" height="150" rx="18"/>
+    <text class="step" x="105" y="42" text-anchor="middle">첫 요청</text>
+    <text class="small" x="105" y="76" text-anchor="middle">Idempotency-Key</text>
+    <text class="small" x="105" y="102" text-anchor="middle">포함</text>
+    <rect class="accent" x="58" y="116" width="94" height="30" rx="15"/>
+    <text class="chip-text" x="105" y="137" text-anchor="middle">client</text>
+  </g>
+  <line class="line" x1="310" y1="265" x2="374" y2="265"/>
+
+  <g transform="translate(392 190)">
+    <rect class="card" x="0" y="0" width="210" height="150" rx="18"/>
+    <text class="step" x="105" y="46" text-anchor="middle">requestId</text>
+    <text class="small" x="105" y="80" text-anchor="middle">발급 또는 재사용</text>
+    <rect class="accent" x="58" y="112" width="94" height="30" rx="15"/>
+    <text class="chip-text" x="105" y="133" text-anchor="middle">API</text>
+  </g>
+  <line class="line" x1="620" y1="265" x2="684" y2="265"/>
+
+  <g transform="translate(702 190)">
+    <rect class="card" x="0" y="0" width="210" height="150" rx="18"/>
+    <text class="step" x="105" y="46" text-anchor="middle">상태 저장</text>
+    <text class="small" x="105" y="80" text-anchor="middle">짧은 TTL</text>
+    <rect class="warn" x="58" y="112" width="94" height="30" rx="15"/>
+    <text class="chip-text" x="105" y="133" text-anchor="middle">Redis</text>
+  </g>
+  <line class="line" x1="930" y1="265" x2="994" y2="265"/>
+
+  <g transform="translate(1012 190)">
+    <rect class="card" x="0" y="0" width="210" height="150" rx="18"/>
+    <text class="step" x="105" y="46" text-anchor="middle">수락 완료</text>
+    <text class="small" x="105" y="80" text-anchor="middle">Redis + Kafka</text>
+    <rect class="ok" x="58" y="112" width="94" height="30" rx="15"/>
+    <text class="chip-text" x="105" y="133" text-anchor="middle">accepted</text>
+  </g>
+
+  <polyline class="line" points="1117,352 1117,430 323,430 323,352" fill="none"/>
+  <g transform="translate(512 472)">
+    <rect class="card" x="0" y="0" width="416" height="92" rx="18"/>
+    <text class="step" x="208" y="38" text-anchor="middle">응답 유실 시 상태 조회</text>
+    <text class="small" x="208" y="66" text-anchor="middle">같은 키로 재시도 또는 requestId 조회</text>
+  </g>
+
+  <g transform="translate(340 622)">
+    <rect x="0" y="0" width="760" height="66" rx="18" fill="#edf3fa"/>
+    <text class="summary" x="380" y="42" text-anchor="middle">중복 발급보다 같은 요청 식별이 먼저</text>
+  </g>
+</svg>

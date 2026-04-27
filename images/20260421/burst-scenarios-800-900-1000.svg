@@ -1,0 +1,81 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 760" role="img" aria-labelledby="title desc">
+  <title id="title">버스트 시나리오 800, 900, 1000 비교</title>
+  <desc id="desc">재고 1개에 대해 800명과 900명은 성공, 1000명은 서버 오류로 실패한 결과</desc>
+  <defs>
+    <style>
+      .bg { fill: #f7f9fc; }
+      .frame { fill: #fff; stroke: #c9d5e6; stroke-width: 2; }
+      .title { font: 700 30px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #25324a; }
+      .subtitle { font: 650 17px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #64748b; }
+      .card { fill: #fff; stroke: #d3deed; stroke-width: 2; }
+      .ok { fill: #ecfdf4; stroke: #7bc79a; }
+      .fail { fill: #fff3f1; stroke: #ed9085; }
+      .head { font: 800 28px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #21314b; }
+      .status { font: 800 18px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #fff; }
+      .label { font: 700 16px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #5b6b82; }
+      .value { font: 800 20px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #26364f; }
+      .summary { font: 800 22px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #34465f; }
+      .line { stroke: #d5deec; stroke-width: 2; }
+    </style>
+  </defs>
+  <rect class="bg" width="1440" height="760"/>
+  <rect class="frame" x="42" y="36" width="1356" height="688" rx="26"/>
+  <text class="title" x="720" y="94" text-anchor="middle">대량 동시 발급 경계</text>
+  <text class="subtitle" x="720" y="128" text-anchor="middle">재고 1개, 같은 쿠폰에 동시 발급 요청</text>
+
+  <g transform="translate(112 180)">
+    <rect class="card ok" x="0" y="0" width="360" height="350" rx="22"/>
+    <text class="head" x="180" y="58" text-anchor="middle">800명 / 재고 1</text>
+    <rect x="116" y="82" width="128" height="42" rx="21" fill="#43b36b"/>
+    <text class="status" x="180" y="109" text-anchor="middle">성공</text>
+    <line class="line" x1="42" y1="150" x2="318" y2="150"/>
+    <text class="label" x="86" y="188" text-anchor="middle">성공</text>
+    <text class="value" x="86" y="218" text-anchor="middle">1</text>
+    <text class="label" x="180" y="188" text-anchor="middle">품절</text>
+    <text class="value" x="180" y="218" text-anchor="middle">799</text>
+    <text class="label" x="274" y="188" text-anchor="middle">오류</text>
+    <text class="value" x="274" y="218" text-anchor="middle">0</text>
+    <line class="line" x1="42" y1="246" x2="318" y2="246"/>
+    <text class="label" x="180" y="284" text-anchor="middle">정합성</text>
+    <text class="value" x="180" y="316" text-anchor="middle">100%</text>
+  </g>
+
+  <g transform="translate(540 180)">
+    <rect class="card ok" x="0" y="0" width="360" height="350" rx="22"/>
+    <text class="head" x="180" y="58" text-anchor="middle">900명 / 재고 1</text>
+    <rect x="116" y="82" width="128" height="42" rx="21" fill="#43b36b"/>
+    <text class="status" x="180" y="109" text-anchor="middle">성공</text>
+    <line class="line" x1="42" y1="150" x2="318" y2="150"/>
+    <text class="label" x="86" y="188" text-anchor="middle">성공</text>
+    <text class="value" x="86" y="218" text-anchor="middle">1</text>
+    <text class="label" x="180" y="188" text-anchor="middle">품절</text>
+    <text class="value" x="180" y="218" text-anchor="middle">899</text>
+    <text class="label" x="274" y="188" text-anchor="middle">오류</text>
+    <text class="value" x="274" y="218" text-anchor="middle">0</text>
+    <line class="line" x1="42" y1="246" x2="318" y2="246"/>
+    <text class="label" x="180" y="284" text-anchor="middle">정합성</text>
+    <text class="value" x="180" y="316" text-anchor="middle">100%</text>
+  </g>
+
+  <g transform="translate(968 180)">
+    <rect class="card fail" x="0" y="0" width="360" height="350" rx="22"/>
+    <text class="head" x="180" y="58" text-anchor="middle">1000명 / 재고 1</text>
+    <rect x="116" y="82" width="128" height="42" rx="21" fill="#e45d4f"/>
+    <text class="status" x="180" y="109" text-anchor="middle">실패</text>
+    <line class="line" x1="42" y1="150" x2="318" y2="150"/>
+    <text class="label" x="80" y="188" text-anchor="middle">성공</text>
+    <text class="value" x="80" y="218" text-anchor="middle">1</text>
+    <text class="label" x="166" y="188" text-anchor="middle">품절</text>
+    <text class="value" x="166" y="218" text-anchor="middle">959</text>
+    <text class="label" x="272" y="188" text-anchor="middle">서버 오류</text>
+    <text class="value" x="272" y="218" text-anchor="middle">40</text>
+    <line class="line" x1="42" y1="246" x2="318" y2="246"/>
+    <text class="label" x="180" y="284" text-anchor="middle">정합성</text>
+    <text class="value" x="180" y="316" text-anchor="middle">100%</text>
+  </g>
+
+  <g transform="translate(300 602)">
+    <rect x="0" y="0" width="840" height="66" rx="18" fill="#edf3fa"/>
+    <text class="summary" x="420" y="42" text-anchor="middle">정합성은 유지, 응답 품질 경계는 900명과 1000명 사이</text>
+  </g>
+</svg>
