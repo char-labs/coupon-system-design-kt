@@ -31,7 +31,30 @@ function durationMsOf(response) {
   return Number(duration.toFixed(3));
 }
 
+function failureKindOf(response) {
+  const status = response?.status ?? 0;
+  if (status <= 0) {
+    return 'transport';
+  }
+
+  if (status >= 500) {
+    return 'server';
+  }
+
+  return null;
+}
+
 function sortSlowFirst(left, right) {
+  if (left.failureKind !== right.failureKind) {
+    if (left.failureKind) {
+      return -1;
+    }
+
+    if (right.failureKind) {
+      return 1;
+    }
+  }
+
   return right.durationMs - left.durationMs;
 }
 
@@ -59,6 +82,7 @@ export function maybeRecordSlowRequestSample(response, options = {}) {
     scenario: scenarioName(),
     status: response?.status ?? 0,
     durationMs: durationMsOf(response),
+    failureKind: failureKindOf(response),
     timestamp: new Date().toISOString(),
     responsePreview: trimPreview(response?.body),
   };
@@ -69,7 +93,7 @@ export function maybeRecordSlowRequestSample(response, options = {}) {
       ? -1
       : vuSlowRequestCandidates[vuSlowRequestCandidates.length - 1].durationMs;
 
-  if (sample.durationMs <= minTrackedDuration) {
+  if (!sample.failureKind && sample.durationMs <= minTrackedDuration) {
     return;
   }
 

@@ -445,7 +445,19 @@ function buildSlowRequestSummary({
   slowRequestSamples,
 }) {
   const sortedSamples = [...slowRequestSamples]
-    .sort((left, right) => Number(right.durationMs || 0) - Number(left.durationMs || 0))
+    .sort((left, right) => {
+      if (left.failureKind !== right.failureKind) {
+        if (left.failureKind) {
+          return -1;
+        }
+
+        if (right.failureKind) {
+          return 1;
+        }
+      }
+
+      return Number(right.durationMs || 0) - Number(left.durationMs || 0);
+    })
     .slice(0, sampleLimit);
 
   return {
@@ -529,9 +541,9 @@ function buildLoadSummary(scenario, parsedEnv, envSource) {
     case 'baseline':
       return `${resolveValue('BASELINE_VUS')}명이 ${resolveValue('BASELINE_DURATION')} 동안 일반 사용 패턴으로 실행`;
     case 'issue-burst':
-      return `${resolveValue('ISSUE_BURST_VUS')}명이 같은 쿠폰에 동시에 1회 발급 요청`;
+      return `${resolveValue('ISSUE_BURST_VUS')}명 동시 요청 / 같은 쿠폰 / 재고 ${resolveValue('ISSUE_BURST_STOCK')}개`;
     case 'restaurant-issue-burst':
-      return `${resolveValue('ISSUE_BURST_VUS')}명이 같은 식당 쿠폰에 동시에 1회 발급 요청`;
+      return `${resolveValue('ISSUE_BURST_VUS')}명 동시 요청 / 같은 식당 쿠폰 / 재고 ${resolveValue('ISSUE_BURST_STOCK')}개`;
     case 'contention':
       return `${resolveValue('CONTENTION_VUS')}명이 같은 쿠폰에 동시에 발급 요청`;
     case 'issue-overload':
