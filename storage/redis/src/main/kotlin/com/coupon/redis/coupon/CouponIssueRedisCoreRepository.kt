@@ -1,6 +1,7 @@
 package com.coupon.redis.coupon
 
 import com.coupon.coupon.CouponIssueRedisRepository
+import com.coupon.coupon.CouponIssueStateNotInitializedException
 import com.coupon.enums.coupon.CouponIssueResult
 import org.springframework.data.redis.core.RedisTemplate
 import org.springframework.data.redis.core.script.DefaultRedisScript
@@ -30,6 +31,7 @@ class CouponIssueRedisCoreRepository(
             RESERVE_SUCCESS -> CouponIssueResult.SUCCESS
             RESERVE_DUPLICATE -> CouponIssueResult.DUPLICATE
             RESERVE_SOLD_OUT -> CouponIssueResult.SOLD_OUT
+            RESERVE_STATE_MISSING -> throw CouponIssueStateNotInitializedException(couponId)
             else -> error("Unexpected coupon issue state result: $result")
         }
     }
@@ -86,6 +88,7 @@ class CouponIssueRedisCoreRepository(
         private const val RESERVE_SUCCESS = 0L
         private const val RESERVE_DUPLICATE = 1L
         private const val RESERVE_SOLD_OUT = 2L
+        private const val RESERVE_STATE_MISSING = 3L
 
         private val reserveScript =
             DefaultRedisScript<Long>().apply {
@@ -98,11 +101,19 @@ class CouponIssueRedisCoreRepository(
                     local totalQuantity = tonumber(ARGV[2])
                     local ttlSeconds = tonumber(ARGV[3])
 
+                    if redis.call('EXISTS', occupiedKey) == 0 then
+                      return 3
+                    end
+
                     if redis.call('SISMEMBER', usersKey, userId) == 1 then
                       return 1
                     end
 
                     local occupiedCount = tonumber(redis.call('GET', occupiedKey) or '0')
+                    if occupiedCount > 0 and redis.call('EXISTS', usersKey) == 0 then
+                      return 3
+                    end
+
                     if occupiedCount >= totalQuantity then
                       return 2
                     end

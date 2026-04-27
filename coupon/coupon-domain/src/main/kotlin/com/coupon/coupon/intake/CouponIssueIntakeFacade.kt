@@ -36,9 +36,16 @@ class CouponIssueIntakeFacade(
         val coupon = couponService.getAvailableCouponForIssue(command.couponId)
         val reserveResult =
             couponIssueService.reserveIssue(coupon, command.userId).also { reserveResult ->
-                log.info {
-                    "event=coupon.issue phase=intake.reserve result=${reserveResult.name} requestId=$requestId " +
-                        "couponId=${command.couponId} userId=${command.userId} errorType=NONE"
+                if (reserveResult == CouponIssueResult.SUCCESS) {
+                    log.info {
+                        "event=coupon.issue phase=intake.reserve result=${reserveResult.name} requestId=$requestId " +
+                            "couponId=${command.couponId} userId=${command.userId} errorType=NONE"
+                    }
+                } else {
+                    log.debug {
+                        "event=coupon.issue phase=intake.reserve result=${reserveResult.name} requestId=$requestId " +
+                            "couponId=${command.couponId} userId=${command.userId} errorType=NONE"
+                    }
                 }
             }
 

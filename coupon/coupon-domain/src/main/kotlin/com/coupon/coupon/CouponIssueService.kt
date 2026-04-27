@@ -30,26 +30,25 @@ class CouponIssueService(
         coupon: CouponDetail,
         userId: Long,
     ): CouponIssueResult {
-        // Redis 발급 상태가 비어 있으면 한 번만 복구하고, 이미 다른 요청이 복구 중이면 잠시 기다린다.
         val ttl = stateTtl(coupon.endAt)
-        if (!couponIssueRedisRepository.hasState(coupon.id)) {
-            try {
-                couponIssueStateInitializationExecutor.initializeStateIfAbsent(coupon, ttl)
-            } catch (e: ErrorException) {
-                if (e.errorType != ErrorType.LOCK_ACQUISITION_FAILED) {
-                    throw e
-                }
 
-                waitForInitializedState(coupon.id)
-            }
+        return try {
+            // 정상 burst 경로에서는 Lua 한 번으로 중복/재고를 판정한다.
+            couponIssueRedisRepository.reserve(
+                couponId = coupon.id,
+                userId = userId,
+                totalQuantity = coupon.totalQuantity,
+                ttl = ttl,
+            )
+        } catch (e: CouponIssueStateNotInitializedException) {
+            initializeIssueStateOrWait(coupon, ttl)
+            couponIssueRedisRepository.reserve(
+                couponId = coupon.id,
+                userId = userId,
+                totalQuantity = coupon.totalQuantity,
+                ttl = ttl,
+            )
         }
-
-        return couponIssueRedisRepository.reserve(
-            couponId = coupon.id,
-            userId = userId,
-            totalQuantity = coupon.totalQuantity,
-            ttl = ttl,
-        )
     }
 
     /**
@@ -124,7 +123,7 @@ class CouponIssueService(
         couponIssueValidator.validateOwnedCouponIssue(couponIssue, command.userId)
         val canceled = couponIssueRepository.cancelIfIssued(command.couponIssueId)
         if (!canceled) {
-            throw ErrorException(com.coupon.enums.error.ErrorType.INVALID_COUPON_STATUS)
+            throw ErrorException(ErrorType.INVALID_COUPON_STATUS)
         }
 
         applicationEventPublisher.publishEvent(
@@ -155,6 +154,21 @@ class CouponIssueService(
         }
 
         throw ErrorException(ErrorType.LOCK_ACQUISITION_FAILED)
+    }
+
+    private fun initializeIssueStateOrWait(
+        coupon: CouponDetail,
+        ttl: Duration,
+    ) {
+        try {
+            couponIssueStateInitializationExecutor.initializeStateIfAbsent(coupon, ttl)
+        } catch (e: ErrorException) {
+            if (e.errorType != ErrorType.LOCK_ACQUISITION_FAILED) {
+                throw e
+            }
+
+            waitForInitializedState(coupon.id)
+        }
     }
 
     private fun stateTtl(endAt: LocalDateTime): Duration {
