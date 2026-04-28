@@ -7,6 +7,7 @@ import com.coupon.coupon.execution.CouponIssueLockingExecutor
 import com.coupon.coupon.execution.CouponIssueUsageExecutor
 import com.coupon.coupon.fixture.CouponIssueFixtures
 import com.coupon.coupon.fixture.FixedCouponFixtures
+import com.coupon.coupon.intake.CouponIssueFlowMetrics
 import com.coupon.coupon.intake.CouponIssueIntakeFacade
 import com.coupon.coupon.intake.CouponIssueMessage
 import com.coupon.coupon.intake.CouponIssueMessagePublisher
@@ -111,6 +112,32 @@ class CouponIssueExecutionFacadeTest :
                         )
                         context.couponIssueService.release(command.couponId, command.userId)
                     }
+                }
+            }
+
+            `when`("Kafka publish 실패 후 Redis 보상 release도 실패하면") {
+                val context = CouponIssueExecutionFacadeTestContext()
+                val command = CouponIssueFixtures.issueCommand(couponId = 15L, userId = 150L)
+                val coupon = FixedCouponFixtures.standard(id = command.couponId, totalQuantity = 10L)
+
+                every { context.couponService.getAvailableCouponForIssue(command.couponId) } returns coupon
+                every { context.couponIssueService.reserveIssue(coupon, command.userId) } returns CouponIssueResult.SUCCESS
+                every {
+                    context.couponIssueMessagePublisher.publish(
+                        match {
+                            it.couponId == command.couponId && it.userId == command.userId
+                        },
+                    )
+                } throws RuntimeException("broker timeout")
+                every { context.couponIssueService.release(command.couponId, command.userId) } throws RuntimeException("redis timeout")
+
+                val exception =
+                    io.kotest.assertions.throwables.shouldThrow<ErrorException> {
+                        context.couponIssueIntakeFacade.issue(command)
+                    }
+
+                then("보상 실패를 Kafka 오류로 숨기지 않고 Redis 오류로 노출한다") {
+                    exception.errorType shouldBe ErrorType.COUPON_ISSUE_REDIS_ERROR
                 }
             }
         }
@@ -277,6 +304,7 @@ class CouponIssueExecutionFacadeTest :
                 couponIssueService = couponIssueService,
                 couponIssueMessagePublisher = couponIssueMessagePublisher,
                 clock = Clock.systemUTC(),
+                metrics = object : CouponIssueFlowMetrics {},
             )
         private val distributedLockAspect = DistributedLockAspect(lock)
         private val couponIssueLockingExecutor: CouponIssueLockingExecutor =

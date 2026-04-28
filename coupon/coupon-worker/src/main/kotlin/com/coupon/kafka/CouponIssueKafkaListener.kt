@@ -5,6 +5,7 @@ import com.coupon.coupon.CouponIssueService
 import com.coupon.coupon.execution.CouponIssueExecutionFacade
 import com.coupon.coupon.execution.CouponIssueExecutionResult
 import com.coupon.coupon.execution.CouponIssueProcessingLimiter
+import com.coupon.coupon.intake.CouponIssueFlowMetrics
 import com.coupon.coupon.intake.CouponIssueMessage
 import com.coupon.shared.logging.logger
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
@@ -29,6 +30,7 @@ class CouponIssueKafkaListener(
     private val couponIssueProcessingLimiter: CouponIssueProcessingLimiter,
     private val couponIssueKafkaProperties: CouponIssueKafkaProperties,
     private val clock: Clock,
+    private val metrics: CouponIssueFlowMetrics,
 ) {
     private val log by logger()
 
@@ -44,6 +46,7 @@ class CouponIssueKafkaListener(
         val limitStartedAt = System.nanoTime()
         couponIssueProcessingLimiter.acquire()
         val limitDuration = Duration.ofNanos((System.nanoTime() - limitStartedAt).coerceAtLeast(0))
+        metrics.recordWorkerLimit(limitDuration)
         log.info {
             "event=coupon.issue phase=worker.limit result=ACQUIRED requestId=${message.requestId} " +
                 "couponId=${message.couponId} userId=${message.userId} acceptedAt=${message.acceptedAt} " +
@@ -53,6 +56,7 @@ class CouponIssueKafkaListener(
         when (val result = couponIssueExecutionFacade.execute(message)) {
             is CouponIssueExecutionResult.Succeeded -> {
                 val durationMs = Duration.between(message.acceptedAt, clock.instant()).toMillis().coerceAtLeast(0)
+                metrics.recordWorkerConsume("SUCCESS", Duration.ofMillis(durationMs))
                 log.info {
                     "event=coupon.issue phase=worker.consume result=SUCCESS requestId=${message.requestId} " +
                         "couponId=${message.couponId} userId=${message.userId} acceptedAt=${message.acceptedAt} " +
@@ -63,6 +67,7 @@ class CouponIssueKafkaListener(
 
             CouponIssueExecutionResult.AlreadyIssued -> {
                 val durationMs = Duration.between(message.acceptedAt, clock.instant()).toMillis().coerceAtLeast(0)
+                metrics.recordWorkerConsume("ALREADY_ISSUED", Duration.ofMillis(durationMs))
                 log.info {
                     "event=coupon.issue phase=worker.consume result=ALREADY_ISSUED requestId=${message.requestId} " +
                         "couponId=${message.couponId} userId=${message.userId} acceptedAt=${message.acceptedAt} " +
@@ -73,6 +78,7 @@ class CouponIssueKafkaListener(
 
             is CouponIssueExecutionResult.Rejected -> {
                 val durationMs = Duration.between(message.acceptedAt, clock.instant()).toMillis().coerceAtLeast(0)
+                metrics.recordWorkerConsume("REJECTED", Duration.ofMillis(durationMs))
                 log.info {
                     "event=coupon.issue phase=worker.consume result=REJECTED requestId=${message.requestId} " +
                         "couponId=${message.couponId} userId=${message.userId} acceptedAt=${message.acceptedAt} " +
@@ -83,6 +89,7 @@ class CouponIssueKafkaListener(
 
             is CouponIssueExecutionResult.Retry -> {
                 val durationMs = Duration.between(message.acceptedAt, clock.instant()).toMillis().coerceAtLeast(0)
+                metrics.recordWorkerConsume("RETRY", Duration.ofMillis(durationMs))
                 log.warn {
                     "event=coupon.issue phase=worker.consume result=RETRY requestId=${message.requestId} " +
                         "couponId=${message.couponId} userId=${message.userId} acceptedAt=${message.acceptedAt} " +
@@ -107,11 +114,23 @@ class CouponIssueKafkaListener(
         acknowledgment: Acknowledgment,
         @Header(name = KafkaHeaders.DLT_EXCEPTION_MESSAGE, required = false) exceptionMessage: String?,
     ) {
-        couponIssueService.release(
-            couponId = message.couponId,
-            userId = message.userId,
-        )
+        runCatching {
+            couponIssueService.release(
+                couponId = message.couponId,
+                userId = message.userId,
+            )
+        }.onFailure { throwable ->
+            val duration = Duration.between(message.acceptedAt, clock.instant()).coerceAtLeast(Duration.ZERO)
+            metrics.recordWorkerDlq("RELEASE_FAILURE", duration)
+            log.error(throwable) {
+                "event=coupon.issue phase=worker.dlq result=RELEASE_FAILURE requestId=${message.requestId} " +
+                    "couponId=${message.couponId} userId=${message.userId} acceptedAt=${message.acceptedAt} " +
+                    "errorType=DLQ_COMPENSATION_FAILURE durationMs=${duration.toMillis()} topic=${couponIssueKafkaProperties.dlqTopic}"
+            }
+            throw throwable
+        }
         val durationMs = Duration.between(message.acceptedAt, clock.instant()).toMillis().coerceAtLeast(0)
+        metrics.recordWorkerDlq("SUCCESS", Duration.ofMillis(durationMs))
 
         log.error {
             "event=coupon.issue phase=worker.dlq result=DLQ requestId=${message.requestId} " +

@@ -33,3 +33,6 @@ worker:
         initial-interval: 1s
         multiplier: 2.0
         max-interval: 30s
+      dlq-retry:
+        max-attempts: 5
+        interval: 5s

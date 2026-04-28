@@ -15,6 +15,7 @@ data class CouponIssueKafkaProperties(
     val topicPartitions: Int = 3,
     val topicReplicas: Int = 1,
     val retry: Retry = Retry(),
+    val dlqRetry: DlqRetry = DlqRetry(),
 ) {
     init {
         require(topic.isNotBlank()) { "worker.kafka.coupon-issue.topic must not be blank" }
@@ -43,6 +44,18 @@ data class CouponIssueKafkaProperties(
             }
             require(maxInterval >= initialInterval) {
                 "worker.kafka.coupon-issue.retry.max-interval must be greater than or equal to initial-interval"
+            }
+        }
+    }
+
+    data class DlqRetry(
+        val maxAttempts: Long = 5,
+        val interval: Duration = Duration.ofSeconds(5),
+    ) {
+        init {
+            require(maxAttempts > 0) { "worker.kafka.coupon-issue.dlq-retry.max-attempts must be greater than 0" }
+            require(!interval.isNegative) {
+                "worker.kafka.coupon-issue.dlq-retry.interval must not be negative"
             }
         }
     }

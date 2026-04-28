@@ -5,11 +5,14 @@ import com.coupon.coupon.CouponIssueService
 import com.coupon.coupon.execution.CouponIssueExecutionFacade
 import com.coupon.coupon.execution.CouponIssueExecutionResult
 import com.coupon.coupon.execution.CouponIssueProcessingLimiter
+import com.coupon.coupon.intake.CouponIssueFlowMetrics
 import com.coupon.coupon.intake.CouponIssueMessage
+import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.BehaviorSpec
 import io.mockk.every
 import io.mockk.justRun
 import io.mockk.mockk
+import io.mockk.verify
 import io.mockk.verifySequence
 import org.springframework.kafka.support.Acknowledgment
 import java.time.Clock
@@ -37,6 +40,7 @@ class CouponIssueKafkaListenerTest :
                         couponIssueProcessingLimiter = couponIssueProcessingLimiter,
                         couponIssueKafkaProperties = properties,
                         clock = clock,
+                        metrics = object : CouponIssueFlowMetrics {},
                     )
                 val message =
                     CouponIssueMessage(
@@ -84,6 +88,7 @@ class CouponIssueKafkaListenerTest :
                         couponIssueProcessingLimiter = couponIssueProcessingLimiter,
                         couponIssueKafkaProperties = properties,
                         clock = clock,
+                        metrics = object : CouponIssueFlowMetrics {},
                     )
                 val message =
                     CouponIssueMessage(
@@ -107,6 +112,49 @@ class CouponIssueKafkaListenerTest :
                         couponIssueService.release(message.couponId, message.userId)
                         acknowledgment.acknowledge()
                     }
+                }
+            }
+
+            `when`("DLQ 보상 release가 실패하면") {
+                val couponIssueExecutionFacade = mockk<CouponIssueExecutionFacade>()
+                val couponIssueService = mockk<CouponIssueService>()
+                val couponIssueProcessingLimiter = mockk<CouponIssueProcessingLimiter>()
+                val acknowledgment = mockk<Acknowledgment>(relaxed = true)
+                val clock = Clock.fixed(Instant.parse("2026-04-08T00:00:05Z"), ZoneOffset.UTC)
+                val properties =
+                    CouponIssueKafkaProperties(
+                        topic = "coupon.issue.v1",
+                        dlqTopic = "coupon.issue.v1.dlq",
+                    )
+                val listener =
+                    CouponIssueKafkaListener(
+                        couponIssueExecutionFacade = couponIssueExecutionFacade,
+                        couponIssueService = couponIssueService,
+                        couponIssueProcessingLimiter = couponIssueProcessingLimiter,
+                        couponIssueKafkaProperties = properties,
+                        clock = clock,
+                        metrics = object : CouponIssueFlowMetrics {},
+                    )
+                val message =
+                    CouponIssueMessage(
+                        couponId = 10L,
+                        userId = 100L,
+                        requestId = "request-1",
+                        acceptedAt = Instant.parse("2026-04-08T00:00:00Z"),
+                    )
+
+                every { couponIssueService.release(message.couponId, message.userId) } throws RuntimeException("redis timeout")
+
+                shouldThrow<RuntimeException> {
+                    listener.consumeDlq(
+                        message = message,
+                        acknowledgment = acknowledgment,
+                        exceptionMessage = "retry exhausted",
+                    )
+                }
+
+                then("ack하지 않아 DLQ listener error handler가 재시도할 수 있게 한다") {
+                    verify(exactly = 0) { acknowledgment.acknowledge() }
                 }
             }
         }

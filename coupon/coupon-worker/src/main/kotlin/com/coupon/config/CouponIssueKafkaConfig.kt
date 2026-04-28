@@ -149,7 +149,14 @@ class CouponIssueKafkaConfig(
     ): ConcurrentKafkaListenerContainerFactory<String, CouponIssueMessage> =
         ConcurrentKafkaListenerContainerFactory<String, CouponIssueMessage>().apply {
             setConsumerFactory(consumerFactory)
-            setCommonErrorHandler(DefaultErrorHandler(FixedBackOff(0L, 0L)))
+            setCommonErrorHandler(
+                DefaultErrorHandler(
+                    FixedBackOff(
+                        couponIssueKafkaProperties.dlqRetry.interval.toMillis(),
+                        couponIssueKafkaProperties.dlqRetry.maxAttempts - 1,
+                    ),
+                ),
+            )
             setConcurrency(1)
             containerProperties.ackMode = ContainerProperties.AckMode.MANUAL
             containerProperties.isObservationEnabled = couponIssueKafkaProperties.observationEnabled
