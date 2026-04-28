@@ -1,6 +1,6 @@
 package com.coupon.controller.user
 
-import com.coupon.config.ADMIN_ONLY
+import com.coupon.config.LOAD_TEST_ADMIN_OR_USER
 import com.coupon.config.OWNER_OR_ADMIN
 import com.coupon.controller.user.request.UserRequest
 import com.coupon.controller.user.response.UserPageResponse
@@ -29,7 +29,7 @@ class UserController(
 ) {
     @Operation(summary = "어드민 사용자 조회(페이징)", description = "어드민 권한으로 사용자 목록을 조회합니다.")
     @GetMapping
-    @PreAuthorize(ADMIN_ONLY)
+    @PreAuthorize(LOAD_TEST_ADMIN_OR_USER)
     fun getUsers(
         @Parameter(hidden = true) user: User,
         @RequestParam(defaultValue = "0") page: Int,
@@ -55,7 +55,7 @@ class UserController(
 
     @Operation(summary = "사용자 삭제", description = "사용자 데이터를 삭제합니다.")
     @DeleteMapping("/{userId}")
-    @PreAuthorize(ADMIN_ONLY)
+    @PreAuthorize(LOAD_TEST_ADMIN_OR_USER)
     fun deleteUser(
         @Parameter(hidden = true) user: User,
         @PathVariable userId: Long,

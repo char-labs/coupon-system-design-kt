@@ -1,6 +1,6 @@
 package com.coupon.controller.coupon
 
-import com.coupon.config.ADMIN_ONLY
+import com.coupon.config.LOAD_TEST_ADMIN_OR_USER
 import com.coupon.controller.coupon.request.CouponIssueRequest
 import com.coupon.controller.coupon.response.CouponIssueMessageResponse
 import com.coupon.controller.coupon.response.CouponIssuePageResponse
@@ -9,10 +9,7 @@ import com.coupon.coupon.CouponIssueService
 import com.coupon.coupon.command.CouponIssueCommand
 import com.coupon.coupon.execution.CouponIssueExecutionFacade
 import com.coupon.coupon.intake.CouponIssueIntakeFacade
-import com.coupon.enums.auth.AuthorityType
 import com.coupon.enums.coupon.CouponIssueResult
-import com.coupon.enums.error.ErrorType
-import com.coupon.error.ErrorException
 import com.coupon.shared.page.OffsetPageRequest
 import com.coupon.user.User
 import io.swagger.v3.oas.annotations.Operation
@@ -69,7 +66,7 @@ class CouponIssueController(
 
     @Operation(summary = "쿠폰별 발급 목록 조회", description = "특정 쿠폰의 발급 목록을 페이징하여 조회합니다. (관리자 전용)")
     @GetMapping("/coupons/{couponId}")
-    @PreAuthorize(ADMIN_ONLY)
+    @PreAuthorize(LOAD_TEST_ADMIN_OR_USER)
     fun getCouponIssues(
         @Parameter(hidden = true) user: User,
         @PathVariable couponId: Long,
@@ -82,16 +79,11 @@ class CouponIssueController(
 
     @Operation(summary = "쿠폰 발급 상세 조회", description = "쿠폰 발급 상세 정보를 조회합니다.")
     @GetMapping("/{couponIssueId}")
+    @PreAuthorize(LOAD_TEST_ADMIN_OR_USER)
     fun getCouponIssue(
         @Parameter(hidden = true) user: User,
         @PathVariable couponIssueId: Long,
-    ): CouponIssueResponse.Detail {
-        val detail = couponIssueService.getCouponIssue(couponIssueId)
-        if (user.role != AuthorityType.ADMIN && detail.userId != user.id) {
-            throw ErrorException(ErrorType.FORBIDDEN_ACCESS)
-        }
-        return CouponIssueResponse.Detail.from(detail)
-    }
+    ): CouponIssueResponse.Detail = CouponIssueResponse.Detail.from(couponIssueService.getCouponIssue(couponIssueId))
 
     @Operation(summary = "쿠폰 사용", description = "발급받은 쿠폰을 사용합니다.")
     @PostMapping("/{couponIssueId}/use")
