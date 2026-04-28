@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 import { spawn } from 'node:child_process';
+import { randomUUID } from 'node:crypto';
 import { existsSync } from 'node:fs';
 import { mkdir, readFile, stat, writeFile } from 'node:fs/promises';
 import http from 'node:http';
@@ -248,6 +249,34 @@ function parseK6EnvArgs(args) {
   }
 
   return env;
+}
+
+function sanitizeManifestEnv(env) {
+  const secretPattern = /(PASSWORD|SECRET|TOKEN|WEBHOOK|DSN|KEY)$/i;
+  const sortedEntries = Object.entries(env)
+    .filter(([key]) => !secretPattern.test(key))
+    .sort(([left], [right]) => left.localeCompare(right));
+
+  return Object.fromEntries(sortedEntries);
+}
+
+function resolveGitSha() {
+  return new Promise((resolve) => {
+    const child = spawn('git', ['rev-parse', '--short=12', 'HEAD'], {
+      cwd: process.cwd(),
+      stdio: ['ignore', 'pipe', 'ignore'],
+    });
+    let output = '';
+
+    child.stdout.on('data', (chunk) => {
+      output += chunk.toString('utf8');
+    });
+
+    child.on('error', () => resolve('unknown'));
+    child.on('close', (code) => {
+      resolve(code === 0 ? output.trim() || 'unknown' : 'unknown');
+    });
+  });
 }
 
 function metricValue(summary, key, nestedKey) {
@@ -854,6 +883,7 @@ function buildScenarioExtraMetrics(scenario, summary) {
 }
 
 function buildSlackMessage({
+  runId,
   profile,
   scenario,
   startedAt,
@@ -863,6 +893,7 @@ function buildSlackMessage({
   exitCode,
   failureReason,
   summaryPath,
+  manifestPath,
   parsedEnv,
   envSource,
 }) {
@@ -909,6 +940,7 @@ function buildSlackMessage({
     `[${profile} 환경 부하 테스트 내용]`,
     reportHeadline,
     `• *테스트 종류:* ${scenarioLabel}`,
+    `• *Run ID:* ${runId}`,
     `• *결과:* ${status}`,
     `• *한 줄 요약:* ${oneLineSummary}`,
     `• *부하 조건:* ${loadSummary}`,
@@ -924,6 +956,7 @@ function buildSlackMessage({
     `• *정상 응답 확인율:* ${checksRate}`,
     ...scenarioExtraMetrics.textLines,
     `• *결과 파일:* ${summaryPath}`,
+    `• *실행 매니페스트:* ${manifestPath}`,
   ].join('\n');
 
   const blocks = [
@@ -954,6 +987,10 @@ function buildSlackMessage({
         {
           type: 'mrkdwn',
           text: `*결과*\n${status}`,
+        },
+        {
+          type: 'mrkdwn',
+          text: `*Run ID*\n${runId}`,
         },
         {
           type: 'mrkdwn',
@@ -1026,6 +1063,10 @@ function buildSlackMessage({
           type: 'mrkdwn',
           text: `*결과 파일:* \`${summaryPath}\``,
         },
+        {
+          type: 'mrkdwn',
+          text: `*실행 매니페스트:* \`${manifestPath}\``,
+        },
       ],
     },
   ];
@@ -1051,6 +1092,10 @@ function shouldNotify(notifyOn, status) {
 
 async function postSlackMessage(webhookUrl, message) {
   const target = new URL(webhookUrl);
+  const localWebhook = ['localhost', '127.0.0.1', '::1'].includes(target.hostname);
+  if (target.protocol !== 'https:' && !localWebhook) {
+    throw new Error('Slack webhook URL must use HTTPS outside localhost.');
+  }
   const payload = JSON.stringify({
     text: message.text,
     blocks: message.blocks,
@@ -1108,6 +1153,8 @@ async function main() {
   const parsedEnv = parseK6EnvArgs(parsed.k6Args);
   const resultsDir = resolveResultsDir(parsedEnv, envSource);
   const summaryPath = path.resolve(resultsDir, `${parsed.scenario}-latest.json`);
+  const runId = randomUUID();
+  const gitSha = await resolveGitSha();
   const startedAt = new Date();
   const startedAtMs = startedAt.getTime();
   const recentLines = [];
@@ -1120,6 +1167,7 @@ async function main() {
     cwd: process.cwd(),
     env: {
       ...envSource,
+      LOAD_TEST_RUN_ID: runId,
       SLOW_REQUEST_SAMPLE_STDOUT: '1',
     },
     stdio: ['inherit', 'pipe', 'pipe'],
@@ -1155,6 +1203,7 @@ async function main() {
   const thresholdFailures = collectThresholdFailures(summary);
   const failureReason = extractFailureReason(recentLines);
   const slackMessage = buildSlackMessage({
+    runId,
     profile: parsed.profile,
     scenario: parsed.scenario,
     startedAt,
@@ -1164,11 +1213,14 @@ async function main() {
     exitCode,
     failureReason,
     summaryPath: path.relative(process.cwd(), summaryPath),
+    manifestPath: path.relative(process.cwd(), path.resolve(resultsDir, `${parsed.scenario}-manifest-latest.json`)),
     parsedEnv,
     envSource,
   });
 
   const generatedAt = finishedAt.toISOString().replace(/[:.]/g, '-');
+  const manifestLatestPath = path.resolve(resultsDir, `${parsed.scenario}-manifest-latest.json`);
+  const manifestTimestampPath = path.resolve(resultsDir, `${parsed.scenario}-manifest-${generatedAt}.json`);
   const slackPreviewLatestPath = path.resolve(resultsDir, `${parsed.scenario}-slack-latest.txt`);
   const slackPreviewTimestampPath = path.resolve(
     resultsDir,
@@ -1177,6 +1229,38 @@ async function main() {
 
   await writeFile(slackPreviewLatestPath, slackMessage.text);
   await writeFile(slackPreviewTimestampPath, slackMessage.text);
+  await writeFile(
+    manifestLatestPath,
+    JSON.stringify(
+      {
+        runId,
+        gitSha,
+        profile: parsed.profile,
+        scenario: parsed.scenario,
+        scenarioLabel: scenarioLabels[parsed.scenario] || parsed.scenario,
+        status: slackMessage.status,
+        startedAt: startedAt.toISOString(),
+        finishedAt: finishedAt.toISOString(),
+        exitCode,
+        thresholdFailures,
+        failureReason,
+        loadSummary: buildLoadSummary(parsed.scenario, parsedEnv, envSource),
+        loadDescription: buildLoadDescription(parsed.scenario, parsedEnv, envSource),
+        k6Args: parsed.k6Args,
+        scenarioScript: path.relative(process.cwd(), scenarioScript),
+        summaryPath: path.relative(process.cwd(), summaryPath),
+        slowRequestSummaryPath: path.relative(process.cwd(), path.resolve(resultsDir, `${parsed.scenario}-slow-requests-latest.json`)),
+        slackPreviewPath: path.relative(process.cwd(), slackPreviewLatestPath),
+        env: sanitizeManifestEnv({
+          ...scenarioDefaults[parsed.scenario],
+          ...parsedEnv,
+        }),
+      },
+      null,
+      2,
+    ),
+  );
+  await writeFile(manifestTimestampPath, await readFile(manifestLatestPath, 'utf8'));
 
   if (shouldNotify(parsed.notifyOn, slackMessage.status)) {
     if (parsed.webhookUrl) {
