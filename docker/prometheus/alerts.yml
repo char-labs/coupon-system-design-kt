@@ -1,0 +1,38 @@
+groups:
+  - name: coupon-issuance
+    rules:
+      - alert: CouponIssuePublishFailure
+        expr: increase(coupon_issue_intake_publish_count_total{result="FAILURE"}[5m]) > 0
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Coupon issue publish failed"
+          description: "Redis reserve succeeded but Kafka publish failed during the last 5 minutes."
+
+      - alert: CouponIssueIntakeCompensationFailure
+        expr: increase(coupon_issue_intake_compensation_count_total{result="FAILURE"}[5m]) > 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Coupon issue reserve release failed"
+          description: "Kafka publish failed and Redis reserve compensation also failed."
+
+      - alert: CouponIssueWorkerRetry
+        expr: increase(coupon_issue_worker_consume_count_total{result="RETRY"}[5m]) > 0
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Coupon issue worker retrying"
+          description: "Worker received retryable coupon issue failures."
+
+      - alert: CouponIssueDlqCompensationFailure
+        expr: increase(coupon_issue_worker_dlq_count_total{result="RELEASE_FAILURE"}[5m]) > 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Coupon issue DLQ compensation failed"
+          description: "DLQ listener could not release the Redis reserve before acknowledging."
