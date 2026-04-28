@@ -3,6 +3,9 @@ management:
     redis:
       enabled: false
 
+jwt:
+  secret-key: coupon-api-int-test-secret-key-32bytes
+
 spring:
   main:
     web-application-type: none

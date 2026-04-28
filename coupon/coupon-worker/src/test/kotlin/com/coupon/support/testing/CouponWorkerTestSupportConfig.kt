@@ -3,6 +3,7 @@ package com.coupon.support.testing
 import com.coupon.auth.AuthenticationHistoryRepository
 import com.coupon.auth.TokenRepository
 import com.coupon.coupon.CouponIssueRedisRepository
+import com.coupon.coupon.CouponIssueStateNotInitializedException
 import com.coupon.coupon.execution.CouponIssueProcessingLimiter
 import com.coupon.coupon.intake.CouponIssueMessagePublisher
 import com.coupon.enums.coupon.CouponIssueResult
@@ -104,7 +105,7 @@ private class InMemoryCouponIssueRedisRepository : CouponIssueRedisRepository {
         totalQuantity: Long,
         ttl: Duration,
     ): CouponIssueResult {
-        val state = states.computeIfAbsent(couponId) { IssueState() }
+        val state = states[couponId] ?: throw CouponIssueStateNotInitializedException(couponId)
 
         return synchronized(state) {
             when {

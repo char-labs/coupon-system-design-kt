@@ -1,6 +1,7 @@
 package com.coupon.controller.user
 
-import com.coupon.config.LOAD_TEST_ADMIN_OR_USER
+import com.coupon.config.ADMIN_ONLY
+import com.coupon.config.OWNER_OR_ADMIN
 import com.coupon.controller.user.request.UserRequest
 import com.coupon.controller.user.response.UserPageResponse
 import com.coupon.controller.user.response.UserResponse
@@ -28,7 +29,7 @@ class UserController(
 ) {
     @Operation(summary = "어드민 사용자 조회(페이징)", description = "어드민 권한으로 사용자 목록을 조회합니다.")
     @GetMapping
-    @PreAuthorize(LOAD_TEST_ADMIN_OR_USER)
+    @PreAuthorize(ADMIN_ONLY)
     fun getUsers(
         @Parameter(hidden = true) user: User,
         @RequestParam(defaultValue = "0") page: Int,
@@ -37,6 +38,7 @@ class UserController(
 
     @Operation(summary = "사용자 조회", description = "사용자 정보를 조회합니다.")
     @GetMapping("/{userId}")
+    @PreAuthorize(OWNER_OR_ADMIN)
     fun getUser(
         @Parameter(hidden = true) user: User,
         @PathVariable userId: Long,
@@ -44,7 +46,7 @@ class UserController(
 
     @Operation(summary = "사용자 정보 수정", description = "사용자 정보를 수정합니다.")
     @PutMapping("/{userId}")
-    @PreAuthorize(LOAD_TEST_ADMIN_OR_USER)
+    @PreAuthorize(OWNER_OR_ADMIN)
     fun modifyUser(
         @Parameter(hidden = true) user: User,
         @PathVariable userId: Long,
@@ -53,7 +55,7 @@ class UserController(
 
     @Operation(summary = "사용자 삭제", description = "사용자 데이터를 삭제합니다.")
     @DeleteMapping("/{userId}")
-    @PreAuthorize(LOAD_TEST_ADMIN_OR_USER)
+    @PreAuthorize(ADMIN_ONLY)
     fun deleteUser(
         @Parameter(hidden = true) user: User,
         @PathVariable userId: Long,

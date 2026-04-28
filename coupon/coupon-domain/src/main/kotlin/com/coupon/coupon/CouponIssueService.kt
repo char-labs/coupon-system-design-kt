@@ -92,6 +92,21 @@ class CouponIssueService(
         couponIssueRedisRepository.releaseStockSlot(couponId)
     }
 
+    fun diagnoseIssueState(coupon: CouponDetail): CouponIssueStateDiagnostic {
+        val issuedCount = couponIssueRepository.countByCouponId(coupon.id)
+        return CouponIssueStateDiagnostic(
+            couponId = coupon.id,
+            initialized = couponIssueRedisRepository.hasState(coupon.id),
+            occupiedCount = coupon.totalQuantity - coupon.remainingQuantity,
+            issuedCount = issuedCount,
+        )
+    }
+
+    fun rebuildIssueState(coupon: CouponDetail): CouponIssueStateDiagnostic {
+        couponIssueStateInitializationExecutor.rebuildState(coupon, stateTtl(coupon.endAt))
+        return diagnoseIssueState(coupon)
+    }
+
     /**
      * 쿠폰 사용은 지금도 동기식 원본 상태 변경이다.
      * outbox 이벤트는 후속 projection을 위한 것이지, 상태 전이 자체를 대신하지 않는다.

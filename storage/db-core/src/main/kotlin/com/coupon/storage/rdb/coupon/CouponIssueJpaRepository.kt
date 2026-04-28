@@ -33,6 +33,8 @@ interface CouponIssueJpaRepository : JpaRepository<CouponIssueEntity, Long> {
     )
     fun findDistinctUserIdsByCouponId(couponId: Long): List<Long>
 
+    fun countByCouponId(couponId: Long): Long
+
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query(
         """

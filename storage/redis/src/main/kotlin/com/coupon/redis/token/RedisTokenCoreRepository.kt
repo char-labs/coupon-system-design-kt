@@ -31,12 +31,12 @@ class RedisTokenCoreRepository(
             set(
                 accessToken,
                 objectMapper.writeValueAsString(tokenWithAuthenticationResult),
-                Duration.ofSeconds(accessTokenExpiration * 60L),
+                Duration.ofSeconds(accessTokenExpiration),
             )
             set(
                 refreshToken,
                 objectMapper.writeValueAsString(tokenWithAuthenticationResult),
-                Duration.ofSeconds(refreshTokenExpiration * 60L),
+                Duration.ofSeconds(refreshTokenExpiration),
             )
         }
         return tokenWithAuthenticationResult

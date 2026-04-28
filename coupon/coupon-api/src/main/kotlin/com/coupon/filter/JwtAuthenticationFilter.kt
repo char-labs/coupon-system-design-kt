@@ -1,7 +1,7 @@
 package com.coupon.filter
 
+import com.coupon.auth.Provider
 import com.coupon.jwt.JwtProvider
-import io.jsonwebtoken.Claims
 import jakarta.servlet.FilterChain
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
@@ -18,7 +18,6 @@ class JwtAuthenticationFilter(
     companion object {
         private const val AUTHORIZATION_HEADER = "Authorization"
         private const val BEARER_PREFIX = "Bearer "
-        private const val ROLES_CLAIM = "roles"
     }
 
     override fun doFilterInternal(
@@ -30,8 +29,8 @@ class JwtAuthenticationFilter(
 
         if (token != null) {
             try {
-                val claims = jwtProvider.validateToken(token)
-                setAuthentication(claims)
+                val provider = jwtProvider.validateAccessToken(token)
+                setAuthentication(provider)
             } catch (e: Exception) {
                 // 토큰이 유효하지 않으면 인증 없이 진행 (Security에서 처리)
                 logger.debug("Invalid JWT token: ${e.message}")
@@ -50,15 +49,12 @@ class JwtAuthenticationFilter(
         }
     }
 
-    private fun setAuthentication(claims: Claims) {
-        val userKey = claims.subject
-        val roles = claims.get(ROLES_CLAIM, List::class.java)?.map { it.toString() } ?: emptyList()
-
-        val authorities = roles.map { SimpleGrantedAuthority(it) }
+    private fun setAuthentication(provider: Provider) {
+        val authorities = provider.grantedAuthorities.map { SimpleGrantedAuthority(it) }
 
         val authentication =
             UsernamePasswordAuthenticationToken(
-                userKey,
+                provider.userKey,
                 null,
                 authorities,
             )

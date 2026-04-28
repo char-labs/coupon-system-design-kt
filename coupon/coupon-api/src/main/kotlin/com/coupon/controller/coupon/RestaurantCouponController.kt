@@ -1,6 +1,6 @@
 package com.coupon.controller.coupon
 
-import com.coupon.config.LOAD_TEST_ADMIN_OR_USER
+import com.coupon.config.ADMIN_ONLY
 import com.coupon.controller.coupon.request.RestaurantCouponRequest
 import com.coupon.controller.coupon.response.CouponIssueMessageResponse
 import com.coupon.controller.coupon.response.RestaurantCouponResponse
@@ -33,7 +33,7 @@ class RestaurantCouponController(
     @Operation(summary = "맛집 쿠폰 배치 생성", description = "오늘의 식당 쿠폰을 배치로 생성합니다. (관리자 전용, 최대 3건)")
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    @PreAuthorize(LOAD_TEST_ADMIN_OR_USER)
+    @PreAuthorize(ADMIN_ONLY)
     fun createRestaurantCoupons(
         @Parameter(hidden = true) user: User,
         @RequestBody request: RestaurantCouponRequest.CreateBatch,
@@ -69,7 +69,7 @@ class RestaurantCouponController(
     @Operation(summary = "맛집 쿠폰 삭제", description = "맛집 쿠폰을 삭제합니다. (관리자 전용)")
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    @PreAuthorize(LOAD_TEST_ADMIN_OR_USER)
+    @PreAuthorize(ADMIN_ONLY)
     fun deleteRestaurantCoupon(
         @Parameter(hidden = true) user: User,
         @PathVariable id: Long,

@@ -28,19 +28,29 @@ import javax.crypto.SecretKey
 
 @Component
 class JwtProvider(
-    @param:Value("\${jwt.secret-key:couponJwtSecretKeyForAuthenticationSecuritySystem2024SecureKey!@#\$}")
+    @param:Value("\${jwt.secret-key}")
     private val secretKey: String,
     private val authenticationProperties: AuthenticationProperties,
     private val redisTokenRepository: TokenStoreRepository,
     private val authenticationHistoryRepository: AuthenticationHistoryRepository,
     private val userService: UserService,
 ) : TokenRepository {
+    init {
+        require(secretKey.toByteArray(StandardCharsets.UTF_8).size >= MINIMUM_HMAC_SECRET_BYTES) {
+            "jwt.secret-key must be at least $MINIMUM_HMAC_SECRET_BYTES bytes"
+        }
+        require(!secretKey.startsWith("change-me") && !secretKey.contains("couponJwtSecretKey")) {
+            "jwt.secret-key must not use a sample or legacy default secret"
+        }
+    }
+
     companion object {
         private const val ISSUER = "coupon"
         private const val TOKEN_TYPE_CLAIM = "type"
         private const val ROLES_CLAIM = "roles"
         private const val ACCESS_TOKEN_TYPE = "A"
         private const val REFRESH_TOKEN_TYPE = "R"
+        private const val MINIMUM_HMAC_SECRET_BYTES = 32
     }
 
     override fun save(
@@ -80,7 +90,7 @@ class JwtProvider(
     }
 
     override fun renew(refreshToken: String): Token {
-        validateAndParseClaims(refreshToken)
+        validateRefreshTokenClaims(refreshToken)
         val tokenWithAuthentication = redisTokenRepository.findByToken(refreshToken)
         val authenticationHistory =
             verifyTokenHistory(
@@ -152,7 +162,24 @@ class JwtProvider(
      * Validate JWT token and return claims
      * Public method for JwtAuthenticationFilter
      */
-    fun validateToken(token: String): Claims = validateAndParseClaims(token)
+    fun validateAccessToken(token: String): Provider {
+        val claims = validateAndParseClaims(token)
+        val tokenType = claims[TOKEN_TYPE_CLAIM]?.toString()
+        if (tokenType != ACCESS_TOKEN_TYPE) {
+            throw ErrorException(ErrorType.INVALID_ACCESS_TOKEN)
+        }
+
+        return redisTokenRepository.findBy(token) ?: throw ErrorException(ErrorType.INVALID_ACCESS_TOKEN)
+    }
+
+    private fun validateRefreshTokenClaims(token: String): Claims {
+        val claims = validateAndParseClaims(token)
+        val tokenType = claims[TOKEN_TYPE_CLAIM]?.toString()
+        if (tokenType != REFRESH_TOKEN_TYPE) {
+            throw ErrorException(ErrorType.INVALID_REFRESH_TOKEN)
+        }
+        return claims
+    }
 
     /**
      * Validate and parse JWT token
@@ -182,7 +209,7 @@ class JwtProvider(
         grantedAuthorities: List<GrantedAuthority>,
     ): String {
         val issuedAt = Date.from(Instant.now())
-        val expiresAt = Date.from(Instant.now().plusSeconds(authenticationProperties.accessTokenExpirationSeconds * 60L))
+        val expiresAt = Date.from(Instant.now().plusSeconds(authenticationProperties.accessTokenExpirationSeconds))
 
         return Jwts
             .builder()
@@ -204,7 +231,7 @@ class JwtProvider(
      */
     private fun issueRefreshToken(jwtId: String): String {
         val issuedAt = Date.from(Instant.now())
-        val expiresAt = Date.from(Instant.now().plusSeconds(authenticationProperties.refreshTokenExpirationSeconds * 60L))
+        val expiresAt = Date.from(Instant.now().plusSeconds(authenticationProperties.refreshTokenExpirationSeconds))
 
         return Jwts
             .builder()

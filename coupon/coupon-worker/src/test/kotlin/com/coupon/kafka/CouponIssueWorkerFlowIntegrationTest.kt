@@ -70,14 +70,18 @@ class CouponIssueWorkerFlowIntegrationTest : BehaviorSpec() {
                     val coupon = couponService.createCoupon(CouponWorkerFixtures.couponCreateCommand(totalQuantity = 2L))
                     val user = userService.createUser(CouponWorkerFixtures.userCreateCommand(index = 1))
 
-                    couponIssueExecutionFacade.execute(
-                        CouponIssueMessage(
-                            couponId = coupon.id,
-                            userId = user.id,
-                            requestId = "request-2",
-                            acceptedAt = Instant.parse("2026-04-08T00:00:00Z"),
-                        ),
-                    )
+                    couponIssueService.reserveIssue(couponService.getCoupon(coupon.id), user.id) shouldBe CouponIssueResult.SUCCESS
+                    val issueResult =
+                        couponIssueExecutionFacade.execute(
+                            CouponIssueMessage(
+                                couponId = coupon.id,
+                                userId = user.id,
+                                requestId = "request-2",
+                                acceptedAt = Instant.parse("2026-04-08T00:00:00Z"),
+                            ),
+                        )
+
+                    (issueResult is CouponIssueExecutionResult.Succeeded) shouldBe true
                     couponIssueRedisRepository.clear(coupon.id)
 
                     val result = couponIssueService.reserveIssue(couponService.getCoupon(coupon.id), user.id)
